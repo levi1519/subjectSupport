@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Estudiante - SubjectSupport</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 40px 0;
+        }
+        .info-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .navbar-custom {
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .badge-pending {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .badge-confirmed {
+            background-color: #28a745;
+        }
+        .badge-cancelled {
+            background-color: #dc3545;
+        }
+        .badge-completed {
+            background-color: #6c757d;
+        }
+        .session-table {
+            font-size: 0.9rem;
+        }
+        .btn-request-session {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            color: white;
+        }
+        .btn-request-session:hover {
+            background: linear-gradient(135deg, #3d9ce6 0%, #00d8e6 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light navbar-custom">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="{% url 'landing' %}">SubjectSupport</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'client_dashboard' %}">Mi Panel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'tutor_selection' %}">Buscar Tutores</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-header">
+        <div class="container">
+            <h1 class="display-5 fw-bold">Bienvenido, {{ user.name }}!</h1>
+            <p class="lead mb-3">Panel de Control del Estudiante</p>
+            <a href="{% url 'tutor_selection' %}" class="btn btn-request-session btn-lg">
+                <i class="bi bi-plus-circle"></i> Buscar Tutores
+            </a>
+        </div>
+    </div>
+
+    <div class="container mt-4 mb-5">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="row">
+            <!-- Clases Confirmadas -->
+            <div class="col-12 mb-4">
+                <div class="info-card">
+                    <h5 class="fw-bold mb-3">📅 Mis Clases Agendadas</h5>
+                    {% if upcoming_sessions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover session-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tutor</th>
+                                        <th>Materia</th>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Duración</th>
+                                        <th>Plataforma</th>
+                                        <th>Estado</th>
+                                        <th>Enlace</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in upcoming_sessions %}
+                                        <tr>
+                                            <td>{{ session.tutor.name }}</td>
+                                            <td>{{ session.subject }}</td>
+                                            <td>{{ session.scheduled_date|date:"d/m/Y" }}</td>
+                                            <td>{{ session.scheduled_time|time:"H:i" }}</td>
+                                            <td>{{ session.get_duration_display }}</td>
+                                            <td>
+                                                <span class="badge bg-info text-dark">
+                                                    {{ session.get_meeting_platform_display }}
+                                                </span>
+                                            </td>
+                                            <td><span class="badge badge-confirmed">Confirmada</span></td>
+                                            <td>
+                                                {% if session.meeting_url %}
+                                                    <a href="{% url 'meeting_room' session.id %}" class="btn btn-sm btn-primary">
+                                                        <i class="bi bi-camera-video"></i> Unirse
+                                                    </a>
+                                                {% else %}
+                                                    <small class="text-muted">Pendiente</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'cancel_session' session.id %}" class="btn btn-sm btn-outline-danger">Cancelar</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No tienes clases confirmadas próximamente.</p>
+                        <a href="{% url 'tutor_selection' %}" class="btn btn-primary mt-2">Buscar tutores</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Solicitudes Pendientes -->
+            <div class="col-12 mb-4">
+                <div class="info-card">
+                    <h5 class="fw-bold mb-3">⏳ Solicitudes Pendientes</h5>
+                    {% if pending_sessions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover session-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tutor</th>
+                                        <th>Materia</th>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Duración</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in pending_sessions %}
+                                        <tr>
+                                            <td>{{ session.tutor.name }}</td>
+                                            <td>{{ session.subject }}</td>
+                                            <td>{{ session.scheduled_date|date:"d/m/Y" }}</td>
+                                            <td>{{ session.scheduled_time|time:"H:i" }}</td>
+                                            <td>{{ session.get_duration_display }}</td>
+                                            <td><span class="badge badge-pending">Pendiente</span></td>
+                                            <td>
+                                                <a href="{% url 'cancel_session' session.id %}" class="btn btn-sm btn-outline-danger">Cancelar</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No tienes solicitudes pendientes.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Historial de Clases -->
+            <div class="col-12 mb-4">
+                <div class="info-card">
+                    <h5 class="fw-bold mb-3">📚 Historial de Clases</h5>
+                    {% if past_sessions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover session-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tutor</th>
+                                        <th>Materia</th>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in past_sessions %}
+                                        <tr>
+                                            <td>{{ session.tutor.name }}</td>
+                                            <td>{{ session.subject }}</td>
+                                            <td>{{ session.scheduled_date|date:"d/m/Y" }}</td>
+                                            <td>{{ session.scheduled_time|time:"H:i" }}</td>
+                                            <td>
+                                                {% if session.status == 'completed' %}
+                                                    <span class="badge badge-completed">Completada</span>
+                                                {% else %}
+                                                    <span class="badge badge-cancelled">Cancelada</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Aún no tienes clases en tu historial.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Tu Perfil -->
+            <div class="col-md-6 mb-4">
+                <div class="info-card">
+                    <h5 class="fw-bold mb-3">👤 Tu Información</h5>
+                    <p><strong>Nombre:</strong> {{ user.name }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    <p><strong>Tipo de cuenta:</strong> Estudiante</p>
+                    <p class="mb-0"><strong>Miembro desde:</strong> {{ user.date_joined|date:"d/m/Y" }}</p>
+                </div>
+
+                {% if profile %}
+                    <div class="info-card">
+                        <h5 class="fw-bold mb-3">ℹ️ Información Adicional</h5>
+                        {% if profile.is_minor %}
+                            <div class="alert alert-info mb-2">
+                                <small>👶 Cuenta de menor de edad</small>
+                            </div>
+                            {% if profile.parent_name %}
+                                <p class="mb-0"><strong>Padre/Tutor:</strong> {{ profile.parent_name }}</p>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted mb-0">Cuenta de adulto</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="col-md-6 mb-4">
+                <div class="info-card">
+                    <h5 class="fw-bold mb-3">📊 Mis Estadísticas</h5>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h3 class="text-success">{{ upcoming_sessions|length }}</h3>
+                            <p class="text-muted small mb-0">Próximas</p>
+                        </div>
+                        <div class="col-4">
+                            <h3 class="text-warning">{{ pending_sessions|length }}</h3>
+                            <p class="text-muted small mb-0">Pendientes</p>
+                        </div>
+                        <div class="col-4">
+                            <h3 class="text-info">{{ past_sessions|length }}</h3>
+                            <p class="text-muted small mb-0">Historial</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h5 class="fw-bold mb-3">💡 Consejos</h5>
+                    <ul class="text-muted small mb-0">
+                        <li>Llega 5 minutos antes a tu clase virtual</li>
+                        <li>Ten tus materiales de estudio listos</li>
+                        <li>Prepara tus preguntas con anticipación</li>
+                        <li>Mantén una buena conexión a internet</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

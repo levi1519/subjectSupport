@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(source env/bin/activate)",
+      "Bash(django-admin startproject:*)",
+      "Bash(source env/Scripts/activate)",
+      "Bash(env/Scripts/pip:*)",
+      "Bash(env/Scripts/django-admin.exe startproject:*)",
+      "Bash(env/Scripts/python.exe manage.py:*)",
+      "Bash(find:*)",
+      "Bash(env/Scripts/python.exe:*)",
+      "Bash(python manage.py makemigrations:*)",
+      "Bash(python manage.py test:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

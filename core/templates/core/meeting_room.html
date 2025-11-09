@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sala de Reunión - SubjectSupport</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .meeting-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            padding: 40px 0;
+        }
+        .meeting-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 50px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .meeting-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+        }
+        .meeting-icon i {
+            font-size: 40px;
+            color: white;
+        }
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .info-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .info-item i {
+            font-size: 20px;
+            color: #667eea;
+            margin-right: 15px;
+            width: 30px;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 120px;
+        }
+        .info-value {
+            color: #212529;
+        }
+        .join-button {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            padding: 18px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 50px;
+            color: white;
+            width: 100%;
+            margin-top: 30px;
+            transition: all 0.3s;
+        }
+        .join-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.4);
+            color: white;
+        }
+        .platform-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .badge-google {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .badge-zoom {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        .badge-custom {
+            background: #f3e5f5;
+            color: #6a1b9a;
+        }
+        .meeting-details {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .countdown {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            color: #667eea;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="meeting-container">
+        <div class="container">
+            <div class="meeting-card">
+                <div class="meeting-icon">
+                    <i class="bi bi-camera-video-fill"></i>
+                </div>
+
+                <h2 class="text-center mb-2">{{ session.subject }}</h2>
+                <p class="text-center text-muted mb-4">
+                    <span class="platform-badge badge-{{ session.meeting_platform }}">
+                        {{ session.get_meeting_platform_display }}
+                    </span>
+                </p>
+
+                <div class="info-box">
+                    <div class="info-item">
+                        <i class="bi bi-person-fill"></i>
+                        <span class="info-label">Tutor:</span>
+                        <span class="info-value">{{ session.tutor.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="bi bi-person-check-fill"></i>
+                        <span class="info-label">Estudiante:</span>
+                        <span class="info-value">{{ session.client.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="bi bi-calendar-event"></i>
+                        <span class="info-label">Fecha:</span>
+                        <span class="info-value">{{ session.scheduled_date|date:"d/m/Y" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="bi bi-clock-fill"></i>
+                        <span class="info-label">Hora:</span>
+                        <span class="info-value">{{ session.scheduled_time|time:"H:i" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="bi bi-hourglass-split"></i>
+                        <span class="info-label">Duración:</span>
+                        <span class="info-value">{{ session.get_duration_display }}</span>
+                    </div>
+                </div>
+
+                {% if session.meeting_id or session.meeting_password %}
+                <div class="meeting-details">
+                    <h6 class="mb-3"><i class="bi bi-info-circle-fill"></i> Detalles de Acceso</h6>
+                    {% if session.meeting_id %}
+                    <p class="mb-2">
+                        <strong>ID de Reunión:</strong> <code>{{ session.meeting_id }}</code>
+                    </p>
+                    {% endif %}
+                    {% if session.meeting_password %}
+                    <p class="mb-0">
+                        <strong>Contraseña:</strong> <code>{{ session.meeting_password }}</code>
+                    </p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if session.notes %}
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-sticky-fill"></i> Notas</h6>
+                    <p class="mb-0">{{ session.notes }}</p>
+                </div>
+                {% endif %}
+
+                {% if session.meeting_url %}
+                    {% if is_host %}
+                    <a href="{{ session.host_join_url|default:session.meeting_url }}" target="_blank" class="btn join-button">
+                        <i class="bi bi-camera-video-fill"></i> Iniciar Reunión (Host)
+                    </a>
+                    {% else %}
+                    <a href="{{ session.meeting_url }}" target="_blank" class="btn join-button">
+                        <i class="bi bi-box-arrow-up-right"></i> Unirse a la Reunión
+                    </a>
+                    {% endif %}
+                {% else %}
+                <div class="alert alert-warning text-center">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    El enlace de reunión aún no está disponible. El tutor generará el enlace al confirmar la sesión.
+                </div>
+                {% endif %}
+
+                <div class="text-center mt-4">
+                    {% if user.user_type == 'tutor' %}
+                        <a href="{% url 'tutor_dashboard' %}" class="text-muted">
+                            <i class="bi bi-arrow-left"></i> Volver al Panel
+                        </a>
+                    {% else %}
+                        <a href="{% url 'client_dashboard' %}" class="text-muted">
+                            <i class="bi bi-arrow-left"></i> Volver al Panel
+                        </a>
+                    {% endif %}
+                </div>
+
+                <div class="text-center mt-4">
+                    <small class="text-muted">
+                        <i class="bi bi-shield-check"></i> Conexión segura a través de {{ session.get_meeting_platform_display }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
