@@ -13,16 +13,35 @@ class TutorLeadForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Your Full Name'
+                'placeholder': 'Tu nombre completo'
             }),
             'email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'your.email@example.com'
+                'placeholder': 'tu.correo@ejemplo.com'
             }),
             'subject': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Subject you want to tutor (e.g., Mathematics, Physics)'
+                'placeholder': 'Materia que quieres enseñar (ej: Matemáticas, Física)'
             }),
+        }
+        labels = {
+            'name': 'Nombre Completo',
+            'email': 'Correo Electrónico',
+            'subject': 'Materia',
+        }
+        error_messages = {
+            'name': {
+                'required': 'Por favor ingresa tu nombre completo.',
+                'max_length': 'El nombre no puede tener más de 200 caracteres.',
+            },
+            'email': {
+                'required': 'Por favor ingresa tu correo electrónico.',
+                'invalid': 'Por favor ingresa un correo electrónico válido.',
+            },
+            'subject': {
+                'required': 'Por favor ingresa la materia que quieres enseñar.',
+                'max_length': 'El nombre de la materia es demasiado largo.',
+            },
         }
 
 
@@ -62,6 +81,24 @@ class SessionRequestForm(forms.ModelForm):
             'duration': 'Duración',
             'notes': 'Notas'
         }
+        error_messages = {
+            'subject': {
+                'required': 'Por favor ingresa la materia.',
+                'max_length': 'El nombre de la materia es demasiado largo.',
+            },
+            'scheduled_date': {
+                'required': 'Por favor selecciona una fecha.',
+                'invalid': 'Por favor ingresa una fecha válida.',
+            },
+            'scheduled_time': {
+                'required': 'Por favor selecciona una hora.',
+                'invalid': 'Por favor ingresa una hora válida.',
+            },
+            'duration': {
+                'required': 'Por favor selecciona la duración de la sesión.',
+                'invalid_choice': 'Por favor selecciona una opción válida.',
+            },
+        }
 
     def clean_scheduled_date(self):
         """Validate that the date is in the future"""
@@ -90,4 +127,10 @@ class SessionConfirmationForm(forms.ModelForm):
         labels = {
             'meeting_platform': 'Plataforma de Reunión',
             'notes': 'Notas adicionales'
+        }
+        error_messages = {
+            'meeting_platform': {
+                'required': 'Por favor selecciona una plataforma de reunión.',
+                'invalid_choice': 'Por favor selecciona una opción válida.',
+            },
         }

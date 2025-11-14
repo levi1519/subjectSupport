@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.core.exceptions import ValidationError
 from .models import User, TutorProfile, ClientProfile
 
 
@@ -75,11 +76,52 @@ class TutorRegistrationForm(UserCreationForm):
             'placeholder': 'Contraseña'
         })
         self.fields['password1'].label = 'Contraseña'
+        self.fields['password1'].help_text = 'Tu contraseña debe tener al menos 8 caracteres y no puede ser completamente numérica.'
+
         self.fields['password2'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Confirmar contraseña'
         })
         self.fields['password2'].label = 'Confirmar Contraseña'
+        self.fields['password2'].help_text = 'Ingresa la misma contraseña para verificación.'
+
+        # Custom error messages
+        self.fields['name'].error_messages = {
+            'required': 'Por favor ingresa tu nombre completo.',
+            'max_length': 'El nombre no puede tener más de 200 caracteres.',
+        }
+        self.fields['email'].error_messages = {
+            'required': 'Por favor ingresa tu correo electrónico.',
+            'invalid': 'Por favor ingresa un correo electrónico válido.',
+            'unique': 'Este correo electrónico ya está registrado.',
+        }
+        self.fields['subjects'].error_messages = {
+            'required': 'Por favor ingresa las materias que enseñas.',
+            'max_length': 'La descripción de materias es demasiado larga.',
+        }
+        self.fields['city'].error_messages = {
+            'required': 'Por favor ingresa tu ciudad.',
+            'max_length': 'El nombre de la ciudad es demasiado largo.',
+        }
+        self.fields['country'].error_messages = {
+            'required': 'Por favor ingresa tu país.',
+            'max_length': 'El nombre del país es demasiado largo.',
+        }
+
+    def clean_email(self):
+        """Validate email is unique"""
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email=email).exists():
+            raise ValidationError('Este correo electrónico ya está registrado.')
+        return email
+
+    def clean_password2(self):
+        """Validate passwords match"""
+        password1 = self.cleaned_data.get('password1')
+        password2 = self.cleaned_data.get('password2')
+        if password1 and password2 and password1 != password2:
+            raise ValidationError('Las contraseñas no coinciden.')
+        return password2
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -161,11 +203,64 @@ class ClientRegistrationForm(UserCreationForm):
             'placeholder': 'Contraseña'
         })
         self.fields['password1'].label = 'Contraseña'
+        self.fields['password1'].help_text = 'Tu contraseña debe tener al menos 8 caracteres y no puede ser completamente numérica.'
+
         self.fields['password2'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Confirmar contraseña'
         })
         self.fields['password2'].label = 'Confirmar Contraseña'
+        self.fields['password2'].help_text = 'Ingresa la misma contraseña para verificación.'
+
+        # Custom error messages
+        self.fields['name'].error_messages = {
+            'required': 'Por favor ingresa tu nombre completo.',
+            'max_length': 'El nombre no puede tener más de 200 caracteres.',
+        }
+        self.fields['email'].error_messages = {
+            'required': 'Por favor ingresa tu correo electrónico.',
+            'invalid': 'Por favor ingresa un correo electrónico válido.',
+            'unique': 'Este correo electrónico ya está registrado.',
+        }
+        self.fields['city'].error_messages = {
+            'required': 'Por favor ingresa tu ciudad.',
+            'max_length': 'El nombre de la ciudad es demasiado largo.',
+        }
+        self.fields['country'].error_messages = {
+            'required': 'Por favor ingresa tu país.',
+            'max_length': 'El nombre del país es demasiado largo.',
+        }
+        self.fields['parent_name'].error_messages = {
+            'max_length': 'El nombre es demasiado largo.',
+        }
+
+    def clean_email(self):
+        """Validate email is unique"""
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email=email).exists():
+            raise ValidationError('Este correo electrónico ya está registrado.')
+        return email
+
+    def clean_password2(self):
+        """Validate passwords match"""
+        password1 = self.cleaned_data.get('password1')
+        password2 = self.cleaned_data.get('password2')
+        if password1 and password2 and password1 != password2:
+            raise ValidationError('Las contraseñas no coinciden.')
+        return password2
+
+    def clean(self):
+        """Validate parent name if minor"""
+        cleaned_data = super().clean()
+        is_minor = cleaned_data.get('is_minor')
+        parent_name = cleaned_data.get('parent_name')
+
+        if is_minor and not parent_name:
+            raise ValidationError({
+                'parent_name': 'Se requiere el nombre del padre o tutor legal para menores de edad.'
+            })
+
+        return cleaned_data
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -191,12 +286,25 @@ class LoginForm(AuthenticationForm):
             'class': 'form-control',
             'placeholder': 'correo@ejemplo.com'
         }),
-        label='Correo Electrónico'
+        label='Correo Electrónico',
+        error_messages={
+            'required': 'Por favor ingresa tu correo electrónico.',
+            'invalid': 'Por favor ingresa un correo electrónico válido.',
+        }
     )
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'placeholder': 'Contraseña'
         }),
-        label='Contraseña'
+        label='Contraseña',
+        error_messages={
+            'required': 'Por favor ingresa tu contraseña.',
+        }
     )
+
+    error_messages = {
+        'invalid_login': 'Por favor ingresa un correo electrónico y contraseña correctos. '
+                        'Ten en cuenta que ambos campos pueden ser sensibles a mayúsculas.',
+        'inactive': 'Esta cuenta está inactiva.',
+    }
