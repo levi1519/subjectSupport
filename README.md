@@ -126,16 +126,42 @@ El archivo `settings.py` incluye validaciones automáticas:
 
 ### Configuración para Producción (Render)
 
-En el dashboard de Render, configura estas variables de entorno:
+El proyecto está completamente configurado para deployment en Render con PostgreSQL.
+
+#### Archivos de Deployment
+
+- ✅ `build.sh` - Script de build automatizado
+- ✅ `render.yaml` - Configuración de infraestructura
+- ✅ `requirements.txt` - Dependencias de producción
+- ✅ WhiteNoise configurado para static files
+- ✅ PostgreSQL con dj-database-url
+- ✅ Security headers habilitados
+
+#### Variables de Entorno Necesarias
+
+En el dashboard de Render, configura:
 
 ```bash
 DEBUG=False
 SECRET_KEY=<genera-uno-nuevo-diferente-al-local>
-ALLOWED_HOSTS=.onrender.com,tu-app.onrender.com
+ALLOWED_HOSTS=.onrender.com
+DATABASE_URL=<auto-generado-por-render>
 CSRF_TRUSTED_ORIGINS=https://tu-app.onrender.com
+SKIP_GEO_CHECK=False
+PYTHON_VERSION=3.12.0
 ```
 
-**📖 Ver más**: `RENDER_DEPLOYMENT.md`
+#### Deployment Rápido
+
+1. Conectar repositorio a Render
+2. Crear "Blueprint" (detecta `render.yaml` automáticamente)
+3. Configurar variables de entorno
+4. Deploy automático
+
+**📖 Guías Completas**:
+- [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Instrucciones paso a paso
+- [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) - Checklist verificable
+- [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md) - Legacy (ver DEPLOYMENT_GUIDE.md)
 
 ## 🧪 Testing
 
