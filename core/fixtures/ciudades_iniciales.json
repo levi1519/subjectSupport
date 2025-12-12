@@ -1,0 +1,15 @@
+[
+  {
+    "model": "core.ciudadhabilitada",
+    "pk": 1,
+    "fields": {
+      "ciudad": "Milagro",
+      "provincia": "Guayas",
+      "pais": "Ecuador",
+      "activo": true,
+      "fecha_habilitacion": "2025-01-01",
+      "orden_prioridad": 1,
+      "notas": "Ciudad inicial del lanzamiento MVP. Primera ciudad habilitada para el servicio."
+    }
+  }
+]

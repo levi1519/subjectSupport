@@ -8,4 +8,7 @@ urlpatterns = [
     path('sessions/<int:session_id>/confirm/', views.confirm_session, name='confirm_session'),
     path('sessions/<int:session_id>/cancel/', views.cancel_session, name='cancel_session'),
     path('sessions/<int:session_id>/meeting/', views.meeting_room, name='meeting_room'),
+    # Geolocalización
+    path('servicio-no-disponible/', views.servicio_no_disponible, name='servicio_no_disponible'),
+    path('notificarme/', views.notificarme_expansion, name='notificarme'),
 ]

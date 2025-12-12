@@ -4,6 +4,113 @@ from django.utils import timezone
 import uuid
 
 
+class CiudadHabilitada(models.Model):
+    """
+    Modelo para gestionar ciudades donde el servicio está disponible.
+    Permite expansión gradual controlada desde el admin.
+    """
+    ciudad = models.CharField(
+        max_length=100,
+        verbose_name='Ciudad'
+    )
+    provincia = models.CharField(
+        max_length=100,
+        verbose_name='Provincia/Estado'
+    )
+    pais = models.CharField(
+        max_length=100,
+        default='Ecuador',
+        verbose_name='País'
+    )
+    activo = models.BooleanField(
+        default=True,
+        verbose_name='Servicio Activo',
+        help_text='Si está activo, los usuarios de esta ciudad pueden acceder al servicio'
+    )
+    fecha_habilitacion = models.DateField(
+        auto_now_add=True,
+        verbose_name='Fecha de Habilitación'
+    )
+    orden_prioridad = models.IntegerField(
+        default=100,
+        verbose_name='Prioridad',
+        help_text='Menor número = mayor prioridad en el listado'
+    )
+    notas = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Notas Administrativas'
+    )
+
+    class Meta:
+        verbose_name = 'Ciudad Habilitada'
+        verbose_name_plural = 'Ciudades Habilitadas'
+        ordering = ['orden_prioridad', 'ciudad']
+        unique_together = [['ciudad', 'provincia', 'pais']]
+
+    def __str__(self):
+        status = "✓ Activo" if self.activo else "✗ Inactivo"
+        return f"{self.ciudad}, {self.provincia} ({status})"
+
+
+class NotificacionExpansion(models.Model):
+    """
+    Modelo para almacenar solicitudes de notificación cuando el servicio
+    llegue a una ciudad nueva.
+    """
+    email = models.EmailField(
+        verbose_name='Email'
+    )
+    ciudad_deseada = models.CharField(
+        max_length=100,
+        verbose_name='Ciudad Deseada'
+    )
+    provincia_deseada = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Provincia Deseada'
+    )
+    pais = models.CharField(
+        max_length=100,
+        default='Ecuador',
+        verbose_name='País'
+    )
+    ip_address = models.GenericIPAddressField(
+        blank=True,
+        null=True,
+        verbose_name='IP del Visitante'
+    )
+    ciudad_detectada = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Ciudad Detectada (IP)'
+    )
+    notificado = models.BooleanField(
+        default=False,
+        verbose_name='Notificación Enviada'
+    )
+    fecha_solicitud = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Solicitud'
+    )
+    fecha_notificacion = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Notificación'
+    )
+
+    class Meta:
+        verbose_name = 'Notificación de Expansión'
+        verbose_name_plural = 'Notificaciones de Expansión'
+        ordering = ['-fecha_solicitud']
+
+    def __str__(self):
+        status = "✓ Notificado" if self.notificado else "⏳ Pendiente"
+        return f"{self.email} - {self.ciudad_deseada} ({status})"
+
+
 class TutorLead(models.Model):
     """Model to store tutor lead information"""
     name = models.CharField(max_length=200)

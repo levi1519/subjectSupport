@@ -2,10 +2,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
-from .models import ClassSession
-from .forms import SessionRequestForm, SessionConfirmationForm
+from .models import ClassSession, CiudadHabilitada, NotificacionExpansion
+from .forms import SessionRequestForm, SessionConfirmationForm, NotificacionExpansionForm
 from accounts.models import User, TutorProfile
 from .services.meeting_service import update_session_with_meeting
+from .utils.geo import get_available_cities, get_client_ip
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def landing_page(request):
@@ -217,3 +221,75 @@ def meeting_room(request, session_id):
     }
 
     return render(request, 'core/meeting_room.html', context)
+
+
+def servicio_no_disponible(request):
+    """
+    Página mostrada cuando el servicio no está disponible en la ubicación del usuario.
+    Muestra formulario para solicitar notificación cuando llegue a su ciudad.
+    """
+    # Obtener información de geolocalización de la sesión
+    geo_city = request.session.get('geo_city', 'Desconocida')
+    geo_region = request.session.get('geo_region', 'Desconocida')
+    geo_country = request.session.get('geo_country', 'Ecuador')
+
+    # Obtener ciudades disponibles
+    ciudades_disponibles = get_available_cities()
+
+    # Crear formulario pre-llenado con la ciudad detectada
+    initial_data = {
+        'ciudad_deseada': geo_city if geo_city != 'Desconocida' else '',
+        'provincia_deseada': geo_region if geo_region != 'Desconocida' else '',
+    }
+    form = NotificacionExpansionForm(initial=initial_data)
+
+    context = {
+        'form': form,
+        'geo_city': geo_city,
+        'geo_region': geo_region,
+        'geo_country': geo_country,
+        'ciudades_disponibles': ciudades_disponibles,
+    }
+
+    return render(request, 'core/servicio_no_disponible.html', context)
+
+
+def notificarme_expansion(request):
+    """
+    View para procesar el formulario de solicitud de notificación.
+    """
+    if request.method == 'POST':
+        form = NotificacionExpansionForm(request.POST)
+        if form.is_valid():
+            notificacion = form.save(commit=False)
+
+            # Añadir información de IP y ciudad detectada
+            notificacion.ip_address = get_client_ip(request)
+            notificacion.ciudad_detectada = request.session.get('geo_city', 'Desconocida')
+
+            # Guardar
+            notificacion.save()
+
+            logger.info(
+                f"Nueva notificación de expansión: {notificacion.email} "
+                f"quiere servicio en {notificacion.ciudad_deseada}"
+            )
+
+            messages.success(
+                request,
+                '¡Gracias! Te avisaremos cuando SubjectSupport llegue a tu ciudad. '
+                'Revisa tu correo para confirmar la suscripción.'
+            )
+
+            # Redirigir de vuelta a la página de servicio no disponible
+            return redirect('servicio_no_disponible')
+        else:
+            # Si hay errores en el formulario, mostrar en la página
+            messages.error(
+                request,
+                'Hubo un error al procesar tu solicitud. Por favor verifica los datos.'
+            )
+            return redirect('servicio_no_disponible')
+    else:
+        # Si no es POST, redirigir a servicio_no_disponible
+        return redirect('servicio_no_disponible')

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import TutorLead, ClassSession
+from .models import TutorLead, ClassSession, CiudadHabilitada, NotificacionExpansion
 
 
 @admin.register(TutorLead)
@@ -51,3 +51,96 @@ class ClassSessionAdmin(admin.ModelAdmin):
         """Optimize queryset with select_related"""
         qs = super().get_queryset(request)
         return qs.select_related('tutor', 'client')
+
+
+@admin.register(CiudadHabilitada)
+class CiudadHabilitadaAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for CiudadHabilitada model.
+    Permite gestionar ciudades donde el servicio está disponible.
+    """
+    list_display = ['ciudad', 'provincia', 'pais', 'activo', 'orden_prioridad', 'fecha_habilitacion']
+    list_filter = ['activo', 'pais', 'provincia', 'fecha_habilitacion']
+    search_fields = ['ciudad', 'provincia', 'pais']
+    readonly_fields = ['fecha_habilitacion']
+    ordering = ['orden_prioridad', 'ciudad']
+
+    fieldsets = (
+        ('Ubicación', {
+            'fields': ('ciudad', 'provincia', 'pais')
+        }),
+        ('Configuración', {
+            'fields': ('activo', 'orden_prioridad')
+        }),
+        ('Información Adicional', {
+            'fields': ('notas', 'fecha_habilitacion'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    list_editable = ['activo', 'orden_prioridad']
+
+    actions = ['activar_ciudades', 'desactivar_ciudades']
+
+    def activar_ciudades(self, request, queryset):
+        """Acción para activar ciudades seleccionadas"""
+        updated = queryset.update(activo=True)
+        self.message_user(request, f'{updated} ciudad(es) activada(s)')
+    activar_ciudades.short_description = 'Activar ciudades seleccionadas'
+
+    def desactivar_ciudades(self, request, queryset):
+        """Acción para desactivar ciudades seleccionadas"""
+        updated = queryset.update(activo=False)
+        self.message_user(request, f'{updated} ciudad(es) desactivada(s)')
+    desactivar_ciudades.short_description = 'Desactivar ciudades seleccionadas'
+
+
+@admin.register(NotificacionExpansion)
+class NotificacionExpansionAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for NotificacionExpansion model.
+    Muestra solicitudes de notificación para nuevas ciudades.
+    """
+    list_display = [
+        'email',
+        'ciudad_deseada',
+        'provincia_deseada',
+        'ciudad_detectada',
+        'notificado',
+        'fecha_solicitud'
+    ]
+    list_filter = ['notificado', 'ciudad_deseada', 'fecha_solicitud']
+    search_fields = ['email', 'ciudad_deseada', 'provincia_deseada', 'ciudad_detectada']
+    readonly_fields = ['fecha_solicitud', 'fecha_notificacion', 'ip_address', 'ciudad_detectada']
+    ordering = ['-fecha_solicitud']
+    date_hierarchy = 'fecha_solicitud'
+
+    fieldsets = (
+        ('Información del Usuario', {
+            'fields': ('email', 'ciudad_deseada', 'provincia_deseada', 'pais')
+        }),
+        ('Detección Automática', {
+            'fields': ('ip_address', 'ciudad_detectada'),
+            'classes': ('collapse',)
+        }),
+        ('Estado de Notificación', {
+            'fields': ('notificado', 'fecha_solicitud', 'fecha_notificacion')
+        }),
+    )
+
+    list_editable = ['notificado']
+
+    actions = ['marcar_como_notificado', 'marcar_como_pendiente']
+
+    def marcar_como_notificado(self, request, queryset):
+        """Acción para marcar notificaciones como enviadas"""
+        from django.utils import timezone
+        updated = queryset.update(notificado=True, fecha_notificacion=timezone.now())
+        self.message_user(request, f'{updated} notificación(es) marcada(s) como enviada(s)')
+    marcar_como_notificado.short_description = 'Marcar como notificado'
+
+    def marcar_como_pendiente(self, request, queryset):
+        """Acción para marcar notificaciones como pendientes"""
+        updated = queryset.update(notificado=False, fecha_notificacion=None)
+        self.message_user(request, f'{updated} notificación(es) marcada(s) como pendiente(s)')
+    marcar_como_pendiente.short_description = 'Marcar como pendiente'

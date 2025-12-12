@@ -13,6 +13,163 @@ SubjectSupport es una plataforma web completa de tutorías que conecta tutores c
 - **Testing**: Django TestCase (76 tests implementados)
 - **Python**: 3.x
 
+## 🚀 Configuración Inicial (IMPORTANTE)
+
+### Paso 1: Clonar y configurar entorno virtual
+
+```bash
+# Clonar repositorio
+git clone <repository-url>
+cd subjectsSuport
+
+# Crear y activar entorno virtual
+python -m venv env
+
+# Activar entorno virtual
+# En Windows:
+env\Scripts\activate
+# En Linux/Mac:
+source env/bin/activate
+
+# Instalar dependencias
+pip install -r requirements.txt
+```
+
+### Paso 2: Configurar variables de entorno (.env)
+
+⚠️ **CRÍTICO**: El proyecto requiere un archivo `.env` con variables de seguridad. **SIN este archivo, el servidor NO arrancará.**
+
+```bash
+# Copiar template
+cp .env.example .env
+```
+
+Luego edita `.env` con los valores correctos:
+
+```bash
+# .env
+DEBUG=True
+SECRET_KEY=<genera-un-secret-key-seguro>
+ALLOWED_HOSTS=localhost,127.0.0.1
+DATABASE_URL=sqlite:///db.sqlite3
+CSRF_TRUSTED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000
+```
+
+### Paso 3: Generar SECRET_KEY seguro
+
+⚠️ **NUNCA uses el SECRET_KEY del ejemplo en producción**
+
+Genera un SECRET_KEY único y seguro:
+
+```bash
+python -c "import secrets; print(''.join(secrets.choice('abcdefghijklmnopqrstuvwxyz0123456789!@#%^&*(-_=+)') for i in range(50)))"
+```
+
+Copia el resultado y pégalo en tu archivo `.env`:
+
+```bash
+SECRET_KEY=tu-secret-key-generado-aqui
+```
+
+### Paso 4: Configurar base de datos
+
+```bash
+# Aplicar migraciones
+python manage.py migrate
+
+# Crear superusuario (opcional)
+python manage.py createsuperuser
+```
+
+### Paso 5: Verificar configuración
+
+Ejecuta los tests de verificación:
+
+```bash
+# Test configuración del servidor
+python test_server.py
+
+# Test funcionalidad de registro
+python test_registration.py
+
+# Test completo de Django
+python manage.py test
+```
+
+Si todos los tests pasan, ¡estás listo! 🎉
+
+### Paso 6: Iniciar servidor
+
+```bash
+python manage.py runserver
+```
+
+Visita: http://localhost:8000
+
+## 🔒 Seguridad y Buenas Prácticas
+
+### Variables de Entorno
+
+El proyecto usa `python-dotenv` para gestionar configuraciones sensibles:
+
+- **`.env`**: Variables locales (NO se sube a git, está en .gitignore)
+- **`.env.example`**: Template sin valores reales (SÍ se sube a git)
+
+### Validaciones de Seguridad en settings.py
+
+El archivo `settings.py` incluye validaciones automáticas:
+
+1. **SECRET_KEY obligatorio**: El servidor NO arranca sin un SECRET_KEY válido
+2. **Rechazo de claves inseguras**: Lista de SECRET_KEYs conocidas que son rechazadas
+3. **ALLOWED_HOSTS**: Validación automática según DEBUG mode
+4. **CSRF_TRUSTED_ORIGINS**: Configurado automáticamente para desarrollo
+
+### Configuración para Producción (Render)
+
+En el dashboard de Render, configura estas variables de entorno:
+
+```bash
+DEBUG=False
+SECRET_KEY=<genera-uno-nuevo-diferente-al-local>
+ALLOWED_HOSTS=.onrender.com,tu-app.onrender.com
+CSRF_TRUSTED_ORIGINS=https://tu-app.onrender.com
+```
+
+**📖 Ver más**: `RENDER_DEPLOYMENT.md`
+
+## 🧪 Testing
+
+El proyecto incluye múltiples niveles de testing:
+
+### Tests Automatizados
+
+```bash
+# Tests unitarios completos (76 tests)
+python manage.py test
+
+# Tests solo de accounts
+python manage.py test accounts
+
+# Tests solo de core
+python manage.py test core
+
+# Test configuración del servidor
+python test_server.py
+
+# Test registro de usuarios
+python test_registration.py
+```
+
+### Coverage de Tests
+
+- ✅ **Autenticación**: Registro, login, logout, validaciones
+- ✅ **Perfiles**: Creación de TutorProfile y ClientProfile
+- ✅ **Sesiones**: Creación, confirmación, cancelación
+- ✅ **Formularios**: Validación de todos los campos
+- ✅ **Seguridad**: CSRF, SECRET_KEY, ALLOWED_HOSTS
+- ✅ **Emails**: Confirmaciones y notificaciones
+- ✅ **Meetings**: Generación de URLs de reunión
+
 ## Estructura del Proyecto
 
 ```

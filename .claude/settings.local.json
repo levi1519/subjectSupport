@@ -10,7 +10,14 @@
       "Bash(find:*)",
       "Bash(env/Scripts/python.exe:*)",
       "Bash(python manage.py makemigrations:*)",
-      "Bash(python manage.py test:*)"
+      "Bash(python manage.py test:*)",
+      "Bash(python manage.py check:*)",
+      "Bash(python manage.py shell:*)",
+      "Bash(python3 manage.py check:*)",
+      "Bash(cat:*)",
+      "Bash(python3:*)",
+      "Bash(ls:*)",
+      "Bash(export PYTHONPATH=/mnt/d/Downloads/Projects/subjectsSuport:*)"
     ],
     "deny": [],
     "ask": []

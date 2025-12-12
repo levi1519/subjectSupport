@@ -15,6 +15,7 @@ class TutorRegistrationForm(UserCreationForm):
         label='Materias que enseñas'
     )
     city = forms.CharField(
+        required=False,
         max_length=100,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
@@ -24,6 +25,7 @@ class TutorRegistrationForm(UserCreationForm):
         initial='Quito'
     )
     country = forms.CharField(
+        required=False,
         max_length=100,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
@@ -144,6 +146,7 @@ class TutorRegistrationForm(UserCreationForm):
 class ClientRegistrationForm(UserCreationForm):
     """Form for client/student registration"""
     city = forms.CharField(
+        required=False,
         max_length=100,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
@@ -153,6 +156,7 @@ class ClientRegistrationForm(UserCreationForm):
         initial='Quito'
     )
     country = forms.CharField(
+        required=False,
         max_length=100,
         widget=forms.TextInput(attrs={
             'class': 'form-control',

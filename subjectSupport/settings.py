@@ -12,7 +12,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
+import os
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,15 +26,62 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$)r=921il+p(swd4he)@p3d8u!st=)7@b77rr4p(i7@^scfkc1'
+# SECRET_KEY must be set in .env file - NO default for security
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError(
+        "SECRET_KEY not found in environment variables!\n"
+        "Create a .env file in the project root with:\n"
+        "SECRET_KEY=your-secret-key-here\n"
+        "Use .env.example as template."
+    )
+
+# Additional validation: reject insecure default keys
+INSECURE_KEYS = [
+    'django-insecure-$)r=921il+p(swd4he)@p3d8u!st=)7@b77rr4p(i7@^scfkc1',
+    'change-me-to-a-random-secret-key-min-50-chars',
+    'omae_o_zutto_aishiteru',
+]
+if SECRET_KEY in INSECURE_KEYS:
+    raise ValueError(
+        "Using an insecure SECRET_KEY!\n"
+        "Generate a new one with:\n"
+        "python -c \"import secrets; print(''.join(secrets.choice('abcdefghijklmnopqrstuvwxyz0123456789!@#%%^&*(-_=+)') for i in range(50)))\"\n"
+        "And update it in your .env file."
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
+# Parse ALLOWED_HOSTS from environment variable
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['']:
+    if DEBUG:
+        # Default to localhost in development
+        ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+    else:
+        raise ValueError(
+            "ALLOWED_HOSTS must be set in production!\n"
+            "Add to your .env file or environment variables:\n"
+            "ALLOWED_HOSTS=.onrender.com,yourdomain.com"
+        )
 
+# Add 'testserver' for Django TestClient (used in unit tests)
+if DEBUG and 'testserver' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('testserver')
 
-DEBUG = False
-SECRET_KEY = "omae_o_zutto_aishiteru"
-ALLOWED_HOSTS =   ['.onrender.com']
+# CSRF Protection - Trusted origins for AJAX/form submissions
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+if not CSRF_TRUSTED_ORIGINS or CSRF_TRUSTED_ORIGINS == ['']:
+    if DEBUG:
+        # Default for local development
+        CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
+    else:
+        # In production, this should be set explicitly
+        CSRF_TRUSTED_ORIGINS = []
+
+# Geolocalización - Restricción geográfica del servicio
+SKIP_GEO_CHECK = os.getenv('SKIP_GEO_CHECK', 'False') == 'True'
 
 # Application definition
 
@@ -53,6 +104,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Middleware de restricción geográfica (debe ir después de SessionMiddleware)
+    'core.middleware.GeoRestrictionMiddleware',
 ]
 
 ROOT_URLCONF = 'subjectSupport.urls'

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servicio no disponible en tu zona - SubjectSupport</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+        .location-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 50px;
+            margin-bottom: 20px;
+        }
+        .notification-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            margin-top: -50px;
+            position: relative;
+            z-index: 10;
+        }
+        .available-cities {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+        .city-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .icon-large {
+            font-size: 64px;
+            color: #ffc107;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <div class="container">
+            <div class="location-badge">
+                <i class="bi bi-geo-alt-fill"></i>
+                {% if geo_city %}
+                    Detectamos que estás en: <strong>{{ geo_city }}, {{ geo_region }}</strong>
+                {% else %}
+                    Ubicación: <strong>{{ geo_country|default:"Desconocida" }}</strong>
+                {% endif %}
+            </div>
+            <h1 class="display-4 fw-bold mb-3">¡Pronto llegaremos a tu ciudad!</h1>
+            <p class="lead">Actualmente SubjectSupport está disponible solo en algunas ciudades</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="notification-card">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-bell icon-large"></i>
+                    </div>
+                    <h2 class="h3 mb-4">Déjanos tu email y te avisaremos</h2>
+                    <p class="text-muted mb-4">
+                        Estamos expandiendo nuestro servicio a nuevas ciudades cada mes.
+                        Déjanos tu correo y te notificaremos apenas estemos disponibles en tu zona.
+                    </p>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" action="{% url 'notificarme' %}">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                {{ form.email.label }}
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small mt-1">{{ form.email.errors }}</div>
+                            {% endif %}
+                            {% if form.email.help_text %}
+                                <div class="form-text">{{ form.email.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.ciudad_deseada.id_for_label }}" class="form-label">
+                                {{ form.ciudad_deseada.label }}
+                            </label>
+                            {{ form.ciudad_deseada }}
+                            {% if form.ciudad_deseada.errors %}
+                                <div class="text-danger small mt-1">{{ form.ciudad_deseada.errors }}</div>
+                            {% endif %}
+                            {% if form.ciudad_deseada.help_text %}
+                                <div class="form-text">{{ form.ciudad_deseada.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.provincia_deseada.id_for_label }}" class="form-label">
+                                {{ form.provincia_deseada.label }}
+                            </label>
+                            {{ form.provincia_deseada }}
+                            {% if form.provincia_deseada.errors %}
+                                <div class="text-danger small mt-1">{{ form.provincia_deseada.errors }}</div>
+                            {% endif %}
+                            {% if form.provincia_deseada.help_text %}
+                                <div class="form-text">{{ form.provincia_deseada.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-envelope-check me-2"></i>
+                            Notificarme cuando lleguen
+                        </button>
+                    </form>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="available-cities">
+                        <h3 class="h4 mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Ciudades Disponibles
+                        </h3>
+                        <p class="text-muted mb-3">
+                            Actualmente estamos operando en:
+                        </p>
+
+                        {% if ciudades_disponibles %}
+                            <div class="mb-4">
+                                {% for ciudad in ciudades_disponibles %}
+                                    <span class="city-badge">
+                                        <i class="bi bi-geo-alt me-1"></i>
+                                        {{ ciudad.ciudad }}, {{ ciudad.provincia }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Estamos próximos a lanzar en varias ciudades
+                            </div>
+                        {% endif %}
+
+                        <hr class="my-4">
+
+                        <h4 class="h5 mb-3">¿Por qué nos expandimos gradualmente?</h4>
+                        <ul class="text-muted">
+                            <li class="mb-2">
+                                <i class="bi bi-check2 text-success me-2"></i>
+                                Garantizamos calidad en el servicio
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check2 text-success me-2"></i>
+                                Validamos tutores locales de cada ciudad
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check2 text-success me-2"></i>
+                                Nos adaptamos a las necesidades de cada región
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check2 text-success me-2"></i>
+                                Crecemos de forma sostenible
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <p class="text-muted small">
+                            <i class="bi bi-lock-fill me-1"></i>
+                            Tu email está seguro. No compartimos tu información.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center my-5">
+            <h3 class="h4 mb-3">¿Quieres más información?</h3>
+            <p class="text-muted mb-4">
+                Conoce más sobre SubjectSupport y cómo conectamos estudiantes con tutores profesionales
+            </p>
+            <a href="{% url 'landing' %}" class="btn btn-outline-primary">
+                <i class="bi bi-house-door me-2"></i>
+                Volver al inicio
+            </a>
+        </div>
+    </div>
+
+    <footer class="bg-light py-4 mt-5">
+        <div class="container text-center text-muted">
+            <p class="mb-0">&copy; 2025 SubjectSupport. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

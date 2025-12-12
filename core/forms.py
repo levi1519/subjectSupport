@@ -1,5 +1,5 @@
 from django import forms
-from .models import TutorLead, ClassSession
+from .models import TutorLead, ClassSession, NotificacionExpansion
 from accounts.models import User
 from datetime import date
 
@@ -132,5 +132,52 @@ class SessionConfirmationForm(forms.ModelForm):
             'meeting_platform': {
                 'required': 'Por favor selecciona una plataforma de reunión.',
                 'invalid_choice': 'Por favor selecciona una opción válida.',
+            },
+        }
+
+
+class NotificacionExpansionForm(forms.ModelForm):
+    """
+    Form para solicitar notificación cuando el servicio llegue a una ciudad.
+    Usado en la página de "servicio no disponible".
+    """
+
+    class Meta:
+        model = NotificacionExpansion
+        fields = ['email', 'ciudad_deseada', 'provincia_deseada']
+        widgets = {
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'tu.correo@ejemplo.com',
+                'required': True
+            }),
+            'ciudad_deseada': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Quito, Guayaquil, Cuenca',
+                'required': True
+            }),
+            'provincia_deseada': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Pichincha, Guayas, Azuay (opcional)'
+            }),
+        }
+        labels = {
+            'email': 'Tu correo electrónico',
+            'ciudad_deseada': '¿A qué ciudad quieres que lleguemos?',
+            'provincia_deseada': 'Provincia (opcional)',
+        }
+        help_texts = {
+            'email': 'Te avisaremos cuando el servicio esté disponible en tu ciudad',
+            'ciudad_deseada': 'Ingresa el nombre de tu ciudad',
+            'provincia_deseada': 'Ayuda a identificar mejor tu ubicación',
+        }
+        error_messages = {
+            'email': {
+                'required': 'Por favor ingresa tu correo electrónico.',
+                'invalid': 'Por favor ingresa un correo electrónico válido.',
+            },
+            'ciudad_deseada': {
+                'required': 'Por favor ingresa el nombre de tu ciudad.',
+                'max_length': 'El nombre de la ciudad es demasiado largo.',
             },
         }
