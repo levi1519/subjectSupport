@@ -2,12 +2,13 @@
 Utilidades de geolocalización para restricción geográfica del servicio.
 
 Soporta:
-- Detección de ciudad por IP usando ipapi.co (gratuito, 1000 req/día)
+- Detección de ciudad por IP usando ipgeolocation.io (50,000 req/mes)
 - Caché en sesión para evitar consultas repetidas
 - Bypass para desarrollo/testing
 - Logging de ubicaciones detectadas
 """
 
+import os
 import requests
 import logging
 from django.conf import settings
@@ -38,13 +39,13 @@ def get_client_ip(request):
 
 def get_location_from_ip(ip_address):
     """
-    Obtiene información de ubicación desde una IP usando ipapi.co.
+    Obtiene información de ubicación desde una IP usando ipgeolocation.io.
 
     Retorna dict con: city, region, country, latitude, longitude
     o None si falla.
 
-    API gratuita: 1,000 requests/día
-    Docs: https://ipapi.co/api/
+    API: 50,000 requests/mes (plan gratuito)
+    Docs: https://ipgeolocation.io/documentation/ip-geolocation-api.html
     """
     # Verificar si está en caché (TTL: 1 hora)
     cache_key = f'geo_ip_{ip_address}'
@@ -53,10 +54,17 @@ def get_location_from_ip(ip_address):
         logger.debug(f"Geo data from cache for IP {ip_address}")
         return cached_data
 
+    # Obtener API key desde variable de entorno
+    api_key = os.getenv('IPGEOLOCATION_API_KEY')
+    if not api_key:
+        logger.warning('IPGEOLOCATION_API_KEY not found in environment variables, geolocation will fail')
+        return None
+
     try:
         # Timeout de 3 segundos para no bloquear la request
         response = requests.get(
-            f'https://ipapi.co/{ip_address}/json/',
+            'https://api.ipgeolocation.io/ipgeo',
+            params={'apiKey': api_key, 'ip': ip_address},
             timeout=3
         )
 
@@ -64,15 +72,15 @@ def get_location_from_ip(ip_address):
             data = response.json()
 
             # Verificar si hay error en la respuesta
-            if 'error' in data:
-                logger.warning(f"IP API error for {ip_address}: {data.get('reason', 'Unknown')}")
+            if 'message' in data and 'error' in data.get('message', '').lower():
+                logger.warning(f"IP API error for {ip_address}: {data.get('message', 'Unknown')}")
                 return None
 
             location_data = {
                 'city': data.get('city'),
-                'region': data.get('region'),
+                'region': data.get('state_prov'),  # ipgeolocation.io usa state_prov
                 'country': data.get('country_name'),
-                'country_code': data.get('country_code'),
+                'country_code': data.get('country_code2'),
                 'latitude': data.get('latitude'),
                 'longitude': data.get('longitude'),
             }

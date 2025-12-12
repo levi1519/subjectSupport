@@ -93,13 +93,30 @@ El sistema de geolocalización de SubjectSupport permite:
 
 ## Configuración Inicial
 
-### Paso 1: Instalar Dependencia
+### Paso 1: Instalar Dependencias
 
 La geolocalización usa la librería `requests` (ya debe estar instalada):
 
 ```bash
-pip install requests  # Si no está ya instalado
+pip install requests python-dotenv  # Si no están ya instalados
 ```
+
+### Paso 1.5: Configurar API Key de ipgeolocation.io
+
+1. **Obtener API Key gratuita**:
+   - Ir a: https://ipgeolocation.io/
+   - Click en "Sign Up" (registro gratuito)
+   - Verificar email
+   - Ir a Dashboard → API Keys
+   - Copiar tu API Key
+
+2. **Añadir a .env**:
+   ```bash
+   # En el archivo .env
+   IPGEOLOCATION_API_KEY=tu-api-key-aqui
+   ```
+
+**Plan Gratuito**: 50,000 requests/mes (suficiente para MVP)
 
 ### Paso 2: Aplicar Migraciones
 
@@ -277,10 +294,11 @@ Ilimitadas. El sistema está diseñado para escalar.
 
 ### ¿Cómo funciona la detección por IP?
 
-Usa la API gratuita de **ipapi.co**:
-- **Límite**: 1,000 requests/día gratis
-- **Datos**: Ciudad, región, país, latitud, longitud
+Usa la API gratuita de **ipgeolocation.io**:
+- **Límite**: 50,000 requests/mes gratis
+- **Datos**: Ciudad, estado/provincia, país, latitud, longitud, zona horaria, ISP
 - **Caché**: Resultados se cachean en sesión (1 hora)
+- **Migración**: Anteriormente usábamos ipapi.co (1,000 req/día) → migrado a ipgeolocation.io para mayor cuota
 
 ### ¿Qué pasa si no se puede detectar la ubicación?
 
@@ -341,13 +359,16 @@ Ver `core/middleware.py:23` para la lista completa.
 ### Problema: No se detecta la ciudad correctamente
 
 **Posibles causas**:
-1. **IP local (127.0.0.1)**:
+1. **API Key no configurada**:
+   - Verificar que `IPGEOLOCATION_API_KEY` está en `.env`
+   - Solución: Añadir API key válida de ipgeolocation.io
+2. **IP local (127.0.0.1)**:
    - En desarrollo, se usa IP local que no se puede geolocalizar
    - Solución: Usar `set_test_ip()` para simular
-2. **Límite de API alcanzado**:
-   - ipapi.co tiene límite de 1,000 req/día
-   - Solución: Esperar 24h o considerar MaxMind GeoLite2 (local)
-3. **Sin conexión a internet**:
+3. **Límite de API alcanzado**:
+   - ipgeolocation.io tiene límite de 50,000 req/mes
+   - Solución: Verificar cuota en dashboard de ipgeolocation.io
+4. **Sin conexión a internet**:
    - La API requiere internet
    - Solución: Usar SKIP_GEO_CHECK=True para desarrollo offline
 
@@ -411,18 +432,25 @@ O reinicia el servidor.
 
 ## API de Geolocalización - Alternativas
 
-### Opción 1: ipapi.co (Actual)
+### Opción 1: ipgeolocation.io (Actual) ✅
 
 ✅ **Ventajas**:
-- Gratuita (1,000 req/día)
+- Gratuita (50,000 req/mes)
 - Fácil de usar (HTTP REST)
-- Sin necesidad de API key
+- Datos completos (ciudad, provincia, país, timezone, ISP)
+- Buena precisión
 
 ❌ **Desventajas**:
-- Límite de requests
+- Requiere API key
 - Requiere internet
 
-### Opción 2: MaxMind GeoLite2
+### Opción 2: ipapi.co (Anterior - Deprecado)
+
+⚠️ **Migrado a ipgeolocation.io**:
+- Límite muy bajo (1,000 req/día)
+- No suficiente para producción
+
+### Opción 3: MaxMind GeoLite2
 
 ✅ **Ventajas**:
 - Base de datos local (sin límites)
