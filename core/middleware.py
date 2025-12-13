@@ -17,59 +17,76 @@ class GeoRestrictionMiddleware:
     """
     Middleware que restringe el acceso al sitio basado en geolocalización.
 
-    Flujo:
-    1. Obtiene IP del usuario
-    2. Detecta ciudad usando API de geolocalización
-    3. Verifica si la ciudad está habilitada en la base de datos
-    4. Si NO está habilitada → redirige a página "servicio no disponible"
-    5. Si SÍ está habilitada → permite acceso normal
+    POLÍTICAS DE SEGURIDAD GEOGRÁFICA:
+    1. /estudiantes/* → SOLO MILAGRO (ciudad_data must be True)
+    2. /tutores/* → TODO ECUADOR (country must be 'Ecuador')
+    3. Usuarios autenticados → Bypass (ya tienen cuenta)
+    4. Admin y logout → Exentos siempre
     """
 
     # URLs que NO requieren verificación geográfica
-    # (páginas públicas, admin, API, etc.)
+    # SOLO admin, logout, y páginas de error/notificación
     EXCLUDED_PATHS = [
         '/admin/',
         '/servicio-no-disponible/',
         '/notificarme/',
         '/static/',
         '/media/',
-        # Añade más rutas públicas según necesites
+        '/accounts/logout/',  # Permitir logout siempre
     ]
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # A) Rutas Exentas
         path = request.path
+
+        # A) Rutas Exentas (solo admin, logout, static, error pages)
         if any(path.startswith(excluded) for excluded in self.EXCLUDED_PATHS):
             return self.get_response(request)
 
-        # B) BYPASS: Usuarios Autenticados
+        # B) BYPASS: Usuarios Autenticados (ya verificados al registrarse)
         if request.user.is_authenticated:
             return self.get_response(request)
 
         # C) Obtener datos de geolocalización
         geo_result = check_geo_restriction(request)
-        
-        country = geo_result.get('country')
-        is_city_allowed = geo_result.get('allowed')
 
-        # D) Implementar reglas de acceso
+        country = geo_result.get('country')
+        ciudad_data = geo_result.get('ciudad_data')  # True = Milagro
+        is_city_allowed = geo_result.get('allowed')  # True = ciudad habilitada en DB
+
+        # D) Implementar reglas de acceso ESTRICTAS por prefijo de ruta
         access_granted = False
 
-        # Política Tutores: Ecuador
-        if path.startswith('/tutores/'):
+        # POLÍTICA ESTUDIANTES: SOLO MILAGRO
+        if path.startswith('/estudiantes/'):
+            # Solo permitir si ciudad_data es True (Milagro verificado)
+            if ciudad_data:
+                access_granted = True
+            logger.info(
+                f"Student route access attempt: path={path}, "
+                f"ciudad_data={ciudad_data}, granted={access_granted}"
+            )
+
+        # POLÍTICA TUTORES: TODO ECUADOR
+        elif path.startswith('/tutores/'):
+            # Permitir si el país es Ecuador
             if country == 'Ecuador':
                 access_granted = True
-            # También permitimos si pasa la validación estricta (por si acaso)
-            elif is_city_allowed:
-                access_granted = True
-        
-        # Política Estudiantes (Default): Milagro
+            logger.info(
+                f"Tutor route access attempt: path={path}, "
+                f"country={country}, granted={access_granted}"
+            )
+
+        # POLÍTICA ROOT Y OTRAS RUTAS: Usar validación estándar (Milagro)
         else:
             if is_city_allowed:
                 access_granted = True
+            logger.info(
+                f"Default route access: path={path}, "
+                f"is_city_allowed={is_city_allowed}, granted={access_granted}"
+            )
 
         # E) Redirección si el acceso es denegado
         if not access_granted:
@@ -78,15 +95,15 @@ class GeoRestrictionMiddleware:
             request.session['geo_region'] = geo_result.get('region', 'Unknown')
             request.session['geo_country'] = geo_result.get('country', 'Unknown')
 
-            logger.info(
-                f"Access blocked for user from {geo_result.get('city')}, "
-                f"{geo_result.get('region')}, {country} "
-                f"(Target: {path})"
+            logger.warning(
+                f"GEO ACCESS DENIED: {geo_result.get('city')}, "
+                f"{geo_result.get('region')}, {country} → {path}"
             )
 
             # Redirigir a página de "servicio no disponible"
             return redirect('servicio_no_disponible')
 
+        # F) Guardar geo_data en request para uso posterior
         request.geo_data = geo_result
 
         return self.get_response(request)

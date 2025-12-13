@@ -3,6 +3,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.views import LoginView
+from django.urls import reverse
 from .forms import TutorRegistrationForm, ClientRegistrationForm, LoginForm
 
 
@@ -45,13 +46,49 @@ def register_client(request):
 
 
 class CustomLoginView(LoginView):
-    """Custom login view"""
+    """Custom login view - DEPRECATED, use StudentLoginView or TutorLoginView"""
     form_class = LoginForm
     template_name = 'accounts/login.html'
 
     def form_valid(self, form):
         messages.success(self.request, f'¡Bienvenido de nuevo, {form.get_user().name}!')
         return super().form_valid(form)
+
+
+class StudentLoginView(LoginView):
+    """Login view for students - ONLY accessible from Milagro"""
+    form_class = LoginForm
+    template_name = 'accounts/login_student.html'
+
+    def form_valid(self, form):
+        user = form.get_user()
+        # Verify user is actually a student
+        if user.user_type != 'client':
+            messages.error(self.request, 'Esta es la página de inicio de sesión para estudiantes. Por favor usa el login de tutores.')
+            return redirect('tutor_login')
+        messages.success(self.request, f'¡Bienvenido de nuevo, {user.name}!')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('client_dashboard')
+
+
+class TutorLoginView(LoginView):
+    """Login view for tutors - Accessible from all Ecuador"""
+    form_class = LoginForm
+    template_name = 'accounts/login_tutor.html'
+
+    def form_valid(self, form):
+        user = form.get_user()
+        # Verify user is actually a tutor
+        if user.user_type != 'tutor':
+            messages.error(self.request, 'Esta es la página de inicio de sesión para tutores. Por favor usa el login de estudiantes.')
+            return redirect('student_login')
+        messages.success(self.request, f'¡Bienvenido de nuevo, {user.name}!')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('tutor_dashboard')
 
 
 @login_required

@@ -17,15 +17,25 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from core import views as core_views
+from accounts import views as accounts_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/', include('accounts.urls')),
+
     # Geo-router inteligente en la raíz
     path('', core_views.GeoRootRouterView.as_view(), name='home'),
-    # Landings específicos
-    path('estudiantes/', core_views.student_landing_view, name='student_landing'),
-    path('tutores/', core_views.tutor_landing_view, name='tutor_landing'),
+
+    # GRUPO ESTUDIANTES (Restricción: SOLO MILAGRO)
+    # Todas estas rutas están protegidas por middleware para ciudad_data=True
+    path('estudiantes/', include('accounts.urls_estudiantes')),
+
+    # GRUPO TUTORES (Restricción: TODO ECUADOR)
+    # Todas estas rutas están protegidas por middleware para country='Ecuador'
+    path('tutores/', include('accounts.urls_tutores')),
+
+    # Logout global (sin restricción geográfica)
+    path('accounts/logout/', accounts_views.logout_view, name='logout'),
+
     # Core URLs (sesiones, etc.)
     path('', include('core.urls')),
 ]
