@@ -17,6 +17,16 @@ def landing_page(request):
     return render(request, 'core/landing.html')
 
 
+def student_landing_view(request):
+    """Landing page for students"""
+    return render(request, 'landing/student_landing.html', {'user_type': 'Estudiante'})
+
+
+def tutor_landing_view(request):
+    """Landing page for tutors"""
+    return render(request, 'landing/tutor_landing.html', {'user_type': 'Tutor'})
+
+
 @login_required
 def tutor_selection(request):
     """View for clients to see and select tutors with geographical prioritization"""
