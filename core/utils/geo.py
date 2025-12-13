@@ -123,34 +123,66 @@ def is_service_available_in_city(ciudad, provincia=None):
         tuple: (disponible: bool, ciudad_obj: CiudadHabilitada or None)
     """
     if not ciudad:
+        logger.warning("is_service_available_in_city called with empty ciudad")
         return False, None
 
-    # Normalizar ciudad (quitar acentos, mayúsculas, etc. para mejor matching)
+    # Normalizar ciudad y provincia (case-insensitive, sin espacios extra)
     ciudad_normalizada = ciudad.strip()
+    provincia_normalizada = provincia.strip() if provincia else None
+
+    # LOG: Mostrar valores exactos que se van a buscar
+    logger.info(f"Searching for city='{ciudad_normalizada}', provincia='{provincia_normalizada}'")
 
     try:
-        # Buscar ciudad habilitada
+        # Buscar ciudad habilitada (case-insensitive con __iexact)
         query = CiudadHabilitada.objects.filter(
             ciudad__iexact=ciudad_normalizada,
             activo=True
         )
 
-        if provincia:
-            # Si tenemos provincia, buscar match exacto
-            provincia_normalizada = provincia.strip()
+        # LOG: Mostrar todas las ciudades activas en BD para debug
+        all_active_cities = CiudadHabilitada.objects.filter(activo=True).values_list('ciudad', 'provincia', 'pais')
+        logger.info(f"Active cities in DB: {list(all_active_cities)}")
+
+        if provincia_normalizada:
+            # Si tenemos provincia, buscar match exacto (case-insensitive)
             query = query.filter(provincia__iexact=provincia_normalizada)
+            logger.info(f"Filtering by provincia: '{provincia_normalizada}'")
 
         ciudad_obj = query.first()
 
         if ciudad_obj:
-            logger.info(f"Service available in {ciudad}, {provincia}")
+            logger.info(f"✓ MATCH FOUND: Service available in {ciudad_obj.ciudad}, {ciudad_obj.provincia}, {ciudad_obj.pais}")
             return True, ciudad_obj
         else:
-            logger.info(f"Service NOT available in {ciudad}, {provincia}")
+            logger.warning(f"✗ NO MATCH: Service NOT available for city='{ciudad_normalizada}', provincia='{provincia_normalizada}'")
+            # LOG: Intentar búsqueda solo por ciudad (sin provincia) para debug
+            ciudad_only_match = CiudadHabilitada.objects.filter(ciudad__iexact=ciudad_normalizada, activo=True).first()
+            if ciudad_only_match:
+                logger.warning(f"  → City '{ciudad_normalizada}' EXISTS in DB but provincia mismatch: DB has '{ciudad_only_match.provincia}', received '{provincia_normalizada}'")
+            else:
+                logger.warning(f"  → City '{ciudad_normalizada}' does NOT exist in DB at all")
+
+            # FALLBACK: Si no hay match por ciudad+provincia, intentar solo por provincia
+            # Esto soluciona el problema de baja precisión de API de geolocalización
+            # (ej: API retorna "Guayaquil" para IPs de Milagro, ambas en provincia Guayas)
+            if provincia_normalizada:
+                logger.info(f"Trying fallback: searching by provincia only ('{provincia_normalizada}')")
+                provincia_match = CiudadHabilitada.objects.filter(
+                    provincia__iexact=provincia_normalizada,
+                    activo=True
+                ).first()
+
+                if provincia_match:
+                    logger.info(f"✓ PROVINCIA MATCH (FALLBACK): Service available in provincia {provincia_match.provincia} (matched city: {provincia_match.ciudad})")
+                    return True, provincia_match
+                else:
+                    logger.warning(f"  → Provincia '{provincia_normalizada}' also NOT found in DB")
+
             return False, None
 
     except Exception as e:
-        logger.error(f"Error checking service availability: {str(e)}")
+        logger.error(f"Error checking service availability: {str(e)}", exc_info=True)
         return False, None
 
 
