@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - SubjectSupport</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 50px;
+        }
+        .choice-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .choice-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 3px solid transparent;
+            text-decoration: none;
+            display: block;
+        }
+        .choice-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .choice-card.student {
+            border-color: #667eea;
+        }
+        .choice-card.student:hover {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        }
+        .choice-card.tutor {
+            border-color: #f5576c;
+        }
+        .choice-card.tutor:hover {
+            background: linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%);
+        }
+        .choice-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        .choice-card.student .choice-icon {
+            color: #667eea;
+        }
+        .choice-card.tutor .choice-icon {
+            color: #f5576c;
+        }
+        .choice-title {
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .choice-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .choice-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .choice-card.student .choice-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .choice-card.tutor .choice-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .login-link {
+            margin-top: 30px;
+            color: #666;
+            font-size: 1em;
+        }
+        .login-link a {
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .choice-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Únete a SubjectSupport</h1>
+        <p class="subtitle">Elige el tipo de cuenta que deseas crear</p>
+
+        <div class="choice-container">
+            <a href="{% url 'register_client' %}" class="choice-card student">
+                <div class="choice-icon">🎓</div>
+                <h2 class="choice-title">Estudiante</h2>
+                <p class="choice-description">
+                    Encuentra tutores calificados para ayudarte con tus materias.
+                    Aprende a tu ritmo con sesiones personalizadas.
+                </p>
+                <span class="choice-btn">Registrarme como Estudiante</span>
+            </a>
+
+            <a href="{% url 'register_tutor' %}" class="choice-card tutor">
+                <div class="choice-icon">👨‍🏫</div>
+                <h2 class="choice-title">Tutor</h2>
+                <p class="choice-description">
+                    Comparte tu conocimiento y ayuda a estudiantes de todo Ecuador.
+                    Define tus horarios y tarifas.
+                </p>
+                <span class="choice-btn">Registrarme como Tutor</span>
+            </a>
+        </div>
+
+        <p class="login-link">
+            ¿Ya tienes una cuenta? <a href="{% url 'login' %}">Inicia sesión aquí</a>
+        </p>
+    </div>
+</body>
+</html>

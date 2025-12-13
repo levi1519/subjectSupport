@@ -6,6 +6,14 @@ from django.contrib.auth.views import LoginView
 from .forms import TutorRegistrationForm, ClientRegistrationForm, LoginForm
 
 
+def register_view(request):
+    """
+    Generic registration view that allows users to choose their type.
+    Serves as entry point for registration process.
+    """
+    return render(request, 'accounts/register_choice.html')
+
+
 def register_tutor(request):
     """Registration view for tutors"""
     if request.method == 'POST':
