@@ -8,7 +8,7 @@ está accediendo desde una ciudad habilitada.
 import logging
 from django.shortcuts import redirect
 from django.urls import reverse
-from core.utils.geo import check_geo_restriction
+from core.utils.geo import check_geo_restriction, get_location_from_ip, is_service_available_in_city
 
 logger = logging.getLogger(__name__)
 
@@ -40,40 +40,39 @@ class GeoRestrictionMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # Verificar si la ruta actual está excluida
+        # A) Rutas Exentas
         path = request.path
         if any(path.startswith(excluded) for excluded in self.EXCLUDED_PATHS):
-            # Saltar verificación para rutas excluidas
-            response = self.get_response(request)
-            return response
+            return self.get_response(request)
 
-        # Bypass para usuarios autenticados: acceso permitido desde cualquier lugar
+        # B) BYPASS: Usuarios Autenticados
         if request.user.is_authenticated:
             return self.get_response(request)
 
-        # LOG: Detectar IP y headers para diagnóstico
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        remote_addr = request.META.get('REMOTE_ADDR')
-
-        # Determinar IP que se usará (misma lógica que get_client_ip en geo.py)
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0].strip()
-        else:
-            ip = remote_addr
-
-        logger.info(
-            f"Middleware IP Detectada: {ip}. "
-            f"Headers: X-Forwarded-For: {x_forwarded_for}, "
-            f"REMOTE_ADDR: {remote_addr}"
-        )
-
-        # Verificar restricción geográfica
+        # C) Obtener datos de geolocalización
         geo_result = check_geo_restriction(request)
+        
+        country = geo_result.get('country')
+        is_city_allowed = geo_result.get('allowed')
 
-        # Si NO está permitido el acceso
-        if not geo_result['allowed']:
-            # Guardar información de geolocalización en sesión
-            # (útil para mostrar en la página de "no disponible")
+        # D) Implementar reglas de acceso
+        access_granted = False
+
+        # Política Tutores: Ecuador
+        if path.startswith('/tutores/'):
+            if country == 'Ecuador':
+                access_granted = True
+            # También permitimos si pasa la validación estricta (por si acaso)
+            elif is_city_allowed:
+                access_granted = True
+        
+        # Política Estudiantes (Default): Milagro
+        else:
+            if is_city_allowed:
+                access_granted = True
+
+        # E) Redirección si el acceso es denegado
+        if not access_granted:
             request.session['geo_blocked'] = True
             request.session['geo_city'] = geo_result.get('city', 'Unknown')
             request.session['geo_region'] = geo_result.get('region', 'Unknown')
@@ -81,16 +80,13 @@ class GeoRestrictionMiddleware:
 
             logger.info(
                 f"Access blocked for user from {geo_result.get('city')}, "
-                f"{geo_result.get('region')} (IP: {geo_result.get('ip_address')})"
+                f"{geo_result.get('region')}, {country} "
+                f"(Target: {path})"
             )
 
             # Redirigir a página de "servicio no disponible"
             return redirect('servicio_no_disponible')
 
-        # Si está permitido, agregar info de geolocalización al request
-        # (útil para filtrar tutores por ubicación, etc.)
         request.geo_data = geo_result
 
-        # Continuar con la request normal
-        response = self.get_response(request)
-        return response
+        return self.get_response(request)
