@@ -47,6 +47,10 @@ class GeoRestrictionMiddleware:
             response = self.get_response(request)
             return response
 
+        # Bypass para usuarios autenticados: acceso permitido desde cualquier lugar
+        if request.user.is_authenticated:
+            return self.get_response(request)
+
         # LOG: Detectar IP y headers para diagnóstico
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         remote_addr = request.META.get('REMOTE_ADDR')
