@@ -21,8 +21,11 @@ from core import views as core_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
-    path('', core_views.student_landing_view, name='home'),
+    # Geo-router inteligente en la raíz
+    path('', core_views.GeoRootRouterView.as_view(), name='home'),
+    # Landings específicos
     path('estudiantes/', core_views.student_landing_view, name='student_landing'),
     path('tutores/', core_views.tutor_landing_view, name='tutor_landing'),
+    # Core URLs (sesiones, etc.)
     path('', include('core.urls')),
 ]

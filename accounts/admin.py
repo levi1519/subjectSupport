@@ -1,6 +1,15 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, TutorProfile, ClientProfile
+from .models import User, TutorProfile, ClientProfile, Subject
+
+
+@admin.register(Subject)
+class SubjectAdmin(admin.ModelAdmin):
+    """Admin configuration for Subject model"""
+    list_display = ['name', 'slug', 'created_at']
+    search_fields = ['name', 'slug']
+    prepopulated_fields = {'slug': ('name',)}
+    readonly_fields = ['created_at']
 
 
 class TutorProfileInline(admin.StackedInline):
@@ -9,6 +18,7 @@ class TutorProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'Perfil de Tutor'
     fk_name = 'user'
+    filter_horizontal = ['subjects']
 
 
 class ClientProfileInline(admin.StackedInline):
@@ -55,10 +65,16 @@ class UserAdmin(BaseUserAdmin):
 @admin.register(TutorProfile)
 class TutorProfileAdmin(admin.ModelAdmin):
     """Admin configuration for TutorProfile model"""
-    list_display = ['user', 'subjects', 'created_at']
-    search_fields = ['user__name', 'user__email', 'subjects']
-    list_filter = ['created_at']
+    list_display = ['user', 'get_subjects_display', 'hourly_rate', 'city', 'created_at']
+    search_fields = ['user__name', 'user__email', 'city']
+    list_filter = ['created_at', 'city', 'country']
     readonly_fields = ['created_at']
+    filter_horizontal = ['subjects']
+
+    def get_subjects_display(self, obj):
+        """Display subjects as comma-separated list"""
+        return ", ".join([subject.name for subject in obj.subjects.all()[:3]])
+    get_subjects_display.short_description = 'Materias'
 
 
 @admin.register(ClientProfile)

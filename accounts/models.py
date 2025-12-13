@@ -1,6 +1,36 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import EmailValidator
+from django.utils.text import slugify
+
+
+class Subject(models.Model):
+    """Model for subjects/materias that tutors can teach"""
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Nombre de la Materia'
+    )
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        verbose_name='Slug'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Materia'
+        verbose_name_plural = 'Materias'
+        ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 
 
 class User(AbstractUser):
@@ -43,10 +73,22 @@ class TutorProfile(models.Model):
         on_delete=models.CASCADE,
         related_name='tutor_profile'
     )
-    subjects = models.CharField(
-        max_length=500,
-        help_text='Materias que enseña (separadas por comas)',
-        verbose_name='Materias'
+    # ManyToMany relationship with Subject model
+    subjects = models.ManyToManyField(
+        Subject,
+        related_name='tutors',
+        verbose_name='Materias',
+        blank=True,
+        help_text='Materias que enseña este tutor'
+    )
+    # Hourly rate for tutoring sessions
+    hourly_rate = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Tarifa por Hora (USD)',
+        help_text='Precio por hora de tutoría en dólares'
     )
     bio = models.TextField(
         blank=True,

@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
+from django.views.generic import View
 from .models import ClassSession, CiudadHabilitada, NotificacionExpansion
 from .forms import SessionRequestForm, SessionConfirmationForm, NotificacionExpansionForm
 from accounts.models import User, TutorProfile
@@ -10,6 +11,61 @@ from .utils.geo import get_available_cities, get_client_ip
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class GeoRootRouterView(View):
+    """
+    Vista inteligente que redirige a usuarios anónimos según su ubicación geográfica:
+    - Milagro, Guayas → /estudiantes/
+    - Resto de Ecuador → /tutores/
+    - Fuera de Ecuador → Middleware redirige a /servicio-no-disponible/
+    """
+
+    def get(self, request):
+        # Si el usuario está autenticado, redirigir según su tipo
+        if request.user.is_authenticated:
+            if request.user.user_type == 'tutor':
+                return redirect('tutor_landing')
+            else:
+                return redirect('student_landing')
+
+        # Para usuarios anónimos, usar datos de geolocalización del middleware
+        geo_data = getattr(request, 'geo_data', None)
+
+        if not geo_data:
+            # Intentar obtener de sesión como fallback
+            geo_data = {
+                'city': request.session.get('geo_city', 'Unknown'),
+                'region': request.session.get('geo_region', 'Unknown'),
+                'country': request.session.get('geo_country', 'Unknown'),
+                'allowed': request.session.get('geo_allowed', False),
+            }
+
+        # Obtener información de geolocalización
+        country = geo_data.get('country', 'Unknown')
+        ciudad_data = geo_data.get('ciudad_data')
+
+        logger.info(
+            f"Geo root router: country={country}, "
+            f"ciudad_data={ciudad_data}, "
+            f"geo_data={geo_data}"
+        )
+
+        # Lógica de redirección:
+        # Si ciudad_data existe, significa que pasó la validación de ciudad habilitada (Milagro)
+        if ciudad_data:
+            # Usuario de Milagro → Landing de Estudiantes
+            logger.info("Redirecting to student_landing (Milagro user)")
+            return redirect('student_landing')
+        elif country == 'Ecuador':
+            # Usuario de Ecuador (pero no Milagro) → Landing de Tutores
+            logger.info("Redirecting to tutor_landing (Ecuador user)")
+            return redirect('tutor_landing')
+        else:
+            # Usuario fuera de Ecuador → El middleware ya debería haberlo bloqueado
+            # Pero por si acaso, redirigir a servicio no disponible
+            logger.info("User outside Ecuador, redirecting to servicio_no_disponible")
+            return redirect('servicio_no_disponible')
 
 
 def landing_page(request):
