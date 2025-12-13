@@ -119,11 +119,15 @@
         </div>
 
         <div style="margin-top: 40px;">
-            <a href="{% url 'register' %}" class="cta-button">Comenzar Ahora</a>
+            <a href="{% url 'student_register' %}" class="cta-button">Comenzar Ahora</a>
         </div>
 
         <p style="margin-top: 30px; font-size: 0.9em;">
-            ¿Ya tienes cuenta? <a href="{% url 'login' %}" style="color: #667eea; font-weight: 600;">Inicia sesión</a>
+            ¿Ya tienes cuenta? <a href="{% url 'student_login' %}" style="color: #667eea; font-weight: 600;">Inicia sesión</a>
+        </p>
+
+        <p style="margin-top: 20px; font-size: 0.85em; color: #888;">
+            ¿Eres maestro? <a href="{% url 'tutor_landing' %}" style="color: #f5576c; font-weight: 600;">Regístrate como Tutor</a>
         </p>
     </div>
 </body>

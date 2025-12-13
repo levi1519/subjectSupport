@@ -54,7 +54,10 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Iniciar Sesión</a>
+                        <a class="nav-link" href="{% url 'student_login' %}">Estudiantes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'tutor_login' %}">Tutores</a>
                     </li>
                 </ul>
             </div>
@@ -86,7 +89,7 @@
                         <li class="mb-2">✓ Horarios flexibles</li>
                         <li class="mb-2">✓ Aprendizaje personalizado</li>
                     </ul>
-                    <a href="{% url 'register_client' %}" class="btn btn-primary btn-lg w-100">Registrarme como Estudiante</a>
+                    <a href="{% url 'student_register' %}" class="btn btn-primary btn-lg w-100">Registrarme como Estudiante</a>
                 </div>
             </div>
 
@@ -105,7 +108,7 @@
                         <li class="mb-2">✓ Gana dinero enseñando</li>
                         <li class="mb-2">✓ Ayuda a otros a crecer</li>
                     </ul>
-                    <a href="{% url 'register_tutor' %}" class="btn btn-primary btn-lg w-100">Registrarme como Tutor</a>
+                    <a href="{% url 'tutor_register' %}" class="btn btn-primary btn-lg w-100">Registrarme como Tutor</a>
                 </div>
             </div>
         </div>
