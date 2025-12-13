@@ -18,7 +18,9 @@
       "Bash(python3:*)",
       "Bash(ls:*)",
       "Bash(export PYTHONPATH=/mnt/d/Downloads/Projects/subjectsSuport:*)",
-      "Bash(env/Scripts/pip.exe install:*)"
+      "Bash(env/Scripts/pip.exe install:*)",
+      "Bash(python manage.py runserver:*)",
+      "Bash(env/Scripts/activate)"
     ],
     "deny": [],
     "ask": []

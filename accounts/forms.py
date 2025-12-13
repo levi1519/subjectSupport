@@ -131,15 +131,17 @@ class TutorRegistrationForm(UserCreationForm):
         user.username = self.cleaned_data['email']
         if commit:
             user.save()
-            # Create tutor profile
-            TutorProfile.objects.create(
+            # Create tutor profile (without ManyToMany field)
+            profile = TutorProfile.objects.create(
                 user=user,
-                subjects=self.cleaned_data['subjects'],
                 city=self.cleaned_data.get('city', 'Quito'),
                 country=self.cleaned_data.get('country', 'Ecuador'),
                 bio=self.cleaned_data.get('bio', ''),
                 experience=self.cleaned_data.get('experience', '')
             )
+            # Note: subjects field is now ManyToMany and needs to be handled separately
+            # The form still accepts subjects as CharField for backward compatibility
+            # but doesn't persist them yet. This needs proper Subject selection UI.
         return user
 
 
