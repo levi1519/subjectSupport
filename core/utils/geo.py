@@ -179,7 +179,7 @@ def check_geo_restriction(request):
         - allowed: bool (si tiene acceso)
         - city: str (ciudad detectada)
         - region: str (provincia detectada)
-        - ciudad_obj: CiudadHabilitada (si está disponible)
+        - ciudad_data: dict (datos serializables de la ciudad, si está disponible)
         - skip_check: bool (si se saltó el check)
     """
     # BYPASS para desarrollo/testing
@@ -190,7 +190,7 @@ def check_geo_restriction(request):
             'allowed': True,
             'city': 'Development Mode',
             'region': 'N/A',
-            'ciudad_obj': None,
+            'ciudad_data': None,
             'skip_check': True
         }
 
@@ -204,7 +204,16 @@ def check_geo_restriction(request):
             geo_data_session.get('region')
         )
         geo_data_session['allowed'] = allowed
-        geo_data_session['ciudad_obj'] = ciudad_obj
+        # Convertir ciudad_obj a dict serializable
+        if ciudad_obj:
+            geo_data_session['ciudad_data'] = {
+                'ciudad': ciudad_obj.ciudad,
+                'provincia': ciudad_obj.provincia,
+                'pais': ciudad_obj.pais,
+                'activo': ciudad_obj.activo,
+            }
+        else:
+            geo_data_session['ciudad_data'] = None
         return geo_data_session
 
     # Obtener IP del cliente
@@ -222,7 +231,7 @@ def check_geo_restriction(request):
             'allowed': True,  # Cambiar a False para ser más restrictivo
             'city': 'Unknown',
             'region': 'Unknown',
-            'ciudad_obj': None,
+            'ciudad_data': None,
             'skip_check': False,
             'detection_failed': True
         }
@@ -235,12 +244,22 @@ def check_geo_restriction(request):
 
     allowed, ciudad_obj = is_service_available_in_city(city, region)
 
+    # Convertir ciudad_obj a dict serializable para guardar en sesión
+    ciudad_data = None
+    if ciudad_obj:
+        ciudad_data = {
+            'ciudad': ciudad_obj.ciudad,
+            'provincia': ciudad_obj.provincia,
+            'pais': ciudad_obj.pais,
+            'activo': ciudad_obj.activo,
+        }
+
     geo_result = {
         'allowed': allowed,
         'city': city,
         'region': region,
         'country': location_data.get('country', 'Unknown'),
-        'ciudad_obj': ciudad_obj,
+        'ciudad_data': ciudad_data,
         'skip_check': False,
         'ip_address': ip_address
     }
