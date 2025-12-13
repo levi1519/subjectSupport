@@ -61,6 +61,9 @@ def get_location_from_ip(ip_address):
         return None
 
     try:
+        # LOG 1: Confirmar IP que se está usando para geolocalización
+        logger.info(f"Geo API called with IP: {ip_address}")
+
         # Timeout de 3 segundos para no bloquear la request
         response = requests.get(
             'https://api.ipgeolocation.io/ipgeo',
@@ -68,8 +71,14 @@ def get_location_from_ip(ip_address):
             timeout=3
         )
 
+        # LOG 2: Status HTTP de la respuesta
+        logger.info(f"API Status for IP {ip_address}: {response.status_code}")
+
         if response.status_code == 200:
             data = response.json()
+
+            # LOG 3: Respuesta cruda de la API para debug
+            logger.info(f"Raw API Response for IP {ip_address}: {data}")
 
             # Verificar si hay error en la respuesta
             if 'message' in data and 'error' in data.get('message', '').lower():
@@ -95,10 +104,10 @@ def get_location_from_ip(ip_address):
             return None
 
     except requests.RequestException as e:
-        logger.error(f"Error fetching geo data for IP {ip_address}: {str(e)}")
+        logger.error(f"Error fetching geo data for IP {ip_address}: {str(e)}", exc_info=True)
         return None
     except Exception as e:
-        logger.error(f"Unexpected error in get_location_from_ip: {str(e)}")
+        logger.error(f"Unexpected error in get_location_from_ip: {str(e)}", exc_info=True)
         return None
 
 

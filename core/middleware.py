@@ -47,6 +47,22 @@ class GeoRestrictionMiddleware:
             response = self.get_response(request)
             return response
 
+        # LOG: Detectar IP y headers para diagnóstico
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        remote_addr = request.META.get('REMOTE_ADDR')
+
+        # Determinar IP que se usará (misma lógica que get_client_ip en geo.py)
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0].strip()
+        else:
+            ip = remote_addr
+
+        logger.info(
+            f"Middleware IP Detectada: {ip}. "
+            f"Headers: X-Forwarded-For: {x_forwarded_for}, "
+            f"REMOTE_ADDR: {remote_addr}"
+        )
+
         # Verificar restricción geográfica
         geo_result = check_geo_restriction(request)
 
