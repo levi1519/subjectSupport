@@ -15,22 +15,10 @@ logger = logging.getLogger(__name__)
 
 class GeoRootRouterView(View):
     """
-    Vista de enrutamiento geográfico con blindaje de seguridad estricto.
-    
-    Redirige a usuarios anónimos según su ubicación geográfica detectada:
-    - Milagro, Guayas → /estudiantes/ (landing de estudiantes)
-    - Resto de Ecuador → /tutores/ (landing de tutores) - BLINDAJE ESTRICTO
-    - Fuera de Ecuador → /servicio-no-disponible/
-    
-    Para usuarios autenticados:
-    - Tutores → /tutores/ (tutor_landing)
-    - Clientes → /estudiantes/ (student_landing)
-    
-    Seguridad:
-    - Validación case-insensitive de nombres de ciudad
-    - Logging completo de todos los accesos con datos de geolocalización
-    - Fallback robusto a datos de sesión si middleware no proporciona geo_data
-    - Prevención de acceso no autorizado a recursos de estudiantes
+    Vista inteligente que redirige a usuarios anónimos según su ubicación geográfica:
+    - Milagro, Guayas → /estudiantes/
+    - Resto de Ecuador → /tutores/
+    - Fuera de Ecuador → Middleware redirige a /servicio-no-disponible/
     """
 
     def get(self, request):
@@ -69,7 +57,7 @@ class GeoRootRouterView(View):
             logger.info(f"Redirecting to student_landing (Milagro detected: city={city})")
             return redirect('student_landing')
 
-        # 2. Si NO es Milagro pero SÍ es Ecuador → Tutores (blindaje estricto)
+        # 2. Si NO es Milagro pero SÍ es Ecuador → Tutores
         elif country == 'Ecuador':
             logger.info(f"Redirecting to tutor_landing (Ecuador but not Milagro: city={city}, country={country})")
             return redirect('tutor_landing')
@@ -86,55 +74,7 @@ def landing_page(request):
 
 
 def student_landing_view(request):
-    """
-    Landing page para estudiantes con protección geográfica de doble capa.
-    
-    Acceso permitido SOLO desde Milagro, Ecuador.
-    
-    Flujo de seguridad:
-    1. Si el usuario está autenticado → Acceso permitido (ya validado en registro)
-    2. Si el usuario es anónimo:
-       a. Verifica ubicación geográfica (geo_data del middleware o sesión)
-       b. Si NO es de Milagro → Renderiza 'city_locked.html' (página de bloqueo)
-       c. Si es de Milagro → Muestra landing de estudiantes
-    
-    Características de seguridad:
-    - NO redirige a usuarios no autorizados (evita loops de redirección)
-    - Muestra página informativa con opción de acceso a landing de tutores
-    - Logging de todos los intentos de acceso no autorizado
-    - Validación case-insensitive de ciudad
-    - Fallback robusto a datos de sesión
-    
-    Args:
-        request: HttpRequest object con datos de geolocalización
-        
-    Returns:
-        - Para usuarios de Milagro: landing/student_landing.html
-        - Para usuarios fuera de Milagro: core/city_locked.html
-    """
-    # Verificar ubicación geográfica para usuarios anónimos
-    if not request.user.is_authenticated:
-        geo_data = getattr(request, 'geo_data', None)
-        
-        if not geo_data:
-            # Intentar obtener de sesión como fallback
-            geo_data = {
-                'city': request.session.get('geo_city', 'Unknown'),
-                'region': request.session.get('geo_region', 'Unknown'),
-                'country': request.session.get('geo_country', 'Unknown'),
-            }
-        
-        city = geo_data.get('city', 'Unknown')
-        country = geo_data.get('country', 'Unknown')
-        
-        # Si NO es de Milagro, mostrar página de bloqueo (no redirigir)
-        if not (city and city.strip().lower() == 'milagro'):
-            logger.info(f"User trying to access student_landing from outside Milagro: city={city}, country={country}")
-            return render(request, 'core/city_locked.html', {
-                'detected_city': city,
-                'detected_country': country
-            })
-    
+    """Landing page for students"""
     return render(request, 'landing/student_landing.html', {'user_type': 'Estudiante'})
 
 

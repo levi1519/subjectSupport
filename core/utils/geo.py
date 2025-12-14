@@ -285,21 +285,10 @@ def check_geo_restriction(request):
             'pais': ciudad_obj.pais,
             'activo': ciudad_obj.activo,
         }
-        
-        # ARREGLO CRÍTICO: Si el fallback por provincia fue exitoso,
-        # sobrescribir la ciudad detectada con la ciudad habilitada real.
-        # Esto resuelve el problema cuando la API retorna "Guayaquil" 
-        # para IPs de Milagro (ambas en provincia Guayas).
-        if ciudad_obj.ciudad.lower() != city.lower():
-            logger.info(
-                f"GeoIP correction: API returned city='{city}', but provincia match "
-                f"confirms user is in '{ciudad_obj.ciudad}'. Overriding city value."
-            )
-            city = ciudad_obj.ciudad  # Sobrescribir con el valor correcto
 
     geo_result = {
         'allowed': allowed,
-        'city': city,  # Ahora contiene la ciudad correcta si hubo fallback
+        'city': city,
         'region': region,
         'country': location_data.get('country', 'Unknown'),
         'ciudad_data': ciudad_data,

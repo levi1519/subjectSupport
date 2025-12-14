@@ -16,28 +16,7 @@ def register_view(request):
 
 
 def register_tutor(request):
-    """
-    Vista de registro para tutores (profesores/docentes).
-    
-    Accesible desde todo Ecuador (sin restricciones geográficas).
-    
-    Proceso:
-    1. Muestra formulario de registro con campos específicos para tutores
-    2. Valida datos del formulario (TutorRegistrationForm)
-    3. Crea usuario con user_type='tutor' y perfil de tutor asociado
-    4. Inicia sesión automáticamente al usuario recién creado
-    5. Redirige directamente a 'tutor_dashboard' (sin pasar por dashboard genérico)
-    
-    Seguridad:
-    - Redirección directa a dashboard específico previene errores NoReverseMatch
-    - Sincronizado con URLs definidas en accounts/urls.py
-    - Mensaje de éxito informativo para el usuario
-    
-    Returns:
-        - GET: Renderiza formulario de registro (register_tutor.html)
-        - POST exitoso: Redirige a 'tutor_dashboard'
-        - POST con errores: Re-renderiza formulario con mensajes de error
-    """
+    """Registration view for tutors"""
     if request.method == 'POST':
         form = TutorRegistrationForm(request.POST)
         if form.is_valid():
@@ -52,44 +31,7 @@ def register_tutor(request):
 
 
 def register_client(request):
-    """
-    Vista de registro para clientes/estudiantes - SOLO accesible desde Milagro.
-    
-    ⚠️ PROTECCIÓN CRÍTICA DE SEGURIDAD ⚠️
-    Esta vista implementa validación geográfica estricta antes de permitir el registro.
-    
-    Flujo de seguridad:
-    1. Para usuarios NO autenticados:
-       a. Obtiene datos de geolocalización (check_geo_restriction)
-       b. Verifica que ciudad sea exactamente 'Milagro' (case-insensitive)
-       c. Si NO es Milagro:
-          - Registra intento de acceso con nivel ERROR
-          - Muestra mensaje de error explicativo
-          - Redirige a 'tutor_landing' (opción alternativa)
-          - BLOQUEA el registro
-    
-    2. Si la validación geográfica pasa:
-       a. Muestra formulario de registro (ClientRegistrationForm)
-       b. Valida datos del formulario
-       c. Crea usuario con user_type='client' y perfil de cliente asociado
-       d. Inicia sesión automáticamente
-       e. Redirige directamente a 'client_dashboard'
-    
-    Seguridad adicional:
-    - Logging completo de intentos de acceso no autorizados
-    - Mensajes informativos sin exponer detalles del sistema
-    - Redirección directa a dashboard específico (evita NoReverseMatch)
-    - Sincronizado con URLs en accounts/urls.py
-    
-    Args:
-        request: HttpRequest con datos de geolocalización en sesión/middleware
-        
-    Returns:
-        - Usuarios fuera de Milagro: Redirige a 'tutor_landing' con mensaje de error
-        - GET (Milagro): Renderiza formulario (register_client.html)
-        - POST exitoso (Milagro): Redirige a 'client_dashboard'
-        - POST con errores: Re-renderiza formulario con mensajes de error
-    """
+    """Registration view for clients/students - ONLY accessible from Milagro"""
     from core.utils.geo import check_geo_restriction
     import logging
 
