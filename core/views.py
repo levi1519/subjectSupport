@@ -51,18 +51,26 @@ class GeoRootRouterView(View):
             f"Geo root router: city={city}, country={country}, ciudad_data={ciudad_data}"
         )
 
-        # LÓGICA ESTRICTA DE REDIRECCIÓN:
-        # 1. Si la ciudad es EXACTAMENTE 'Milagro' (case-insensitive) → Estudiantes
-        if city and city.strip().lower() == 'milagro':
-            logger.info(f"Redirecting to student_landing (Milagro detected: city={city})")
+        # LÓGICA DE REDIRECCIÓN USANDO ciudad_data (más confiable que city):
+        # ciudad_data contiene la información de la ciudad CONFIRMADA en la BD
+        # después del fallback por provincia, evitando problemas de precisión de GeoIP
+        
+        # 1. Si ciudad_data existe y es Milagro → Estudiantes
+        if ciudad_data and ciudad_data.get('ciudad', '').strip().lower() == 'milagro':
+            logger.info(f"Redirecting to student_landing (Milagro confirmed via ciudad_data: {ciudad_data})")
+            return redirect('student_landing')
+        
+        # 2. Si NO hay ciudad_data pero city es exactamente 'Milagro' → Estudiantes (fallback)
+        elif city and city.strip().lower() == 'milagro':
+            logger.info(f"Redirecting to student_landing (Milagro detected via city string: city={city})")
             return redirect('student_landing')
 
-        # 2. Si NO es Milagro pero SÍ es Ecuador → Tutores
+        # 3. Si NO es Milagro pero SÍ es Ecuador → Tutores
         elif country == 'Ecuador':
-            logger.info(f"Redirecting to tutor_landing (Ecuador but not Milagro: city={city}, country={country})")
+            logger.info(f"Redirecting to tutor_landing (Ecuador but not Milagro: city={city}, ciudad_data={ciudad_data})")
             return redirect('tutor_landing')
 
-        # 3. Si no es Ecuador → Servicio no disponible
+        # 4. Si no es Ecuador → Servicio no disponible
         else:
             logger.warning(f"User outside Ecuador: city={city}, country={country}, redirecting to servicio_no_disponible")
             return redirect('servicio_no_disponible')
