@@ -13,7 +13,7 @@ urlpatterns = [
 
     # Autenticación de estudiantes
     path('login/', views.StudentLoginView.as_view(), name='student_login'),
-    path('registro/', views.register_client, name='student_register'),
+    path('registro/', views.register_client, name='register_client'),
 
     # Dashboard de estudiantes
     path('dashboard/', views.client_dashboard, name='client_dashboard'),
