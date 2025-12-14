@@ -80,7 +80,13 @@
                             <p class="text-muted small mb-2">
                                 📍 {{ tutor.tutor_profile.city }}, {{ tutor.tutor_profile.country }}
                             </p>
-                            <p class="card-text"><strong>Materias:</strong> {{ tutor.tutor_profile.subjects }}</p>
+                            <p class="card-text"><strong>Materias:</strong>
+                                {% if tutor.tutor_profile.subjects.all %}
+                                    {% for subject in tutor.tutor_profile.subjects.all %}{{ subject.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                {% else %}
+                                    <span class="text-muted">No especificadas</span>
+                                {% endif %}
+                            </p>
                             {% if tutor.tutor_profile.bio %}
                                 <p class="card-text small text-muted">{{ tutor.tutor_profile.bio|truncatewords:15 }}</p>
                             {% endif %}
@@ -108,7 +114,13 @@
                             <p class="text-muted small mb-2">
                                 📍 {{ tutor.tutor_profile.city }}, {{ tutor.tutor_profile.country }}
                             </p>
-                            <p class="card-text"><strong>Materias:</strong> {{ tutor.tutor_profile.subjects }}</p>
+                            <p class="card-text"><strong>Materias:</strong>
+                                {% if tutor.tutor_profile.subjects.all %}
+                                    {% for subject in tutor.tutor_profile.subjects.all %}{{ subject.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                {% else %}
+                                    <span class="text-muted">No especificadas</span>
+                                {% endif %}
+                            </p>
                             {% if tutor.tutor_profile.bio %}
                                 <p class="card-text small text-muted">{{ tutor.tutor_profile.bio|truncatewords:15 }}</p>
                             {% endif %}
@@ -135,7 +147,13 @@
                             <p class="text-muted small mb-2">
                                 📍 {{ tutor.tutor_profile.city }}, {{ tutor.tutor_profile.country }}
                             </p>
-                            <p class="card-text"><strong>Materias:</strong> {{ tutor.tutor_profile.subjects }}</p>
+                            <p class="card-text"><strong>Materias:</strong>
+                                {% if tutor.tutor_profile.subjects.all %}
+                                    {% for subject in tutor.tutor_profile.subjects.all %}{{ subject.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                {% else %}
+                                    <span class="text-muted">No especificadas</span>
+                                {% endif %}
+                            </p>
                             {% if tutor.tutor_profile.bio %}
                                 <p class="card-text small text-muted">{{ tutor.tutor_profile.bio|truncatewords:15 }}</p>
                             {% endif %}

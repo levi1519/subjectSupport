@@ -148,7 +148,7 @@ def tutor_selection(request):
     """View for clients to see and select tutors with geographical prioritization"""
     if request.user.user_type != 'client':
         messages.error(request, 'Solo los clientes pueden ver la lista de tutores.')
-        return redirect('dashboard')
+        return redirect('tutor_dashboard')  # Redirect tutors to their own dashboard
 
     # Get client's profile for location-based filtering
     try:
@@ -217,7 +217,7 @@ def request_session(request, tutor_id):
     """View for clients to request a new session with a specific tutor"""
     if request.user.user_type != 'client':
         messages.error(request, 'Solo los clientes pueden solicitar sesiones.')
-        return redirect('dashboard')
+        return redirect('tutor_dashboard')  # Redirect tutors to their own dashboard
 
     # Get the selected tutor
     tutor = get_object_or_404(User, id=tutor_id, user_type='tutor', is_active=True)
@@ -260,7 +260,7 @@ def confirm_session(request, session_id):
 
     if request.user.user_type != 'tutor':
         messages.error(request, 'Solo los tutores pueden confirmar sesiones.')
-        return redirect('dashboard')
+        return redirect('client_dashboard')  # Redirect clients to their own dashboard
 
     if session.status != 'pending':
         messages.warning(request, 'Esta sesión ya ha sido procesada.')
@@ -293,27 +293,47 @@ def confirm_session(request, session_id):
 
 @login_required
 def cancel_session(request, session_id):
-    """View to cancel a session"""
+    """
+    View to cancel a session.
+
+    Allows both tutors and clients to cancel their sessions.
+    After cancellation, redirects to the appropriate dashboard based on user type.
+
+    Security:
+    - Only the tutor or client associated with the session can cancel it
+    - Cannot cancel already cancelled or completed sessions
+    - Updates session status to 'cancelled' and saves to database
+
+    Returns:
+    - GET: Renders confirmation page (core/cancel_session.html)
+    - POST: Cancels session and redirects to user's dashboard
+    """
     session = get_object_or_404(ClassSession, id=session_id)
+
+    # Determine the correct dashboard URL for redirection
+    if request.user.user_type == 'tutor':
+        dashboard_url = 'tutor_dashboard'
+    else:
+        dashboard_url = 'client_dashboard'
 
     # Check if user is either the tutor or client for this session
     if request.user != session.tutor and request.user != session.client:
         messages.error(request, 'No tienes permiso para cancelar esta sesión.')
-        return redirect('dashboard')
+        return redirect(dashboard_url)
 
     if session.status == 'cancelled':
         messages.warning(request, 'Esta sesión ya está cancelada.')
-        return redirect('dashboard')
+        return redirect(dashboard_url)
 
     if session.status == 'completed':
         messages.warning(request, 'No puedes cancelar una sesión completada.')
-        return redirect('dashboard')
+        return redirect(dashboard_url)
 
     if request.method == 'POST':
         session.status = 'cancelled'
         session.save()
         messages.info(request, 'La sesión ha sido cancelada.')
-        return redirect('dashboard')
+        return redirect(dashboard_url)
 
     return render(request, 'core/cancel_session.html', {'session': session})
 
@@ -323,15 +343,21 @@ def meeting_room(request, session_id):
     """View for accessing the meeting room for a session"""
     session = get_object_or_404(ClassSession, id=session_id)
 
+    # Determine the correct dashboard URL for redirection
+    if request.user.user_type == 'tutor':
+        dashboard_url = 'tutor_dashboard'
+    else:
+        dashboard_url = 'client_dashboard'
+
     # Check if user is either the tutor or client for this session
     if request.user != session.tutor and request.user != session.client:
         messages.error(request, 'No tienes permiso para acceder a esta reunión.')
-        return redirect('dashboard')
+        return redirect(dashboard_url)
 
     # Check if session is confirmed
     if session.status != 'confirmed':
         messages.warning(request, 'Esta sesión aún no ha sido confirmada.')
-        return redirect('dashboard')
+        return redirect(dashboard_url)
 
     # Determine if user is the host (tutor)
     is_host = request.user == session.tutor

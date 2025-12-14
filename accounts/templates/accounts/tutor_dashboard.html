@@ -196,7 +196,15 @@
                     {% if profile %}
                         <div class="mb-3">
                             <strong>Materias que enseñas:</strong>
-                            <p class="text-muted">{{ profile.subjects }}</p>
+                            <p class="text-muted">
+                                {% if profile.subjects.all %}
+                                    {% for subject in profile.subjects.all %}
+                                        {{ subject.name }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-warning">No has especificado materias aún</span>
+                                {% endif %}
+                            </p>
                         </div>
 
                         {% if profile.bio %}

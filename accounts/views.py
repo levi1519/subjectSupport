@@ -188,7 +188,22 @@ def dashboard(request):
 
 @login_required
 def tutor_dashboard(request):
-    """Dashboard for tutors - ONLY accessible to tutors"""
+    """
+    Dashboard for tutors - ONLY accessible to tutors.
+
+    Displays session statistics and management interface for tutors.
+
+    Context variables provided:
+    - pending_sessions: Sessions awaiting tutor confirmation (status='pending')
+    - upcoming_sessions: Next 5 confirmed sessions scheduled for future dates
+    - all_active_sessions: ALL sessions with status 'pending' OR 'confirmed'
+      (This represents SESSIONS OF CLASSES, not user login sessions)
+    - pending_count: Number of pending session requests
+
+    Note: "Total Sesiones Activas" in template = count of CLASS SESSIONS
+    that are either waiting for confirmation or already confirmed.
+    This does NOT track user login sessions.
+    """
     from core.models import ClassSession
     from datetime import datetime
 
@@ -202,13 +217,13 @@ def tutor_dashboard(request):
     except:
         profile = None
 
-    # Get pending session requests
+    # Get pending session requests (waiting for tutor to confirm/reject)
     pending_sessions = ClassSession.objects.filter(
         tutor=request.user,
         status='pending'
     ).order_by('scheduled_date', 'scheduled_time')
 
-    # Get upcoming confirmed sessions
+    # Get upcoming confirmed sessions (next 5 classes scheduled for future dates)
     upcoming_sessions = ClassSession.objects.filter(
         tutor=request.user,
         status='confirmed',
@@ -216,6 +231,8 @@ def tutor_dashboard(request):
     ).order_by('scheduled_date', 'scheduled_time')[:5]
 
     # Get all active sessions (pending + confirmed)
+    # IMPORTANT: This counts CLASS SESSIONS (tutoring sessions with students),
+    # NOT user login sessions. Each item represents a scheduled or pending class.
     all_active_sessions = ClassSession.objects.filter(
         tutor=request.user,
         status__in=['pending', 'confirmed']
