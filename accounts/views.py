@@ -279,6 +279,63 @@ def manage_tutor_subjects(request):
     return render(request, 'accounts/manage_subjects.html', context)
 
 
+@login_required
+def user_profile(request):
+    """
+    Vista de perfil única que redirige al template apropiado según el tipo de usuario.
+    """
+    if request.user.user_type == 'tutor':
+        return redirect('tutor_profile')
+    else:
+        return redirect('client_profile')
+
+
+@login_required
+def tutor_profile(request):
+    """
+    Vista de perfil para tutores con gestión de materias integrada.
+    """
+    # CRITICAL: Ensure only tutors can access this view
+    if request.user.user_type != 'tutor':
+        messages.error(request, 'Acceso denegado. Esta sección es solo para tutores.')
+        return redirect('client_profile')
+
+    try:
+        profile = request.user.tutor_profile
+    except:
+        messages.error(request, 'Error: No se encontró el perfil de tutor.')
+        return redirect('tutor_dashboard')
+
+    context = {
+        'user': request.user,
+        'profile': profile,
+    }
+    return render(request, 'accounts/tutor_profile.html', context)
+
+
+@login_required
+def client_profile(request):
+    """
+    Vista de perfil para clientes/estudiantes.
+    """
+    # CRITICAL: Ensure only clients can access this view
+    if request.user.user_type != 'client':
+        messages.error(request, 'Acceso denegado. Esta sección es solo para estudiantes.')
+        return redirect('tutor_profile')
+
+    try:
+        profile = request.user.client_profile
+    except:
+        messages.error(request, 'Error: No se encontró el perfil de estudiante.')
+        return redirect('client_dashboard')
+
+    context = {
+        'user': request.user,
+        'profile': profile,
+    }
+    return render(request, 'accounts/client_profile.html', context)
+
+
 def logout_view(request):
     """Logout view"""
     logout(request)

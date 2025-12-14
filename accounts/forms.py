@@ -6,13 +6,14 @@ from .models import User, TutorProfile, ClientProfile, Subject
 
 class TutorRegistrationForm(UserCreationForm):
     """Form for tutor registration"""
-    subjects = forms.CharField(
-        max_length=500,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Ej: Matemáticas, Física, Química'
+    subjects = forms.ModelMultipleChoiceField(
+        queryset=Subject.objects.all().order_by('name'),
+        required=False,
+        widget=forms.CheckboxSelectMultiple(attrs={
+            'class': 'form-check-input'
         }),
-        label='Materias que enseñas'
+        label='Materias que enseñas',
+        help_text='Selecciona todas las materias que puedes enseñar'
     )
     city = forms.CharField(
         required=False,
@@ -131,7 +132,7 @@ class TutorRegistrationForm(UserCreationForm):
         user.username = self.cleaned_data['email']
         if commit:
             user.save()
-            # Create tutor profile (without ManyToMany field)
+            # Create tutor profile
             profile = TutorProfile.objects.create(
                 user=user,
                 city=self.cleaned_data.get('city', 'Quito'),
@@ -139,9 +140,10 @@ class TutorRegistrationForm(UserCreationForm):
                 bio=self.cleaned_data.get('bio', ''),
                 experience=self.cleaned_data.get('experience', '')
             )
-            # Note: subjects field is now ManyToMany and needs to be handled separately
-            # The form still accepts subjects as CharField for backward compatibility
-            # but doesn't persist them yet. This needs proper Subject selection UI.
+            # Save ManyToMany relationships (subjects)
+            subjects = self.cleaned_data.get('subjects')
+            if subjects:
+                profile.subjects.set(subjects)
         return user
 
 
