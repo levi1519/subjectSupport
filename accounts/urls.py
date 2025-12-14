@@ -13,4 +13,6 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('dashboard/tutor/', views.tutor_dashboard, name='tutor_dashboard'),
     path('dashboard/client/', views.client_dashboard, name='client_dashboard'),
+    # Tutor management routes
+    path('tutor/manage-subjects/', views.manage_tutor_subjects, name='manage_subjects'),
 ]

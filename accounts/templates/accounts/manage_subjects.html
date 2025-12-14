@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionar Materias - SubjectSupport</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 40px 0;
+        }
+        .content-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-custom {
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .subject-checkbox {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .subject-checkbox:hover {
+            background: #e9ecef;
+        }
+        .subject-checkbox input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .subject-checkbox label {
+            font-size: 1.05rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            padding: 12px 40px;
+            font-weight: 600;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
+        }
+        .btn-secondary {
+            padding: 12px 40px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light navbar-custom">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="{% url 'landing' %}">SubjectSupport</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'tutor_dashboard' %}">Mi Panel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'manage_subjects' %}">Mis Materias</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <div class="container">
+            <h1 class="display-5 fw-bold">Gestionar Mis Materias</h1>
+            <p class="lead mb-0">Selecciona las materias que puedes enseñar</p>
+        </div>
+    </div>
+
+    <div class="container mt-5 mb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="content-card">
+                    <div class="info-box">
+                        <h5 class="mb-2">📚 ¿Por qué es importante?</h5>
+                        <p class="mb-0">
+                            Las materias que selecciones determinarán en qué búsquedas aparecerás.
+                            Los estudiantes podrán encontrarte cuando busquen tutores para estas materias específicas.
+                        </p>
+                    </div>
+
+                    <form method="post" action="{% url 'manage_subjects' %}">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <h5 class="mb-3">Selecciona tus materias:</h5>
+                            
+                            {% if form.subjects %}
+                                <div class="subjects-container">
+                                    {% for checkbox in form.subjects %}
+                                        <div class="subject-checkbox">
+                                            {{ checkbox.tag }}
+                                            <label for="{{ checkbox.id_for_label }}">
+                                                {{ checkbox.choice_label }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                {% if form.subjects.help_text %}
+                                    <small class="form-text text-muted d-block mt-2">
+                                        {{ form.subjects.help_text }}
+                                    </small>
+                                {% endif %}
+
+                                {% if form.subjects.errors %}
+                                    <div class="alert alert-danger mt-2">
+                                        {{ form.subjects.errors }}
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <strong>Atención:</strong> No hay materias disponibles en el sistema.
+                                    Por favor contacta al administrador para que agregue materias.
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-3 justify-content-end mt-4">
+                            <a href="{% url 'tutor_dashboard' %}" class="btn btn-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                💾 Guardar Materias
+                            </button>
+                        </div>
+                    </form>
+
+                    {% if profile.subjects.count > 0 %}
+                        <div class="mt-5 pt-4 border-top">
+                            <h6 class="text-muted mb-3">Materias seleccionadas actualmente:</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for subject in profile.subjects.all %}
+                                    <span class="badge bg-primary fs-6 px-3 py-2">
+                                        {{ subject.name }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="mt-5 pt-4 border-top">
+                            <div class="alert alert-info">
+                                <strong>ℹ️ Información:</strong> Aún no has seleccionado ninguna materia.
+                                Selecciona al menos una para que los estudiantes puedan encontrarte.
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

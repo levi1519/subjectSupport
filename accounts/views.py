@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
-from .forms import TutorRegistrationForm, ClientRegistrationForm, LoginForm
+from .forms import TutorRegistrationForm, ClientRegistrationForm, LoginForm, TutorSubjectsForm
 
 
 def register_view(request):
@@ -292,6 +292,49 @@ def client_dashboard(request):
         'past_sessions': past_sessions,
     }
     return render(request, 'accounts/client_dashboard.html', context)
+
+
+@login_required
+def manage_tutor_subjects(request):
+    """
+    Vista para gestión de materias del tutor.
+    Solo accesible para usuarios con user_type='tutor'.
+    """
+    # CRITICAL: Ensure only tutors can access this view
+    if request.user.user_type != 'tutor':
+        messages.error(request, 'Acceso denegado. Esta sección es solo para tutores.')
+        return redirect('client_dashboard')
+
+    try:
+        profile = request.user.tutor_profile
+    except:
+        messages.error(request, 'Error: No se encontró el perfil de tutor.')
+        return redirect('tutor_dashboard')
+
+    if request.method == 'POST':
+        form = TutorSubjectsForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                '¡Materias actualizadas exitosamente! Ahora los estudiantes podrán '
+                'encontrarte cuando busquen tutores para estas materias.'
+            )
+            return redirect('tutor_dashboard')
+        else:
+            messages.error(
+                request,
+                'Hubo un error al actualizar las materias. Por favor verifica el formulario.'
+            )
+    else:
+        form = TutorSubjectsForm(instance=profile)
+
+    context = {
+        'form': form,
+        'profile': profile,
+        'user': request.user,
+    }
+    return render(request, 'accounts/manage_subjects.html', context)
 
 
 def logout_view(request):

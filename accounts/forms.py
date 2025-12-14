@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.core.exceptions import ValidationError
-from .models import User, TutorProfile, ClientProfile
+from .models import User, TutorProfile, ClientProfile, Subject
 
 
 class TutorRegistrationForm(UserCreationForm):
@@ -314,3 +314,30 @@ class LoginForm(AuthenticationForm):
                         'Ten en cuenta que ambos campos pueden ser sensibles a mayúsculas.',
         'inactive': 'Esta cuenta está inactiva.',
     }
+
+
+class TutorSubjectsForm(forms.ModelForm):
+    """
+    Formulario para que los tutores gestionen las materias que enseñan.
+    Permite selección múltiple de materias existentes.
+    """
+    subjects = forms.ModelMultipleChoiceField(
+        queryset=Subject.objects.all().order_by('name'),
+        required=False,
+        widget=forms.CheckboxSelectMultiple(attrs={
+            'class': 'form-check-input'
+        }),
+        label='Materias que enseño',
+        help_text='Selecciona todas las materias que puedes enseñar'
+    )
+
+    class Meta:
+        model = TutorProfile
+        fields = ['subjects']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Personalizar mensajes de error
+        self.fields['subjects'].error_messages = {
+            'required': 'Por favor selecciona al menos una materia.',
+        }
