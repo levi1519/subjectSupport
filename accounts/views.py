@@ -31,7 +31,35 @@ def register_tutor(request):
 
 
 def register_client(request):
-    """Registration view for clients/students"""
+    """Registration view for clients/students - ONLY accessible from Milagro"""
+    from core.utils.geo import check_geo_restriction
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    # PROTECCIÓN CRÍTICA: Solo usuarios de Milagro pueden registrarse como estudiantes
+    if not request.user.is_authenticated:
+        geo_data = check_geo_restriction(request)
+        city = geo_data.get('city', 'Unknown')
+        country = geo_data.get('country', 'Unknown')
+
+        logger.warning(
+            f"Student registration access attempt: city={city}, country={country}"
+        )
+
+        # Verificar que la ciudad sea exactamente Milagro (case-insensitive)
+        if not (city and city.strip().lower() == 'milagro'):
+            logger.error(
+                f"SECURITY: Non-Milagro user tried to access student registration. "
+                f"City={city}, Country={country}. Redirecting to tutor_landing."
+            )
+            messages.error(
+                request,
+                'El registro de estudiantes solo está disponible en Milagro. '
+                'Como estás en otra ciudad de Ecuador, puedes registrarte como tutor.'
+            )
+            return redirect('tutor_landing')
+
     if request.method == 'POST':
         form = ClientRegistrationForm(request.POST)
         if form.is_valid():

@@ -39,32 +39,32 @@ class GeoRootRouterView(View):
                 'region': request.session.get('geo_region', 'Unknown'),
                 'country': request.session.get('geo_country', 'Unknown'),
                 'allowed': request.session.get('geo_allowed', False),
+                'ciudad_data': request.session.get('geo_ciudad_data'),
             }
 
         # Obtener información de geolocalización
+        city = geo_data.get('city', 'Unknown')
         country = geo_data.get('country', 'Unknown')
         ciudad_data = geo_data.get('ciudad_data')
 
         logger.info(
-            f"Geo root router: country={country}, "
-            f"ciudad_data={ciudad_data}, "
-            f"geo_data={geo_data}"
+            f"Geo root router: city={city}, country={country}, ciudad_data={ciudad_data}"
         )
 
-        # Lógica de redirección:
-        # Si ciudad_data existe, significa que pasó la validación de ciudad habilitada (Milagro)
-        if ciudad_data:
-            # Usuario de Milagro → Landing de Estudiantes
-            logger.info("Redirecting to student_landing (Milagro user)")
+        # LÓGICA ESTRICTA DE REDIRECCIÓN:
+        # 1. Si la ciudad es EXACTAMENTE 'Milagro' (case-insensitive) → Estudiantes
+        if city and city.strip().lower() == 'milagro':
+            logger.info(f"Redirecting to student_landing (Milagro detected: city={city})")
             return redirect('student_landing')
+
+        # 2. Si NO es Milagro pero SÍ es Ecuador → Tutores
         elif country == 'Ecuador':
-            # Usuario de Ecuador (pero no Milagro) → Landing de Tutores
-            logger.info("Redirecting to tutor_landing (Ecuador user)")
+            logger.info(f"Redirecting to tutor_landing (Ecuador but not Milagro: city={city}, country={country})")
             return redirect('tutor_landing')
+
+        # 3. Si no es Ecuador → Servicio no disponible
         else:
-            # Usuario fuera de Ecuador → El middleware ya debería haberlo bloqueado
-            # Pero por si acaso, redirigir a servicio no disponible
-            logger.info("User outside Ecuador, redirecting to servicio_no_disponible")
+            logger.warning(f"User outside Ecuador: city={city}, country={country}, redirecting to servicio_no_disponible")
             return redirect('servicio_no_disponible')
 
 
