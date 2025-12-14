@@ -23,7 +23,7 @@ def register_tutor(request):
             user = form.save()
             login(request, user)
             messages.success(request, '¡Bienvenido! Tu cuenta de tutor ha sido creada exitosamente.')
-            return redirect('dashboard')
+            return redirect('tutor_dashboard')
     else:
         form = TutorRegistrationForm()
 
@@ -66,7 +66,7 @@ def register_client(request):
             user = form.save()
             login(request, user)
             messages.success(request, '¡Bienvenido! Tu cuenta ha sido creada exitosamente.')
-            return redirect('dashboard')
+            return redirect('client_dashboard')
     else:
         form = ClientRegistrationForm()
 
