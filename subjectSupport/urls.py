@@ -33,6 +33,9 @@ urlpatterns = [
     # Todas estas rutas están protegidas por middleware para country='Ecuador'
     path('tutores/', include('accounts.urls_tutores')),
 
+    # Perfiles de usuario (sin restricción geográfica, requiere login)
+    path('accounts/', include('accounts.urls')),
+
     # Logout global (sin restricción geográfica)
     path('accounts/logout/', accounts_views.logout_view, name='logout'),
 
