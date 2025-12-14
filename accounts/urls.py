@@ -17,6 +17,8 @@ urlpatterns = [
     path('profile/', views.user_profile, name='user_profile'),
     path('profile/tutor/', views.tutor_profile, name='tutor_profile'),
     path('profile/client/', views.client_profile, name='client_profile'),
+    path('profile/tutor/edit/', views.edit_tutor_profile, name='edit_tutor_profile'),
+    path('profile/client/edit/', views.edit_client_profile, name='edit_client_profile'),
     # Tutor management routes
     path('tutor/manage-subjects/', views.manage_tutor_subjects, name='manage_subjects'),
 ]

@@ -90,6 +90,12 @@ class TutorProfile(models.Model):
         verbose_name='Tarifa por Hora (USD)',
         help_text='Precio por hora de tutoría en dólares'
     )
+    phone_number = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='Número de teléfono'
+    )
     bio = models.TextField(
         blank=True,
         null=True,

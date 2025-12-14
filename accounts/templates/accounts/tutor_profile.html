@@ -140,7 +140,12 @@
             <div class="col-lg-8">
                 <!-- Información Personal -->
                 <div class="profile-card">
-                    <h3 class="section-title">📋 Información Personal</h3>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="section-title mb-0">📋 Información Personal</h3>
+                        <a href="{% url 'edit_tutor_profile' %}" class="btn btn-action">
+                            ✏️ Editar Perfil
+                        </a>
+                    </div>
                     
                     <div class="info-item">
                         <div class="info-label">Nombre Completo</div>

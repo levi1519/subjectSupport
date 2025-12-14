@@ -118,6 +118,13 @@ class TutorRegistrationForm(UserCreationForm):
             raise ValidationError('Este correo electrónico ya está registrado.')
         return email
 
+    def clean_subjects(self):
+        """Validate maximum 5 subjects selected"""
+        subjects = self.cleaned_data.get('subjects')
+        if subjects and subjects.count() > 5:
+            raise ValidationError('Solo puedes seleccionar un máximo de 5 materias.')
+        return subjects
+
     def clean_password2(self):
         """Validate passwords match"""
         password1 = self.cleaned_data.get('password1')
@@ -343,3 +350,161 @@ class TutorSubjectsForm(forms.ModelForm):
         self.fields['subjects'].error_messages = {
             'required': 'Por favor selecciona al menos una materia.',
         }
+
+
+class ClientProfileEditForm(forms.ModelForm):
+    """
+    Formulario para editar el perfil del cliente/estudiante.
+    Incluye campos del User (email) y ClientProfile (phone_number, bio).
+    """
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'correo@ejemplo.com'
+        }),
+        label='Correo Electrónico',
+        help_text='Tu correo para notificaciones y comunicación'
+    )
+    phone_number = forms.CharField(
+        required=True,
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '+593 99 999 9999'
+        }),
+        label='Número de Teléfono',
+        help_text='Número de contacto para emergencias'
+    )
+    bio = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 4,
+            'placeholder': 'Cuéntanos un poco sobre ti, tus intereses académicos, etc.'
+        }),
+        label='Biografía',
+        help_text='Información adicional sobre ti (opcional)'
+    )
+
+    class Meta:
+        model = ClientProfile
+        fields = ['phone_number', 'bio']
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if self.user:
+            self.fields['email'].initial = self.user.email
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        # Verificar que el email no esté en uso por otro usuario
+        if User.objects.filter(email=email).exclude(id=self.user.id).exists():
+            raise ValidationError('Este correo electrónico ya está registrado.')
+        return email
+
+    def save(self, commit=True):
+        profile = super().save(commit=False)
+        if self.user:
+            # Actualizar email del usuario
+            self.user.email = self.cleaned_data['email']
+            if commit:
+                self.user.save()
+        if commit:
+            profile.save()
+        return profile
+
+
+class TutorProfileEditForm(forms.ModelForm):
+    """
+    Formulario para editar el perfil del tutor.
+    Incluye campos del User (email) y TutorProfile (phone_number, bio, experience, hourly_rate).
+    """
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'correo@ejemplo.com'
+        }),
+        label='Correo Electrónico',
+        help_text='Tu correo para notificaciones y comunicación'
+    )
+    phone_number = forms.CharField(
+        required=True,
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '+593 99 999 9999'
+        }),
+        label='Número de Teléfono',
+        help_text='Número de contacto para estudiantes'
+    )
+    bio = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 4,
+            'placeholder': 'Cuéntanos sobre tu experiencia, metodología de enseñanza, etc.'
+        }),
+        label='Biografía',
+        help_text='Información sobre ti que verán los estudiantes'
+    )
+    experience = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Ej: 5 años enseñando matemáticas a nivel universitario...'
+        }),
+        label='Experiencia Profesional',
+        help_text='Tu experiencia como tutor o docente (opcional)'
+    )
+    hourly_rate = forms.DecimalField(
+        required=False,
+        max_digits=6,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': '15.00',
+            'step': '0.50'
+        }),
+        label='Tarifa por Hora (USD)',
+        help_text='Precio por hora de tutoría (opcional)'
+    )
+
+    class Meta:
+        model = TutorProfile
+        fields = ['phone_number', 'bio', 'experience', 'hourly_rate']
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if self.user:
+            self.fields['email'].initial = self.user.email
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        # Verificar que el email no esté en uso por otro usuario
+        if User.objects.filter(email=email).exclude(id=self.user.id).exists():
+            raise ValidationError('Este correo electrónico ya está registrado.')
+        return email
+
+    def clean_hourly_rate(self):
+        rate = self.cleaned_data.get('hourly_rate')
+        if rate and rate < 0:
+            raise ValidationError('La tarifa no puede ser negativa.')
+        if rate and rate > 9999:
+            raise ValidationError('La tarifa es demasiado alta.')
+        return rate
+
+    def save(self, commit=True):
+        profile = super().save(commit=False)
+        if self.user:
+            # Actualizar email del usuario
+            self.user.email = self.cleaned_data['email']
+            if commit:
+                self.user.save()
+        if commit:
+            profile.save()
+        return profile

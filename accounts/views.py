@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
-from .forms import TutorRegistrationForm, ClientRegistrationForm, LoginForm, TutorSubjectsForm
+from .forms import TutorRegistrationForm, ClientRegistrationForm, LoginForm, TutorSubjectsForm, ClientProfileEditForm, TutorProfileEditForm
 
 
 def register_view(request):
@@ -334,6 +334,74 @@ def client_profile(request):
         'profile': profile,
     }
     return render(request, 'accounts/client_profile.html', context)
+
+
+@login_required
+def edit_client_profile(request):
+    """
+    Vista para editar el perfil del estudiante.
+    Maneja actualización de User (email) y ClientProfile (phone_number, bio).
+    """
+    # CRITICAL: Ensure only clients can access this view
+    if request.user.user_type != 'client':
+        messages.error(request, 'Acceso denegado. Esta sección es solo para estudiantes.')
+        return redirect('tutor_profile')
+
+    try:
+        profile = request.user.client_profile
+    except:
+        messages.error(request, 'Error: No se encontró el perfil de estudiante.')
+        return redirect('client_dashboard')
+
+    if request.method == 'POST':
+        form = ClientProfileEditForm(request.POST, instance=profile, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '¡Perfil actualizado exitosamente!')
+            return redirect('user_profile')
+    else:
+        form = ClientProfileEditForm(instance=profile, user=request.user)
+
+    context = {
+        'form': form,
+        'profile': profile,
+        'user': request.user,
+    }
+    return render(request, 'accounts/edit_client_profile.html', context)
+
+
+@login_required
+def edit_tutor_profile(request):
+    """
+    Vista para editar el perfil del tutor.
+    Maneja actualización de User (email) y TutorProfile (phone_number, bio, experience, hourly_rate).
+    """
+    # CRITICAL: Ensure only tutors can access this view
+    if request.user.user_type != 'tutor':
+        messages.error(request, 'Acceso denegado. Esta sección es solo para tutores.')
+        return redirect('client_profile')
+
+    try:
+        profile = request.user.tutor_profile
+    except:
+        messages.error(request, 'Error: No se encontró el perfil de tutor.')
+        return redirect('tutor_dashboard')
+
+    if request.method == 'POST':
+        form = TutorProfileEditForm(request.POST, instance=profile, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '¡Perfil actualizado exitosamente!')
+            return redirect('user_profile')
+    else:
+        form = TutorProfileEditForm(instance=profile, user=request.user)
+
+    context = {
+        'form': form,
+        'profile': profile,
+        'user': request.user,
+    }
+    return render(request, 'accounts/edit_tutor_profile.html', context)
 
 
 def logout_view(request):
