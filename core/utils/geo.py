@@ -276,6 +276,17 @@ def check_geo_restriction(request):
 
     allowed, ciudad_obj = is_service_available_in_city(city, region)
 
+    # 🔒 BLINDAJE DEFINITIVO: Si el fallback por provincia fue exitoso,
+    # sobrescribir city con la ciudad confirmada de la BD para evitar
+    # inconsistencias entre API (ej: "Guayaquil") y realidad (ej: "Milagro")
+    if ciudad_obj and city.lower() != ciudad_obj.ciudad.lower():
+        logger.warning(
+            f"🔄 GEO CORRECTION: API returned city='{city}', but provincia fallback "
+            f"matched '{ciudad_obj.ciudad}'. Overriding city to '{ciudad_obj.ciudad}' "
+            f"for consistent routing."
+        )
+        city = ciudad_obj.ciudad  # ✨ SOBRESCRIBIR con la ciudad real de la BD
+
     # Convertir ciudad_obj a dict serializable para guardar en sesión
     ciudad_data = None
     if ciudad_obj:
@@ -288,7 +299,7 @@ def check_geo_restriction(request):
 
     geo_result = {
         'allowed': allowed,
-        'city': city,
+        'city': city,  # ✅ Ahora siempre será la ciudad correcta (Milagro)
         'region': region,
         'country': location_data.get('country', 'Unknown'),
         'ciudad_data': ciudad_data,
