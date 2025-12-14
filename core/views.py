@@ -57,7 +57,7 @@ class GeoRootRouterView(View):
             logger.info(f"Redirecting to student_landing (Milagro detected: city={city})")
             return redirect('student_landing')
 
-        # 2. Si NO es Milagro pero SÍ es Ecuador → Tutores
+        # 2. Si NO es Milagro pero SÍ es Ecuador → Tutores (blindaje estricto)
         elif country == 'Ecuador':
             logger.info(f"Redirecting to tutor_landing (Ecuador but not Milagro: city={city}, country={country})")
             return redirect('tutor_landing')
@@ -74,7 +74,30 @@ def landing_page(request):
 
 
 def student_landing_view(request):
-    """Landing page for students"""
+    """Landing page for students - Only accessible from Milagro"""
+    # Verificar ubicación geográfica para usuarios anónimos
+    if not request.user.is_authenticated:
+        geo_data = getattr(request, 'geo_data', None)
+        
+        if not geo_data:
+            # Intentar obtener de sesión como fallback
+            geo_data = {
+                'city': request.session.get('geo_city', 'Unknown'),
+                'region': request.session.get('geo_region', 'Unknown'),
+                'country': request.session.get('geo_country', 'Unknown'),
+            }
+        
+        city = geo_data.get('city', 'Unknown')
+        country = geo_data.get('country', 'Unknown')
+        
+        # Si NO es de Milagro, mostrar página de bloqueo (no redirigir)
+        if not (city and city.strip().lower() == 'milagro'):
+            logger.info(f"User trying to access student_landing from outside Milagro: city={city}, country={country}")
+            return render(request, 'core/city_locked.html', {
+                'detected_city': city,
+                'detected_country': country
+            })
+    
     return render(request, 'landing/student_landing.html', {'user_type': 'Estudiante'})
 
 
