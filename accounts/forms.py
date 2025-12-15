@@ -9,11 +9,12 @@ class TutorRegistrationForm(UserCreationForm):
     subjects = forms.ModelMultipleChoiceField(
         queryset=Subject.objects.all().order_by('name'),
         required=False,
-        widget=forms.CheckboxSelectMultiple(attrs={
-            'class': 'form-check-input'
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-control',
+            'size': '7'
         }),
         label='Materias que enseñas',
-        help_text='Selecciona todas las materias que puedes enseñar'
+        help_text='Selecciona todas las materias que puedes enseñar (mantén Ctrl/Cmd para selección múltiple)'
     )
     bio = forms.CharField(
         required=False,
@@ -273,11 +274,12 @@ class TutorSubjectsForm(forms.ModelForm):
     subjects = forms.ModelMultipleChoiceField(
         queryset=Subject.objects.all().order_by('name'),
         required=False,
-        widget=forms.CheckboxSelectMultiple(attrs={
-            'class': 'form-check-input'
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-control',
+            'size': '7'
         }),
         label='Materias que enseño',
-        help_text='Selecciona todas las materias que puedes enseñar'
+        help_text='Selecciona todas las materias que puedes enseñar (mantén Ctrl/Cmd para selección múltiple)'
     )
 
     class Meta:

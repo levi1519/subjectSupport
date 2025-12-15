@@ -65,9 +65,9 @@ class UserAdmin(BaseUserAdmin):
 @admin.register(TutorProfile)
 class TutorProfileAdmin(admin.ModelAdmin):
     """Admin configuration for TutorProfile model"""
-    list_display = ['user', 'get_subjects_display', 'hourly_rate', 'city', 'created_at']
-    search_fields = ['user__name', 'user__email', 'city']
-    list_filter = ['created_at', 'city', 'country']
+    list_display = ['user', 'get_subjects_display', 'hourly_rate', 'phone_number', 'created_at']
+    search_fields = ['user__name', 'user__email', 'phone_number']
+    list_filter = ['created_at']
     readonly_fields = ['created_at']
     filter_horizontal = ['subjects']
 

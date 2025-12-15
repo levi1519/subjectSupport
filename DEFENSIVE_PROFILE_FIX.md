@@ -1,12 +1,27 @@
-# 🛡️ CORRECCIÓN DEFENSIVA DE PERFILES - RESTAURAR FUNCIONALIDAD
+# ⚠️ DOCUMENTO OBSOLETO - NO USAR
 
-## 📋 RESUMEN EJECUTIVO
+## � ESTE DOCUMENTO HA SIDO REEMPLAZADO
 
-**Fecha:** 2024-01-XX  
-**Estado:** ✅ COMPLETADO  
-**Archivos Modificados:** 1 (accounts/views.py)  
-**Problema Crítico:** Usuarios sin perfil causaban errores "Profile not found" y crashes  
-**Solución:** Implementación de patrón `get_or_create` defensivo en todas las vistas
+**Fecha de Obsolescencia:** 14 de Diciembre, 2025  
+**Razón:** Los campos `city` y `country` fueron eliminados del modelo
+
+**Ver en su lugar:**
+- ✅ **CRITICAL_DB_FIX.md** - Documentación actualizada del fix definitivo
+
+---
+
+## ❌ Por qué este documento está obsoleto
+
+Este documento describía una implementación con valores por defecto:
+```python
+# ❌ ESTO YA NO FUNCIONA
+profile, created = TutorProfile.objects.get_or_create(
+    user=request.user,
+    defaults={
+        'city': 'Quito',      # ❌ Campo eliminado
+        'country': 'Ecuador'  # ❌ Campo eliminado
+    }
+)
 
 ---
 
