@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
 from .forms import TutorRegistrationForm, ClientRegistrationForm, LoginForm, TutorSubjectsForm, ClientProfileEditForm, TutorProfileEditForm
+from .models import TutorProfile, ClientProfile
 
 
 def register_view(request):
@@ -154,10 +155,17 @@ def tutor_dashboard(request):
         messages.error(request, 'Acceso denegado. Esta sección es solo para tutores.')
         return redirect('client_dashboard')
 
-    try:
-        profile = request.user.tutor_profile
-    except:
-        profile = None
+    # Lógica defensiva: Crear perfil si no existe
+    profile, created = TutorProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'city': 'Quito',
+            'country': 'Ecuador'
+        }
+    )
+    
+    if created:
+        messages.info(request, 'Bienvenido! Tu perfil ha sido creado. Por favor completa tu información.')
 
     # Get pending session requests (waiting for tutor to confirm/reject)
     pending_sessions = ClassSession.objects.filter(
@@ -202,10 +210,17 @@ def client_dashboard(request):
         messages.error(request, 'Acceso denegado. Esta sección es solo para estudiantes.')
         return redirect('tutor_dashboard')
 
-    try:
-        profile = request.user.client_profile
-    except:
-        profile = None
+    # Lógica defensiva: Crear perfil si no existe
+    profile, created = ClientProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'city': 'Milagro',
+            'country': 'Ecuador'
+        }
+    )
+    
+    if created:
+        messages.info(request, 'Bienvenido! Tu perfil ha sido creado. Por favor completa tu información.')
 
     # Get upcoming sessions (confirmed)
     upcoming_sessions = ClassSession.objects.filter(
@@ -247,11 +262,17 @@ def manage_tutor_subjects(request):
         messages.error(request, 'Acceso denegado. Esta sección es solo para tutores.')
         return redirect('client_dashboard')
 
-    try:
-        profile = request.user.tutor_profile
-    except:
-        messages.error(request, 'Error: No se encontró el perfil de tutor.')
-        return redirect('tutor_dashboard')
+    # Lógica defensiva: Crear perfil si no existe
+    profile, created = TutorProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'city': 'Quito',
+            'country': 'Ecuador'
+        }
+    )
+    
+    if created:
+        messages.info(request, 'Tu perfil ha sido creado. Por favor completa tu información.')
 
     if request.method == 'POST':
         form = TutorSubjectsForm(request.POST, instance=profile)
@@ -294,17 +315,24 @@ def user_profile(request):
 def tutor_profile(request):
     """
     Vista de perfil para tutores con gestión de materias integrada.
+    Crea automáticamente el perfil si no existe (lógica defensiva).
     """
     # CRITICAL: Ensure only tutors can access this view
     if request.user.user_type != 'tutor':
         messages.error(request, 'Acceso denegado. Esta sección es solo para tutores.')
         return redirect('client_profile')
 
-    try:
-        profile = request.user.tutor_profile
-    except:
-        messages.error(request, 'Error: No se encontró el perfil de tutor.')
-        return redirect('tutor_dashboard')
+    # Lógica defensiva: Crear perfil si no existe
+    profile, created = TutorProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'city': 'Quito',
+            'country': 'Ecuador'
+        }
+    )
+    
+    if created:
+        messages.info(request, 'Tu perfil ha sido creado. Por favor completa tu información.')
 
     context = {
         'user': request.user,
@@ -317,17 +345,24 @@ def tutor_profile(request):
 def client_profile(request):
     """
     Vista de perfil para clientes/estudiantes.
+    Crea automáticamente el perfil si no existe (lógica defensiva).
     """
     # CRITICAL: Ensure only clients can access this view
     if request.user.user_type != 'client':
         messages.error(request, 'Acceso denegado. Esta sección es solo para estudiantes.')
         return redirect('tutor_profile')
 
-    try:
-        profile = request.user.client_profile
-    except:
-        messages.error(request, 'Error: No se encontró el perfil de estudiante.')
-        return redirect('client_dashboard')
+    # Lógica defensiva: Crear perfil si no existe
+    profile, created = ClientProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'city': 'Milagro',
+            'country': 'Ecuador'
+        }
+    )
+    
+    if created:
+        messages.info(request, 'Tu perfil ha sido creado. Por favor completa tu información.')
 
     context = {
         'user': request.user,
@@ -347,11 +382,17 @@ def edit_client_profile(request):
         messages.error(request, 'Acceso denegado. Esta sección es solo para estudiantes.')
         return redirect('tutor_profile')
 
-    try:
-        profile = request.user.client_profile
-    except:
-        messages.error(request, 'Error: No se encontró el perfil de estudiante.')
-        return redirect('client_dashboard')
+    # Lógica defensiva: Crear perfil si no existe
+    profile, created = ClientProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'city': 'Milagro',
+            'country': 'Ecuador'
+        }
+    )
+    
+    if created:
+        messages.info(request, 'Tu perfil ha sido creado. Por favor completa tu información.')
 
     if request.method == 'POST':
         form = ClientProfileEditForm(request.POST, instance=profile, user=request.user)
@@ -381,11 +422,17 @@ def edit_tutor_profile(request):
         messages.error(request, 'Acceso denegado. Esta sección es solo para tutores.')
         return redirect('client_profile')
 
-    try:
-        profile = request.user.tutor_profile
-    except:
-        messages.error(request, 'Error: No se encontró el perfil de tutor.')
-        return redirect('tutor_dashboard')
+    # Lógica defensiva: Crear perfil si no existe
+    profile, created = TutorProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'city': 'Quito',
+            'country': 'Ecuador'
+        }
+    )
+    
+    if created:
+        messages.info(request, 'Tu perfil ha sido creado. Por favor completa tu información.')
 
     if request.method == 'POST':
         form = TutorProfileEditForm(request.POST, instance=profile, user=request.user)
