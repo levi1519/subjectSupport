@@ -157,11 +157,7 @@ def tutor_dashboard(request):
 
     # Lógica defensiva: Crear perfil si no existe
     profile, created = TutorProfile.objects.get_or_create(
-        user=request.user,
-        defaults={
-            'city': 'Quito',
-            'country': 'Ecuador'
-        }
+        user=request.user
     )
     
     if created:
@@ -212,11 +208,7 @@ def client_dashboard(request):
 
     # Lógica defensiva: Crear perfil si no existe
     profile, created = ClientProfile.objects.get_or_create(
-        user=request.user,
-        defaults={
-            'city': 'Milagro',
-            'country': 'Ecuador'
-        }
+        user=request.user
     )
     
     if created:
@@ -264,11 +256,7 @@ def manage_tutor_subjects(request):
 
     # Lógica defensiva: Crear perfil si no existe
     profile, created = TutorProfile.objects.get_or_create(
-        user=request.user,
-        defaults={
-            'city': 'Quito',
-            'country': 'Ecuador'
-        }
+        user=request.user
     )
     
     if created:
@@ -324,11 +312,7 @@ def tutor_profile(request):
 
     # Lógica defensiva: Crear perfil si no existe
     profile, created = TutorProfile.objects.get_or_create(
-        user=request.user,
-        defaults={
-            'city': 'Quito',
-            'country': 'Ecuador'
-        }
+        user=request.user
     )
     
     if created:
@@ -354,11 +338,7 @@ def client_profile(request):
 
     # Lógica defensiva: Crear perfil si no existe
     profile, created = ClientProfile.objects.get_or_create(
-        user=request.user,
-        defaults={
-            'city': 'Milagro',
-            'country': 'Ecuador'
-        }
+        user=request.user
     )
     
     if created:
@@ -384,11 +364,7 @@ def edit_client_profile(request):
 
     # Lógica defensiva: Crear perfil si no existe
     profile, created = ClientProfile.objects.get_or_create(
-        user=request.user,
-        defaults={
-            'city': 'Milagro',
-            'country': 'Ecuador'
-        }
+        user=request.user
     )
     
     if created:
@@ -424,11 +400,7 @@ def edit_tutor_profile(request):
 
     # Lógica defensiva: Crear perfil si no existe
     profile, created = TutorProfile.objects.get_or_create(
-        user=request.user,
-        defaults={
-            'city': 'Quito',
-            'country': 'Ecuador'
-        }
+        user=request.user
     )
     
     if created:

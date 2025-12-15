@@ -106,16 +106,6 @@ class TutorProfile(models.Model):
         null=True,
         verbose_name='Experiencia'
     )
-    city = models.CharField(
-        max_length=100,
-        default='Quito',
-        verbose_name='Ciudad'
-    )
-    country = models.CharField(
-        max_length=100,
-        default='Ecuador',
-        verbose_name='País'
-    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -160,16 +150,6 @@ class ClientProfile(models.Model):
         blank=True,
         null=True,
         verbose_name='Nombre del padre/tutor legal'
-    )
-    city = models.CharField(
-        max_length=100,
-        default='Quito',
-        verbose_name='Ciudad'
-    )
-    country = models.CharField(
-        max_length=100,
-        default='Ecuador',
-        verbose_name='País'
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

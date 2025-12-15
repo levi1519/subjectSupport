@@ -15,26 +15,6 @@ class TutorRegistrationForm(UserCreationForm):
         label='Materias que enseñas',
         help_text='Selecciona todas las materias que puedes enseñar'
     )
-    city = forms.CharField(
-        required=False,
-        max_length=100,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Ciudad'
-        }),
-        label='Ciudad',
-        initial='Quito'
-    )
-    country = forms.CharField(
-        required=False,
-        max_length=100,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'value': 'Ecuador'
-        }),
-        label='País',
-        initial='Ecuador'
-    )
     bio = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={
@@ -102,14 +82,6 @@ class TutorRegistrationForm(UserCreationForm):
             'required': 'Por favor ingresa las materias que enseñas.',
             'max_length': 'La descripción de materias es demasiado larga.',
         }
-        self.fields['city'].error_messages = {
-            'required': 'Por favor ingresa tu ciudad.',
-            'max_length': 'El nombre de la ciudad es demasiado largo.',
-        }
-        self.fields['country'].error_messages = {
-            'required': 'Por favor ingresa tu país.',
-            'max_length': 'El nombre del país es demasiado largo.',
-        }
 
     def clean_email(self):
         """Validate email is unique"""
@@ -142,8 +114,6 @@ class TutorRegistrationForm(UserCreationForm):
             # Create tutor profile
             profile = TutorProfile.objects.create(
                 user=user,
-                city=self.cleaned_data.get('city', 'Quito'),
-                country=self.cleaned_data.get('country', 'Ecuador'),
                 bio=self.cleaned_data.get('bio', ''),
                 experience=self.cleaned_data.get('experience', '')
             )
@@ -156,26 +126,6 @@ class TutorRegistrationForm(UserCreationForm):
 
 class ClientRegistrationForm(UserCreationForm):
     """Form for client/student registration"""
-    city = forms.CharField(
-        required=False,
-        max_length=100,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Ciudad'
-        }),
-        label='Ciudad',
-        initial='Quito'
-    )
-    country = forms.CharField(
-        required=False,
-        max_length=100,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'value': 'Ecuador'
-        }),
-        label='País',
-        initial='Ecuador'
-    )
     is_minor = forms.BooleanField(
         required=False,
         widget=forms.CheckboxInput(attrs={
@@ -237,14 +187,6 @@ class ClientRegistrationForm(UserCreationForm):
             'invalid': 'Por favor ingresa un correo electrónico válido.',
             'unique': 'Este correo electrónico ya está registrado.',
         }
-        self.fields['city'].error_messages = {
-            'required': 'Por favor ingresa tu ciudad.',
-            'max_length': 'El nombre de la ciudad es demasiado largo.',
-        }
-        self.fields['country'].error_messages = {
-            'required': 'Por favor ingresa tu país.',
-            'max_length': 'El nombre del país es demasiado largo.',
-        }
         self.fields['parent_name'].error_messages = {
             'max_length': 'El nombre es demasiado largo.',
         }
@@ -286,8 +228,6 @@ class ClientRegistrationForm(UserCreationForm):
             # Create client profile
             ClientProfile.objects.create(
                 user=user,
-                city=self.cleaned_data.get('city', 'Quito'),
-                country=self.cleaned_data.get('country', 'Ecuador'),
                 is_minor=self.cleaned_data.get('is_minor', False),
                 parent_name=self.cleaned_data.get('parent_name', '')
             )
