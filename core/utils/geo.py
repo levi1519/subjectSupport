@@ -295,6 +295,30 @@ def check_geo_restriction(request):
     return geo_result
 
 
+def get_available_service_areas():
+    """
+    Retorna lista de áreas de servicio activas.
+
+    NUEVA FUNCIÓN GEODJANGO:
+    Reemplaza get_available_cities() del sistema anterior.
+    Retorna ServiceArea objects en lugar de CiudadHabilitada.
+
+    Returns:
+        QuerySet de ServiceArea activos, o lista vacía si GIS no está disponible
+    """
+    if not GIS_AVAILABLE:
+        logger.warning("GIS not available - cannot retrieve service areas")
+        return []
+
+    try:
+        from core.models import ServiceArea
+        service_areas = ServiceArea.objects.filter(activo=True).order_by('city_name')
+        return service_areas
+    except Exception as e:
+        logger.error(f"Error getting service areas: {str(e)}")
+        return []
+
+
 def set_test_ip(request, ip_address):
     """
     Útil para testing: permite simular una IP específica.

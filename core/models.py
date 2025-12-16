@@ -85,60 +85,6 @@ class ServiceArea(gis_models.Model):
         return self.area.contains(point)
 
 
-class CiudadHabilitada(models.Model):
-    """
-    DEPRECADO: Modelo legado basado en comparación de strings de ciudades.
-
-    Este modelo ha sido reemplazado por ServiceArea que usa geometría PostGIS.
-    Se mantiene temporalmente para compatibilidad con datos existentes,
-    pero NO se debe usar para nueva lógica de restricción geográfica.
-
-    Usar ServiceArea en su lugar para consultas espaciales precisas.
-    """
-    ciudad = models.CharField(
-        max_length=100,
-        verbose_name='Ciudad'
-    )
-    provincia = models.CharField(
-        max_length=100,
-        verbose_name='Provincia/Estado'
-    )
-    pais = models.CharField(
-        max_length=100,
-        default='Ecuador',
-        verbose_name='País'
-    )
-    activo = models.BooleanField(
-        default=True,
-        verbose_name='Servicio Activo',
-        help_text='Si está activo, los usuarios de esta ciudad pueden acceder al servicio'
-    )
-    fecha_habilitacion = models.DateField(
-        auto_now_add=True,
-        verbose_name='Fecha de Habilitación'
-    )
-    orden_prioridad = models.IntegerField(
-        default=100,
-        verbose_name='Prioridad',
-        help_text='Menor número = mayor prioridad en el listado'
-    )
-    notas = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name='Notas Administrativas'
-    )
-
-    class Meta:
-        verbose_name = 'Ciudad Habilitada'
-        verbose_name_plural = 'Ciudades Habilitadas'
-        ordering = ['orden_prioridad', 'ciudad']
-        unique_together = [['ciudad', 'provincia', 'pais']]
-
-    def __str__(self):
-        status = "✓ Activo" if self.activo else "✗ Inactivo"
-        return f"{self.ciudad}, {self.provincia} ({status})"
-
-
 class NotificacionExpansion(models.Model):
     """
     Modelo para almacenar solicitudes de notificación cuando el servicio

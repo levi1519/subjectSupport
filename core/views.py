@@ -3,11 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
 from django.views.generic import View
-from .models import ClassSession, CiudadHabilitada, NotificacionExpansion
+from .models import ClassSession, NotificacionExpansion
 from .forms import SessionRequestForm, SessionConfirmationForm, NotificacionExpansionForm
 from accounts.models import User, TutorProfile
 from .services.meeting_service import update_session_with_meeting
-from .utils.geo import get_available_cities, get_client_ip
+from .utils.geo import get_available_service_areas, get_client_ip
 import logging
 
 logger = logging.getLogger(__name__)
@@ -322,8 +322,8 @@ def servicio_no_disponible(request):
     geo_region = request.session.get('geo_region', 'Desconocida')
     geo_country = request.session.get('geo_country', 'Ecuador')
 
-    # Obtener ciudades disponibles
-    ciudades_disponibles = get_available_cities()
+    # Obtener áreas de servicio disponibles (NUEVA LÓGICA GEODJANGO)
+    service_areas = get_available_service_areas()
 
     # Crear formulario pre-llenado con la ciudad detectada
     initial_data = {
@@ -337,7 +337,7 @@ def servicio_no_disponible(request):
         'geo_city': geo_city,
         'geo_region': geo_region,
         'geo_country': geo_country,
-        'ciudades_disponibles': ciudades_disponibles,
+        'service_areas': service_areas,  # NUEVA: ServiceArea objects
     }
 
     return render(request, 'core/servicio_no_disponible.html', context)

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.gis.admin import GISModelAdmin
-from .models import ServiceArea, TutorLead, ClassSession, CiudadHabilitada, NotificacionExpansion
+from .models import ServiceArea, TutorLead, ClassSession, NotificacionExpansion
 
 
 @admin.register(ServiceArea)
@@ -90,48 +90,6 @@ class ClassSessionAdmin(admin.ModelAdmin):
         """Optimize queryset with select_related"""
         qs = super().get_queryset(request)
         return qs.select_related('tutor', 'client')
-
-
-@admin.register(CiudadHabilitada)
-class CiudadHabilitadaAdmin(admin.ModelAdmin):
-    """
-    Admin configuration for CiudadHabilitada model.
-    Permite gestionar ciudades donde el servicio está disponible.
-    """
-    list_display = ['ciudad', 'provincia', 'pais', 'activo', 'orden_prioridad', 'fecha_habilitacion']
-    list_filter = ['activo', 'pais', 'provincia', 'fecha_habilitacion']
-    search_fields = ['ciudad', 'provincia', 'pais']
-    readonly_fields = ['fecha_habilitacion']
-    ordering = ['orden_prioridad', 'ciudad']
-
-    fieldsets = (
-        ('Ubicación', {
-            'fields': ('ciudad', 'provincia', 'pais')
-        }),
-        ('Configuración', {
-            'fields': ('activo', 'orden_prioridad')
-        }),
-        ('Información Adicional', {
-            'fields': ('notas', 'fecha_habilitacion'),
-            'classes': ('collapse',)
-        }),
-    )
-
-    list_editable = ['activo', 'orden_prioridad']
-
-    actions = ['activar_ciudades', 'desactivar_ciudades']
-
-    def activar_ciudades(self, request, queryset):
-        """Acción para activar ciudades seleccionadas"""
-        updated = queryset.update(activo=True)
-        self.message_user(request, f'{updated} ciudad(es) activada(s)')
-    activar_ciudades.short_description = 'Activar ciudades seleccionadas'
-
-    def desactivar_ciudades(self, request, queryset):
-        """Acción para desactivar ciudades seleccionadas"""
-        updated = queryset.update(activo=False)
-        self.message_user(request, f'{updated} ciudad(es) desactivada(s)')
-    desactivar_ciudades.short_description = 'Desactivar ciudades seleccionadas'
 
 
 @admin.register(NotificacionExpansion)
