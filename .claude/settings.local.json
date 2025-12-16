@@ -21,7 +21,10 @@
       "Bash(env/Scripts/pip.exe install:*)",
       "Bash(python manage.py runserver:*)",
       "Bash(env/Scripts/activate)",
-      "Bash(python -m py_compile:*)"
+      "Bash(python -m py_compile:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
