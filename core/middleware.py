@@ -21,20 +21,22 @@ class GeoRestrictionMiddleware:
     """
     Middleware que restringe el acceso al sitio basado en geolocalización espacial.
 
-    NUEVA POLÍTICA DE SEGURIDAD GEOGRÁFICA (GeoDjango):
+    POLÍTICA DE SEGURIDAD GEOGRÁFICA (GeoDjango):
 
-    ENFORCEMENT GLOBAL:
-    - TODAS las rutas (excepto whitelist) requieren verificación espacial
-    - Si usuario NO está dentro de ServiceArea activo → redirección forzada a /servicio-no-disponible/
+    ENFORCEMENT POR RUTA:
+    1. /estudiantes/* → SOLO polígono de Milagro (verificación espacial PostGIS estricta)
+    2. /tutores/* → TODO Ecuador (verificación por país, sin polígono)
+    3. / (raíz) → TODO Ecuador (GeoRootRouterView redirige internamente según ubicación)
+    4. Otras rutas → TODO Ecuador (acceso general para ecuatorianos)
 
-    EXCEPCIONES:
-    1. /tutores/* → Solo requiere estar en Ecuador (sin verificación de polígono)
-    2. Usuarios autenticados → Bypass completo (ya verificados al registrarse)
-    3. Whitelist → /admin/, /servicio-no-disponible/, /notificarme/, /static/, /media/, /accounts/logout/
+    BYPASSES:
+    - Usuarios autenticados → Bypass completo (ya verificados al registrarse)
+    - Whitelist → /admin/, /servicio-no-disponible/, /notificarme/, /static/, /media/, /accounts/logout/
 
-    ELIMINADO:
-    - Lógica anterior que solo aplicaba verificación a /estudiantes/*
-    - Ahora se aplica a TODAS las rutas por defecto
+    FLUJO DE USUARIO:
+    - Usuario en Milagro → Acceso a /estudiantes/* y /tutores/*
+    - Usuario en Guayaquil (u otra ciudad de Ecuador) → Acceso a /tutores/* únicamente
+    - Usuario fuera de Ecuador → Bloqueado con redirección a /servicio-no-disponible/
 
     La verificación usa coordenadas GPS y consultas PostGIS para precisión máxima.
     """
@@ -71,15 +73,28 @@ class GeoRestrictionMiddleware:
         service_area = geo_result.get('service_area')  # Dict con info del ServiceArea si matched
         is_in_service_area = geo_result.get('allowed')  # True = dentro de polígono activo
 
-        # D) NUEVA POLÍTICA DE ENFORCEMENT GLOBAL:
-        # Si el usuario NO está en el área de servicio, redirigir SIEMPRE
-        # (excepto para rutas de tutores que solo requieren Ecuador)
+        # D) NUEVA POLÍTICA DE ENFORCEMENT POR RUTA:
+        # - /estudiantes/* → SOLO polígono de Milagro (estricto)
+        # - /tutores/* → TODO Ecuador
+        # - / (raíz) → TODO Ecuador (GeoRootRouterView maneja redirección interna)
+        # - Otras rutas → TODO Ecuador
 
         access_granted = False
 
-        # POLÍTICA TUTORES: TODO ECUADOR (excepción a la regla global)
-        if path.startswith('/tutores/'):
-            # Los tutores solo necesitan estar en Ecuador
+        # POLÍTICA ESTUDIANTES: SOLO MILAGRO (verificación espacial estricta)
+        if path.startswith('/estudiantes/'):
+            # Requiere estar DENTRO del polígono de ServiceArea (Milagro)
+            if is_in_service_area and service_area:
+                access_granted = True
+            logger.info(
+                f"Student route access attempt: path={path}, "
+                f"is_in_service_area={is_in_service_area}, "
+                f"service_area={service_area}, granted={access_granted}"
+            )
+
+        # POLÍTICA TUTORES: TODO ECUADOR
+        elif path.startswith('/tutores/'):
+            # Solo requiere estar en Ecuador (sin verificación de polígono)
             if country == 'Ecuador':
                 access_granted = True
             logger.info(
@@ -87,16 +102,15 @@ class GeoRestrictionMiddleware:
                 f"country={country}, granted={access_granted}"
             )
 
-        # POLÍTICA GLOBAL: TODAS las demás rutas requieren estar en ServiceArea
+        # POLÍTICA RAÍZ Y OTRAS RUTAS: TODO ECUADOR
         else:
-            # Verificación espacial ESTRICTA: debe estar dentro del polígono
-            if is_in_service_area and service_area:
+            # Permitir acceso a usuarios de Ecuador
+            # GeoRootRouterView en views.py maneja redirección interna (Milagro→estudiantes, otros→tutores)
+            if country == 'Ecuador':
                 access_granted = True
-
             logger.info(
-                f"Route access attempt: path={path}, "
-                f"is_in_service_area={is_in_service_area}, "
-                f"service_area={service_area}, granted={access_granted}"
+                f"General route access attempt: path={path}, "
+                f"country={country}, granted={access_granted}"
             )
 
         # E) Redirección FORZADA si el acceso es denegado
