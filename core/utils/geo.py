@@ -144,10 +144,21 @@ def is_point_in_service_area(latitude, longitude):
         return True, None
 
     try:
-        # Crear punto geográfico
-        user_point = Point(longitude, latitude, srid=4326)
+        # Convertir coordenadas de string a float (API retorna strings)
+        try:
+            lon_float = float(longitude)
+            lat_float = float(latitude)
+        except (ValueError, TypeError) as conv_error:
+            logger.error(
+                f"Invalid coordinates - cannot convert to float: "
+                f"lat={latitude}, lon={longitude}, error={str(conv_error)}"
+            )
+            return False, None
 
-        logger.info(f"Checking if point ({latitude}, {longitude}) is in service area")
+        # Crear punto geográfico (NOTE: order is LON, LAT)
+        user_point = Point(lon_float, lat_float, srid=4326)
+
+        logger.info(f"Checking if point ({lat_float}, {lon_float}) is in service area")
 
         # Consulta espacial: encontrar ServiceArea activa que contenga el punto
         service_area = ServiceArea.objects.filter(
@@ -157,12 +168,12 @@ def is_point_in_service_area(latitude, longitude):
 
         if service_area:
             logger.info(
-                f"✓ MATCH: Point ({latitude}, {longitude}) is inside {service_area.city_name} service area"
+                f"✓ MATCH: Point ({lat_float}, {lon_float}) is inside {service_area.city_name} service area"
             )
             return True, service_area
         else:
             logger.warning(
-                f"✗ NO MATCH: Point ({latitude}, {longitude}) is NOT inside any active service area"
+                f"✗ NO MATCH: Point ({lat_float}, {lon_float}) is NOT inside any active service area"
             )
             return False, None
 

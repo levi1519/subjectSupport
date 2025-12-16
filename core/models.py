@@ -74,14 +74,22 @@ class ServiceArea(gis_models.Model):
         Verifica si un punto (lat, lon) está dentro del área de servicio.
 
         Args:
-            latitude: Latitud del punto
-            longitude: Longitud del punto
+            latitude: Latitud del punto (float o string)
+            longitude: Longitud del punto (float o string)
 
         Returns:
             bool: True si el punto está dentro del polígono
         """
         from django.contrib.gis.geos import Point
-        point = Point(longitude, latitude, srid=4326)
+
+        # Convertir a float en caso de que sean strings
+        try:
+            lon_float = float(longitude)
+            lat_float = float(latitude)
+        except (ValueError, TypeError):
+            return False
+
+        point = Point(lon_float, lat_float, srid=4326)
         return self.area.contains(point)
 
 

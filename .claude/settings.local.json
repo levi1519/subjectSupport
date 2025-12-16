@@ -20,7 +20,8 @@
       "Bash(export PYTHONPATH=/mnt/d/Downloads/Projects/subjectsSuport:*)",
       "Bash(env/Scripts/pip.exe install:*)",
       "Bash(python manage.py runserver:*)",
-      "Bash(env/Scripts/activate)"
+      "Bash(env/Scripts/activate)",
+      "Bash(python -m py_compile:*)"
     ],
     "deny": [],
     "ask": []
