@@ -82,6 +82,20 @@ class CustomLoginView(LoginView):
     def form_valid(self, form):
         messages.success(self.request, f'¡Bienvenido de nuevo, {form.get_user().name}!')
         return super().form_valid(form)
+    
+    def get_success_url(self):
+        """Redirect based on user role - Admin/Staff go to /admin/"""
+        user = self.request.user
+        
+        # P1.1 FIX: Superusers and staff go to admin panel
+        if user.is_superuser or user.is_staff:
+            return '/admin/'
+        
+        # Regular users go to their role-specific dashboard
+        if user.user_type == 'tutor':
+            return reverse('tutor_dashboard')
+        else:
+            return reverse('client_dashboard')
 
 
 class StudentLoginView(LoginView):
@@ -99,6 +113,14 @@ class StudentLoginView(LoginView):
         return super().form_valid(form)
 
     def get_success_url(self):
+        """Redirect based on user role - Admin/Staff go to /admin/"""
+        user = self.request.user
+        
+        # P1.1 FIX: Superusers and staff go to admin panel
+        if user.is_superuser or user.is_staff:
+            return '/admin/'
+        
+        # Regular client users go to their dashboard
         return reverse('client_dashboard')
 
 
@@ -117,12 +139,24 @@ class TutorLoginView(LoginView):
         return super().form_valid(form)
 
     def get_success_url(self):
+        """Redirect based on user role - Admin/Staff go to /admin/"""
+        user = self.request.user
+        
+        # P1.1 FIX: Superusers and staff go to admin panel
+        if user.is_superuser or user.is_staff:
+            return '/admin/'
+        
+        # Regular tutor users go to their dashboard
         return reverse('tutor_dashboard')
 
 
 @login_required
 def dashboard(request):
     """Dashboard view - redirects to appropriate dashboard based on user type"""
+    # P1.1 & P1.2 FIX: Superusers/staff go to admin, regular users to their dashboard
+    if request.user.is_superuser or request.user.is_staff:
+        return redirect('/admin/')
+    
     if request.user.user_type == 'tutor':
         return redirect('tutor_dashboard')
     else:
@@ -150,10 +184,13 @@ def tutor_dashboard(request):
     from core.models import ClassSession
     from datetime import datetime
 
-    # CRITICAL: Ensure only tutors can access this dashboard
-    if request.user.user_type != 'tutor':
-        messages.error(request, 'Acceso denegado. Esta sección es solo para tutores.')
-        return redirect('client_dashboard')
+    # P1.2 FIX: Prevent redirect loop for superusers/staff
+    # Allow admin users to access tutor dashboard for inspection
+    if not (request.user.is_superuser or request.user.is_staff):
+        # CRITICAL: Ensure only tutors can access this dashboard
+        if request.user.user_type != 'tutor':
+            messages.error(request, 'Acceso denegado. Esta sección es solo para tutores.')
+            return redirect('client_dashboard')
 
     # Lógica defensiva: Crear perfil si no existe
     profile, created = TutorProfile.objects.get_or_create(
@@ -201,10 +238,13 @@ def client_dashboard(request):
     from core.models import ClassSession
     from datetime import datetime
 
-    # CRITICAL: Ensure only clients can access this dashboard
-    if request.user.user_type != 'client':
-        messages.error(request, 'Acceso denegado. Esta sección es solo para estudiantes.')
-        return redirect('tutor_dashboard')
+    # P1.2 FIX: Prevent redirect loop for superusers/staff
+    # Allow admin users to access client dashboard for inspection
+    if not (request.user.is_superuser or request.user.is_staff):
+        # CRITICAL: Ensure only clients can access this dashboard
+        if request.user.user_type != 'client':
+            messages.error(request, 'Acceso denegado. Esta sección es solo para estudiantes.')
+            return redirect('tutor_dashboard')
 
     # Lógica defensiva: Crear perfil si no existe
     profile, created = ClientProfile.objects.get_or_create(
