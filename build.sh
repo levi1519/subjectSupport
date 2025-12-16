@@ -5,16 +5,19 @@ pip install -r requirements.txt
 python manage.py collectstatic --no-input
 python manage.py migrate
 
-# Cargar fixture de ciudades habilitadas SOLO si la tabla está vacía
+# Poblar ServiceArea (GeoDjango) SOLO si la tabla está vacía
 python manage.py shell << EOF
-from core.models import CiudadHabilitada
-if not CiudadHabilitada.objects.exists():
-    print('Loading ciudades_iniciales fixture...')
-    from django.core.management import call_command
-    call_command('loaddata', 'core/fixtures/ciudades_iniciales.json')
-    print('Fixture loaded successfully')
-else:
-    print('CiudadHabilitada table is not empty, skipping fixture load')
+try:
+    from core.models import ServiceArea
+    if not ServiceArea.objects.exists():
+        print('Populating ServiceArea with Milagro polygon...')
+        from django.core.management import call_command
+        call_command('populate_service_areas')
+        print('ServiceArea populated successfully')
+    else:
+        print('ServiceArea table is not empty, skipping population')
+except ImportError:
+    print('GIS not available, skipping ServiceArea population')
 EOF
 
 # Crear superusuario automáticamente si no existe
