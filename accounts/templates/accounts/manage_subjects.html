@@ -67,6 +67,14 @@
             padding: 12px 40px;
             font-weight: 600;
         }
+        .subjects-container {
+            max-height: 250px;
+            overflow-y: scroll;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            background: #fafbfc;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -140,6 +148,10 @@
                                         </div>
                                     {% endfor %}
                                 </div>
+
+                                <small class="form-text text-muted d-block mt-2">
+                                    💡 <strong>Consejo:</strong> Usa <kbd>Ctrl + Clic</kbd> o <kbd>Cmd + Clic</kbd> para seleccionar múltiples asignaturas.
+                                </small>
 
                                 {% if form.subjects.help_text %}
                                     <small class="form-text text-muted d-block mt-2">
