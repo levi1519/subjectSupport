@@ -1,11 +1,16 @@
 """
 Utilidades de geolocalización para restricción geográfica del servicio.
 
+NUEVA ARQUITECTURA CON GEODJANGO:
+- Detección de coordenadas (lat/lon) por IP usando ipgeolocation.io
+- Consultas espaciales con PostGIS para verificar si un punto está dentro del área de servicio
+- Elimina comparación de strings frágil, usa geometría precisa
+
 Soporta:
-- Detección de ciudad por IP usando ipgeolocation.io (50,000 req/mes)
 - Caché en sesión para evitar consultas repetidas
 - Bypass para desarrollo/testing
 - Logging de ubicaciones detectadas
+- Fallback graceful cuando GIS no está disponible (desarrollo sin GDAL)
 """
 
 import os
@@ -13,9 +18,17 @@ import requests
 import logging
 from django.conf import settings
 from django.core.cache import cache
-from core.models import CiudadHabilitada
 
 logger = logging.getLogger(__name__)
+
+# Verificar si GIS está disponible
+try:
+    from django.contrib.gis.geos import Point
+    from core.models import ServiceArea
+    GIS_AVAILABLE = True
+except ImportError:
+    GIS_AVAILABLE = False
+    logger.warning("GIS not available - using fallback mode")
 
 
 def get_client_ip(request):
@@ -30,8 +43,7 @@ def get_client_ip(request):
 
     # Para desarrollo local, usar IP pública de prueba
     if ip in ['127.0.0.1', 'localhost', '::1']:
-        # IP de prueba de Milagro, Ecuador (puedes cambiarla)
-        # En producción esto será la IP real del usuario
+        # IP de prueba (puedes cambiarla en sesión con set_test_ip)
         ip = request.session.get('test_ip', ip)
 
     return ip
@@ -61,7 +73,6 @@ def get_location_from_ip(ip_address):
         return None
 
     try:
-        # LOG 1: Confirmar IP que se está usando para geolocalización
         logger.info(f"Geo API called with IP: {ip_address}")
 
         # Timeout de 3 segundos para no bloquear la request
@@ -71,13 +82,10 @@ def get_location_from_ip(ip_address):
             timeout=3
         )
 
-        # LOG 2: Status HTTP de la respuesta
         logger.info(f"API Status for IP {ip_address}: {response.status_code}")
 
         if response.status_code == 200:
             data = response.json()
-
-            # LOG 3: Respuesta cruda de la API para debug
             logger.info(f"Raw API Response for IP {ip_address}: {data}")
 
             # Verificar si hay error en la respuesta
@@ -87,7 +95,7 @@ def get_location_from_ip(ip_address):
 
             location_data = {
                 'city': data.get('city'),
-                'region': data.get('state_prov'),  # ipgeolocation.io usa state_prov
+                'region': data.get('state_prov'),
                 'country': data.get('country_name'),
                 'country_code': data.get('country_code2'),
                 'latitude': data.get('latitude'),
@@ -97,7 +105,11 @@ def get_location_from_ip(ip_address):
             # Guardar en caché por 1 hora
             cache.set(cache_key, location_data, 3600)
 
-            logger.info(f"Geo data obtained for IP {ip_address}: {location_data['city']}, {location_data['region']}")
+            logger.info(
+                f"Geo data obtained for IP {ip_address}: "
+                f"{location_data['city']}, {location_data['region']} "
+                f"({location_data['latitude']}, {location_data['longitude']})"
+            )
             return location_data
         else:
             logger.error(f"IP API returned status {response.status_code} for {ip_address}")
@@ -111,97 +123,63 @@ def get_location_from_ip(ip_address):
         return None
 
 
-def is_service_available_in_city(ciudad, provincia=None):
+def is_point_in_service_area(latitude, longitude):
     """
-    Verifica si el servicio está disponible en una ciudad específica.
+    Verifica si un punto geográfico está dentro de alguna área de servicio activa.
+
+    NUEVA LÓGICA GEODJANGO:
+    Realiza consulta espacial PostGIS para verificar si el punto está contenido
+    en algún polígono de ServiceArea activo.
 
     Args:
-        ciudad: Nombre de la ciudad
-        provincia: Nombre de la provincia (opcional, mejora precisión)
+        latitude: Latitud del punto (float)
+        longitude: Longitud del punto (float)
 
     Returns:
-        tuple: (disponible: bool, ciudad_obj: CiudadHabilitada or None)
+        tuple: (allowed: bool, service_area: ServiceArea or None)
     """
-    if not ciudad:
-        logger.warning("is_service_available_in_city called with empty ciudad")
-        return False, None
-
-    # Normalizar ciudad y provincia (case-insensitive, sin espacios extra)
-    ciudad_normalizada = ciudad.strip()
-    provincia_normalizada = provincia.strip() if provincia else None
-
-    # LOG: Mostrar valores exactos que se van a buscar
-    logger.info(f"Searching for city='{ciudad_normalizada}', provincia='{provincia_normalizada}'")
+    if not GIS_AVAILABLE:
+        logger.warning("GIS not available - cannot perform spatial queries")
+        # Fallback: permitir acceso (o podrías denegar)
+        return True, None
 
     try:
-        # Buscar ciudad habilitada (case-insensitive con __iexact)
-        query = CiudadHabilitada.objects.filter(
-            ciudad__iexact=ciudad_normalizada,
-            activo=True
-        )
+        # Crear punto geográfico
+        user_point = Point(longitude, latitude, srid=4326)
 
-        # LOG: Mostrar todas las ciudades activas en BD para debug
-        all_active_cities = CiudadHabilitada.objects.filter(activo=True).values_list('ciudad', 'provincia', 'pais')
-        logger.info(f"Active cities in DB: {list(all_active_cities)}")
+        logger.info(f"Checking if point ({latitude}, {longitude}) is in service area")
 
-        if provincia_normalizada:
-            # Si tenemos provincia, buscar match exacto (case-insensitive)
-            query = query.filter(provincia__iexact=provincia_normalizada)
-            logger.info(f"Filtering by provincia: '{provincia_normalizada}'")
+        # Consulta espacial: encontrar ServiceArea activa que contenga el punto
+        service_area = ServiceArea.objects.filter(
+            activo=True,
+            area__contains=user_point
+        ).first()
 
-        ciudad_obj = query.first()
-
-        if ciudad_obj:
-            logger.info(f"✓ MATCH FOUND: Service available in {ciudad_obj.ciudad}, {ciudad_obj.provincia}, {ciudad_obj.pais}")
-            return True, ciudad_obj
+        if service_area:
+            logger.info(
+                f"✓ MATCH: Point ({latitude}, {longitude}) is inside {service_area.city_name} service area"
+            )
+            return True, service_area
         else:
-            logger.warning(f"✗ NO MATCH: Service NOT available for city='{ciudad_normalizada}', provincia='{provincia_normalizada}'")
-            # LOG: Intentar búsqueda solo por ciudad (sin provincia) para debug
-            ciudad_only_match = CiudadHabilitada.objects.filter(ciudad__iexact=ciudad_normalizada, activo=True).first()
-            if ciudad_only_match:
-                logger.warning(f"  → City '{ciudad_normalizada}' EXISTS in DB but provincia mismatch: DB has '{ciudad_only_match.provincia}', received '{provincia_normalizada}'")
-            else:
-                logger.warning(f"  → City '{ciudad_normalizada}' does NOT exist in DB at all")
-
-            # FALLBACK: Si no hay match por ciudad+provincia, intentar solo por provincia
-            # Esto soluciona el problema de baja precisión de API de geolocalización
-            # (ej: API retorna "Guayaquil" para IPs de Milagro, ambas en provincia Guayas)
-            if provincia_normalizada:
-                logger.info(f"Trying fallback: searching by provincia only ('{provincia_normalizada}')")
-                provincia_match = CiudadHabilitada.objects.filter(
-                    provincia__iexact=provincia_normalizada,
-                    activo=True
-                ).first()
-
-                if provincia_match:
-                    logger.info(f"✓ PROVINCIA MATCH (FALLBACK): Service available in provincia {provincia_match.provincia} (matched city: {provincia_match.ciudad})")
-                    return True, provincia_match
-                else:
-                    logger.warning(f"  → Provincia '{provincia_normalizada}' also NOT found in DB")
-
+            logger.warning(
+                f"✗ NO MATCH: Point ({latitude}, {longitude}) is NOT inside any active service area"
+            )
             return False, None
 
     except Exception as e:
-        logger.error(f"Error checking service availability: {str(e)}", exc_info=True)
-        return False, None
-
-
-def get_available_cities():
-    """
-    Retorna lista de ciudades donde el servicio está disponible.
-    Útil para mostrar en landing page.
-    """
-    try:
-        cities = CiudadHabilitada.objects.filter(activo=True).order_by('orden_prioridad', 'ciudad')
-        return cities
-    except Exception as e:
-        logger.error(f"Error getting available cities: {str(e)}")
-        return []
+        logger.error(f"Error in spatial query: {str(e)}", exc_info=True)
+        # En caso de error, permitir acceso por defecto (o podrías denegar)
+        return True, None
 
 
 def check_geo_restriction(request):
     """
     Función principal para verificar restricción geográfica.
+
+    NUEVA LÓGICA:
+    1. Obtiene coordenadas (lat/lon) del usuario vía API de geolocalización
+    2. Realiza consulta espacial PostGIS para verificar si está en área de servicio
+    3. Retorna resultado con información detallada
 
     Args:
         request: HttpRequest object
@@ -209,9 +187,12 @@ def check_geo_restriction(request):
     Returns:
         dict con:
         - allowed: bool (si tiene acceso)
-        - city: str (ciudad detectada)
-        - region: str (provincia detectada)
-        - ciudad_data: dict (datos serializables de la ciudad, si está disponible)
+        - city: str (ciudad detectada por API)
+        - region: str (provincia detectada por API)
+        - country: str (país detectado por API)
+        - latitude: float (coordenada)
+        - longitude: float (coordenada)
+        - service_area: dict (datos del área de servicio si matched, sino None)
         - skip_check: bool (si se saltó el check)
     """
     # BYPASS para desarrollo/testing
@@ -222,7 +203,10 @@ def check_geo_restriction(request):
             'allowed': True,
             'city': 'Development Mode',
             'region': 'N/A',
-            'ciudad_data': None,
+            'country': 'N/A',
+            'latitude': None,
+            'longitude': None,
+            'service_area': None,
             'skip_check': True
         }
 
@@ -230,22 +214,6 @@ def check_geo_restriction(request):
     geo_data_session = request.session.get('geo_data')
     if geo_data_session:
         logger.debug("Using geo data from session")
-        # Volver a verificar disponibilidad por si cambió en admin
-        allowed, ciudad_obj = is_service_available_in_city(
-            geo_data_session.get('city'),
-            geo_data_session.get('region')
-        )
-        geo_data_session['allowed'] = allowed
-        # Convertir ciudad_obj a dict serializable
-        if ciudad_obj:
-            geo_data_session['ciudad_data'] = {
-                'ciudad': ciudad_obj.ciudad,
-                'provincia': ciudad_obj.provincia,
-                'pais': ciudad_obj.pais,
-                'activo': ciudad_obj.activo,
-            }
-        else:
-            geo_data_session['ciudad_data'] = None
         return geo_data_session
 
     # Obtener IP del cliente
@@ -256,59 +224,73 @@ def check_geo_restriction(request):
     location_data = get_location_from_ip(ip_address)
 
     if not location_data:
-        # Si no podemos detectar ubicación, permitir acceso por defecto
-        # (o podrías cambiar a denegar acceso)
-        logger.warning(f"Could not detect location for IP {ip_address}, allowing access by default")
+        # Si no podemos detectar ubicación, denegar acceso por seguridad
+        logger.warning(f"Could not detect location for IP {ip_address}, DENYING access")
         geo_result = {
-            'allowed': True,  # Cambiar a False para ser más restrictivo
+            'allowed': False,
             'city': 'Unknown',
             'region': 'Unknown',
-            'ciudad_data': None,
+            'country': 'Unknown',
+            'latitude': None,
+            'longitude': None,
+            'service_area': None,
             'skip_check': False,
             'detection_failed': True
         }
         request.session['geo_data'] = geo_result
         return geo_result
 
-    # Verificar si la ciudad está habilitada
-    city = location_data.get('city', 'Unknown')
-    region = location_data.get('region', 'Unknown')
+    # Extraer coordenadas
+    latitude = location_data.get('latitude')
+    longitude = location_data.get('longitude')
 
-    allowed, ciudad_obj = is_service_available_in_city(city, region)
+    if not latitude or not longitude:
+        logger.warning(f"No coordinates in API response for IP {ip_address}, DENYING access")
+        geo_result = {
+            'allowed': False,
+            'city': location_data.get('city', 'Unknown'),
+            'region': location_data.get('region', 'Unknown'),
+            'country': location_data.get('country', 'Unknown'),
+            'latitude': None,
+            'longitude': None,
+            'service_area': None,
+            'skip_check': False,
+            'no_coordinates': True
+        }
+        request.session['geo_data'] = geo_result
+        return geo_result
 
-    # 🔒 BLINDAJE DEFINITIVO: Si el fallback por provincia fue exitoso,
-    # sobrescribir city con la ciudad confirmada de la BD para evitar
-    # inconsistencias entre API (ej: "Guayaquil") y realidad (ej: "Milagro")
-    if ciudad_obj and city.lower() != ciudad_obj.ciudad.lower():
-        logger.warning(
-            f"🔄 GEO CORRECTION: API returned city='{city}', but provincia fallback "
-            f"matched '{ciudad_obj.ciudad}'. Overriding city to '{ciudad_obj.ciudad}' "
-            f"for consistent routing."
-        )
-        city = ciudad_obj.ciudad  # ✨ SOBRESCRIBIR con la ciudad real de la BD
+    # CONSULTA ESPACIAL: Verificar si el punto está en área de servicio
+    allowed, service_area_obj = is_point_in_service_area(latitude, longitude)
 
-    # Convertir ciudad_obj a dict serializable para guardar en sesión
-    ciudad_data = None
-    if ciudad_obj:
-        ciudad_data = {
-            'ciudad': ciudad_obj.ciudad,
-            'provincia': ciudad_obj.provincia,
-            'pais': ciudad_obj.pais,
-            'activo': ciudad_obj.activo,
+    # Serializar service_area para guardar en sesión
+    service_area_data = None
+    if service_area_obj:
+        service_area_data = {
+            'city_name': service_area_obj.city_name,
+            'descripcion': service_area_obj.descripcion,
+            'activo': service_area_obj.activo,
         }
 
     geo_result = {
         'allowed': allowed,
-        'city': city,  # ✅ Ahora siempre será la ciudad correcta (Milagro)
-        'region': region,
+        'city': location_data.get('city', 'Unknown'),
+        'region': location_data.get('region', 'Unknown'),
         'country': location_data.get('country', 'Unknown'),
-        'ciudad_data': ciudad_data,
+        'latitude': latitude,
+        'longitude': longitude,
+        'service_area': service_area_data,
         'skip_check': False,
         'ip_address': ip_address
     }
 
     # Guardar en sesión
     request.session['geo_data'] = geo_result
+
+    logger.info(
+        f"Geo restriction result for {ip_address}: "
+        f"allowed={allowed}, service_area={service_area_data}"
+    )
 
     return geo_result
 
@@ -326,42 +308,3 @@ def set_test_ip(request, ip_address):
         logger.info(f"Test IP set to: {ip_address}")
         return True
     return False
-
-
-def get_cities_by_proximity(user_city, user_region):
-    """
-    Retorna ciudades ordenadas por proximidad al usuario.
-
-    Orden de prioridad:
-    1. Misma ciudad
-    2. Misma provincia/región
-    3. Mismo país
-    4. Resto (por orden_prioridad)
-    """
-    try:
-        all_cities = CiudadHabilitada.objects.filter(activo=True)
-
-        # Ordenar por proximidad
-        same_city = []
-        same_region = []
-        same_country = []
-        others = []
-
-        for city in all_cities:
-            if city.ciudad.lower() == user_city.lower():
-                same_city.append(city)
-            elif city.provincia.lower() == user_region.lower():
-                same_region.append(city)
-            elif city.pais == 'Ecuador':  # Asumiendo usuario en Ecuador
-                same_country.append(city)
-            else:
-                others.append(city)
-
-        # Concatenar listas en orden de prioridad
-        ordered_cities = same_city + same_region + same_country + others
-
-        return ordered_cities
-
-    except Exception as e:
-        logger.error(f"Error getting cities by proximity: {str(e)}")
-        return get_available_cities()

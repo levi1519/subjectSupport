@@ -85,6 +85,25 @@ SKIP_GEO_CHECK = os.getenv('SKIP_GEO_CHECK', 'False') == 'True'
 
 # Application definition
 
+# Determinar si GIS está disponible (necesario para GeoDjango)
+GIS_AVAILABLE = False
+if not DEBUG:
+    # En producción siempre usar GIS (PostGIS estará disponible)
+    GIS_AVAILABLE = True
+else:
+    # En desarrollo, verificar si GDAL está instalado
+    try:
+        from django.contrib.gis.db.backends.spatialite.base import DatabaseWrapper  # noqa: F401
+        GIS_AVAILABLE = True
+    except (ImportError, Exception):
+        GIS_AVAILABLE = False
+        import warnings
+        warnings.warn(
+            "GDAL not available in development. GIS features disabled locally. "
+            "To enable: install OSGeo4W (Windows) or gdal-bin (Linux/Mac). "
+            "Production will use PostGIS normally."
+        )
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -92,6 +111,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+]
+
+# Agregar django.contrib.gis solo si está disponible
+if GIS_AVAILABLE:
+    INSTALLED_APPS.append('django.contrib.gis')
+
+INSTALLED_APPS += [
     'accounts',
     'core',
 ]
@@ -135,21 +161,45 @@ WSGI_APPLICATION = 'subjectSupport.wsgi.application'
 import dj_database_url
 
 if DEBUG:
-    # Development: SQLite
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+    # Development: Intentar usar SpatiaLite para GeoDjango si está disponible
+    # Si no está disponible (GDAL no instalado), usar SQLite normal
+    # NOTA: En desarrollo local, si necesitas funcionalidad GIS completa:
+    #   - Windows: instala OSGeo4W (https://trac.osgeo.org/osgeo4w/)
+    #   - Linux/Mac: instala gdal (apt-get install gdal-bin python3-gdal)
+    try:
+        from django.contrib.gis.db.backends.spatialite.base import DatabaseWrapper  # noqa: F401
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.contrib.gis.db.backends.spatialite',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
         }
-    }
-else:
-    # Production: PostgreSQL from DATABASE_URL
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.getenv('DATABASE_URL'),
-            conn_max_age=600,
-            conn_health_checks=True,
+    except (ImportError, Exception):
+        # Fallback: SQLite normal sin capacidades GIS
+        # Las migraciones GIS se crearán pero no se ejecutarán en desarrollo
+        import warnings
+        warnings.warn(
+            "GDAL not found. Using standard SQLite. "
+            "Install GDAL/SpatiaLite for full GIS support in development. "
+            "Production (PostGIS) will work normally."
         )
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+else:
+    # Production: PostgreSQL con PostGIS para GeoDjango
+    db_config = dj_database_url.config(
+        default=os.getenv('DATABASE_URL'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+    # Cambiar engine a PostGIS backend
+    db_config['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
+    DATABASES = {
+        'default': db_config
     }
 
 

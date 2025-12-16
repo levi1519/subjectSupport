@@ -3,11 +3,97 @@ from django.conf import settings
 from django.utils import timezone
 import uuid
 
+# Importar GIS models solo si está disponible
+try:
+    from django.contrib.gis.db import models as gis_models
+    GIS_AVAILABLE = True
+except ImportError:
+    gis_models = models  # Fallback a models normales
+    GIS_AVAILABLE = False
+
+
+class ServiceArea(gis_models.Model):
+    """
+    Modelo para definir zonas geográficas de cobertura del servicio usando polígonos.
+
+    Reemplaza la lógica de comparación de strings por consultas espaciales precisas.
+    Utiliza PostGIS en producción y SpatiaLite en desarrollo.
+    """
+    city_name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Ciudad',
+        help_text='Nombre de la ciudad que cubre esta área de servicio'
+    )
+
+    # Usar PolygonField si GIS está disponible, sino TextField como fallback
+    if GIS_AVAILABLE:
+        area = gis_models.PolygonField(
+            verbose_name='Área de Cobertura',
+            help_text='Polígono que define el área geográfica donde el servicio está disponible',
+            srid=4326  # WGS84 - Sistema de coordenadas estándar GPS
+        )
+    else:
+        # Fallback para desarrollo sin GDAL: almacenar WKT como texto
+        area = models.TextField(
+            verbose_name='Área de Cobertura (WKT)',
+            help_text='Polígono en formato WKT. En producción se usará PolygonField de PostGIS.',
+            default='POLYGON EMPTY'
+        )
+    activo = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+        help_text='Si está activo, usuarios dentro del polígono tendrán acceso al servicio'
+    )
+    descripcion = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Descripción',
+        help_text='Descripción del área (ej: Cantón Milagro, Provincia Guayas)'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última Actualización'
+    )
+
+    class Meta:
+        verbose_name = 'Área de Servicio'
+        verbose_name_plural = 'Áreas de Servicio'
+        ordering = ['city_name']
+
+    def __str__(self):
+        status = "✓ Activo" if self.activo else "✗ Inactivo"
+        return f"{self.city_name} ({status})"
+
+    def contains_point(self, latitude, longitude):
+        """
+        Verifica si un punto (lat, lon) está dentro del área de servicio.
+
+        Args:
+            latitude: Latitud del punto
+            longitude: Longitud del punto
+
+        Returns:
+            bool: True si el punto está dentro del polígono
+        """
+        from django.contrib.gis.geos import Point
+        point = Point(longitude, latitude, srid=4326)
+        return self.area.contains(point)
+
 
 class CiudadHabilitada(models.Model):
     """
-    Modelo para gestionar ciudades donde el servicio está disponible.
-    Permite expansión gradual controlada desde el admin.
+    DEPRECADO: Modelo legado basado en comparación de strings de ciudades.
+
+    Este modelo ha sido reemplazado por ServiceArea que usa geometría PostGIS.
+    Se mantiene temporalmente para compatibilidad con datos existentes,
+    pero NO se debe usar para nueva lógica de restricción geográfica.
+
+    Usar ServiceArea en su lugar para consultas espaciales precisas.
     """
     ciudad = models.CharField(
         max_length=100,

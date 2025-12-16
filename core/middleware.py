@@ -1,27 +1,33 @@
 """
 Middleware para restricción geográfica del servicio.
 
-Este middleware intercepta requests y verifica si el usuario
-está accediendo desde una ciudad habilitada.
+NUEVA ARQUITECTURA GEODJANGO:
+- Usa consultas espaciales PostGIS para verificar si un usuario está en el área de servicio
+- Elimina comparación frágil de strings de ciudades
+- Política basada en geometría precisa de polígonos
+
+Este middleware intercepta requests y verifica si el usuario está
+accediendo desde una ubicación dentro del área de servicio definida.
 """
 
 import logging
 from django.shortcuts import redirect
-from django.urls import reverse
-from core.utils.geo import check_geo_restriction, get_location_from_ip, is_service_available_in_city
+from core.utils.geo import check_geo_restriction
 
 logger = logging.getLogger(__name__)
 
 
 class GeoRestrictionMiddleware:
     """
-    Middleware que restringe el acceso al sitio basado en geolocalización.
+    Middleware que restringe el acceso al sitio basado en geolocalización espacial.
 
-    POLÍTICAS DE SEGURIDAD GEOGRÁFICA:
-    1. /estudiantes/* → SOLO MILAGRO (ciudad_data must be True)
-    2. /tutores/* → TODO ECUADOR (country must be 'Ecuador')
-    3. Usuarios autenticados → Bypass (ya tienen cuenta)
+    NUEVA POLÍTICA DE SEGURIDAD GEOGRÁFICA (GeoDjango):
+    1. /estudiantes/* → SOLO usuarios dentro del polígono de ServiceArea activo (Milagro)
+    2. /tutores/* → TODO Ecuador (verificado por país en API)
+    3. Usuarios autenticados → Bypass (ya verificados al registrarse)
     4. Admin y logout → Exentos siempre
+
+    La verificación usa coordenadas GPS y consultas PostGIS para precisión máxima.
     """
 
     # URLs que NO requieren verificación geográfica
@@ -53,25 +59,25 @@ class GeoRestrictionMiddleware:
         geo_result = check_geo_restriction(request)
 
         country = geo_result.get('country')
-        ciudad_data = geo_result.get('ciudad_data')  # True = Milagro
-        is_city_allowed = geo_result.get('allowed')  # True = ciudad habilitada en DB
+        service_area = geo_result.get('service_area')  # Dict con info del ServiceArea si matched
+        is_in_service_area = geo_result.get('allowed')  # True = dentro de polígono activo
 
         # D) Implementar reglas de acceso ESTRICTAS por prefijo de ruta
         access_granted = False
 
-        # POLÍTICA ESTUDIANTES: SOLO MILAGRO
+        # POLÍTICA ESTUDIANTES: SOLO dentro del área de servicio (Milagro)
         if path.startswith('/estudiantes/'):
-            # Solo permitir si ciudad_data es True (Milagro verificado)
-            if ciudad_data:
+            # NUEVA LÓGICA: Solo permitir si está dentro del polígono de ServiceArea
+            if service_area:
                 access_granted = True
             logger.info(
                 f"Student route access attempt: path={path}, "
-                f"ciudad_data={ciudad_data}, granted={access_granted}"
+                f"service_area={service_area}, granted={access_granted}"
             )
 
         # POLÍTICA TUTORES: TODO ECUADOR
         elif path.startswith('/tutores/'):
-            # Permitir si el país es Ecuador
+            # Permitir si el país es Ecuador (sin cambios en esta política)
             if country == 'Ecuador':
                 access_granted = True
             logger.info(
@@ -79,13 +85,13 @@ class GeoRestrictionMiddleware:
                 f"country={country}, granted={access_granted}"
             )
 
-        # POLÍTICA ROOT Y OTRAS RUTAS: Usar validación estándar (Milagro)
+        # POLÍTICA ROOT Y OTRAS RUTAS: Usar validación de área de servicio
         else:
-            if is_city_allowed:
+            if is_in_service_area:
                 access_granted = True
             logger.info(
                 f"Default route access: path={path}, "
-                f"is_city_allowed={is_city_allowed}, granted={access_granted}"
+                f"is_in_service_area={is_in_service_area}, granted={access_granted}"
             )
 
         # E) Redirección si el acceso es denegado

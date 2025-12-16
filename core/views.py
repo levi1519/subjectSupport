@@ -15,10 +15,14 @@ logger = logging.getLogger(__name__)
 
 class GeoRootRouterView(View):
     """
-    Vista inteligente que redirige a usuarios anónimos según su ubicación geográfica:
-    - Milagro, Guayas → /estudiantes/
-    - Resto de Ecuador → /tutores/
-    - Fuera de Ecuador → Middleware redirige a /servicio-no-disponible/
+    Vista inteligente que redirige a usuarios anónimos según su ubicación geográfica.
+
+    NUEVA LÓGICA GEODJANGO:
+    - Dentro del polígono de ServiceArea (Milagro) → /estudiantes/
+    - Ecuador pero fuera del polígono → /tutores/
+    - Fuera de Ecuador → /servicio-no-disponible/
+
+    Usa consultas espaciales PostGIS para precisión máxima.
     """
 
     def get(self, request):
@@ -34,45 +38,30 @@ class GeoRootRouterView(View):
 
         if not geo_data:
             # Intentar obtener de sesión como fallback
-            geo_data = {
-                'city': request.session.get('geo_city', 'Unknown'),
-                'region': request.session.get('geo_region', 'Unknown'),
-                'country': request.session.get('geo_country', 'Unknown'),
-                'allowed': request.session.get('geo_allowed', False),
-                'ciudad_data': request.session.get('geo_ciudad_data'),
-            }
+            geo_data = request.session.get('geo_data', {})
 
         # Obtener información de geolocalización
-        city = geo_data.get('city', 'Unknown')
         country = geo_data.get('country', 'Unknown')
-        ciudad_data = geo_data.get('ciudad_data')
+        service_area = geo_data.get('service_area')  # Dict con info si está en área de servicio
 
         logger.info(
-            f"Geo root router: city={city}, country={country}, ciudad_data={ciudad_data}"
+            f"Geo root router: country={country}, service_area={service_area}"
         )
 
-        # LÓGICA DE REDIRECCIÓN USANDO ciudad_data (más confiable que city):
-        # ciudad_data contiene la información de la ciudad CONFIRMADA en la BD
-        # después del fallback por provincia, evitando problemas de precisión de GeoIP
-        
-        # 1. Si ciudad_data existe y es Milagro → Estudiantes
-        if ciudad_data and ciudad_data.get('ciudad', '').strip().lower() == 'milagro':
-            logger.info(f"Redirecting to student_landing (Milagro confirmed via ciudad_data: {ciudad_data})")
-            return redirect('student_landing')
-        
-        # 2. Si NO hay ciudad_data pero city es exactamente 'Milagro' → Estudiantes (fallback)
-        elif city and city.strip().lower() == 'milagro':
-            logger.info(f"Redirecting to student_landing (Milagro detected via city string: city={city})")
+        # NUEVA LÓGICA DE REDIRECCIÓN BASADA EN GEOMETRÍA:
+        # 1. Si está dentro del polígono de ServiceArea → Estudiantes
+        if service_area:
+            logger.info(f"Redirecting to student_landing (inside service area: {service_area['city_name']})")
             return redirect('student_landing')
 
-        # 3. Si NO es Milagro pero SÍ es Ecuador → Tutores
+        # 2. Si NO está en service area pero SÍ es Ecuador → Tutores
         elif country == 'Ecuador':
-            logger.info(f"Redirecting to tutor_landing (Ecuador but not Milagro: city={city}, ciudad_data={ciudad_data})")
+            logger.info(f"Redirecting to tutor_landing (Ecuador but outside service area)")
             return redirect('tutor_landing')
 
-        # 4. Si no es Ecuador → Servicio no disponible
+        # 3. Si no es Ecuador → Servicio no disponible
         else:
-            logger.warning(f"User outside Ecuador: city={city}, country={country}, redirecting to servicio_no_disponible")
+            logger.warning(f"User outside Ecuador: country={country}, redirecting to servicio_no_disponible")
             return redirect('servicio_no_disponible')
 
 

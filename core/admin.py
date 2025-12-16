@@ -1,5 +1,44 @@
 from django.contrib import admin
-from .models import TutorLead, ClassSession, CiudadHabilitada, NotificacionExpansion
+from django.contrib.gis.admin import GISModelAdmin
+from .models import ServiceArea, TutorLead, ClassSession, CiudadHabilitada, NotificacionExpansion
+
+
+@admin.register(ServiceArea)
+class ServiceAreaAdmin(GISModelAdmin):
+    """
+    Admin configuration for ServiceArea model with GIS map widget.
+    Permite visualizar y editar polígonos de cobertura en un mapa interactivo.
+    """
+    list_display = ['city_name', 'activo', 'descripcion', 'created_at', 'updated_at']
+    list_filter = ['activo', 'created_at']
+    search_fields = ['city_name', 'descripcion']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['city_name']
+
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('city_name', 'activo', 'descripcion')
+        }),
+        ('Área Geográfica', {
+            'fields': ('area',),
+            'description': 'Define el polígono de cobertura del servicio. Usa el mapa para dibujar el área.'
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    list_editable = ['activo']
+
+    # Configuración del widget GIS
+    gis_widget_kwargs = {
+        'attrs': {
+            'default_lat': -2.134,  # Latitud de Milagro
+            'default_lon': -79.594,  # Longitud de Milagro
+            'default_zoom': 11,
+        }
+    }
 
 
 @admin.register(TutorLead)
