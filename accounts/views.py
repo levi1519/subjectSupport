@@ -192,13 +192,17 @@ def tutor_dashboard(request):
             messages.error(request, 'Acceso denegado. Esta sección es solo para tutores.')
             return redirect('client_dashboard')
 
-    # Lógica defensiva: Crear perfil si no existe
-    profile, created = TutorProfile.objects.get_or_create(
-        user=request.user
-    )
-    
-    if created:
-        messages.info(request, 'Bienvenido! Tu perfil ha sido creado. Por favor completa tu información.')
+    # FIX: Prevent IntegrityError by checking if profile exists first
+    # Instead of get_or_create, redirect to profile creation if missing
+    try:
+        profile = TutorProfile.objects.get(user=request.user)
+    except TutorProfile.DoesNotExist:
+        messages.warning(
+            request, 
+            'Por favor completa tu perfil antes de acceder al dashboard. '
+            'Necesitamos información básica para activar tu cuenta de tutor.'
+        )
+        return redirect('edit_tutor_profile')
 
     # Get pending session requests (waiting for tutor to confirm/reject)
     pending_sessions = ClassSession.objects.filter(
@@ -246,13 +250,17 @@ def client_dashboard(request):
             messages.error(request, 'Acceso denegado. Esta sección es solo para estudiantes.')
             return redirect('tutor_dashboard')
 
-    # Lógica defensiva: Crear perfil si no existe
-    profile, created = ClientProfile.objects.get_or_create(
-        user=request.user
-    )
-    
-    if created:
-        messages.info(request, 'Bienvenido! Tu perfil ha sido creado. Por favor completa tu información.')
+    # FIX: Prevent IntegrityError by checking if profile exists first
+    # Instead of get_or_create, redirect to profile creation if missing
+    try:
+        profile = ClientProfile.objects.get(user=request.user)
+    except ClientProfile.DoesNotExist:
+        messages.warning(
+            request, 
+            'Por favor completa tu perfil antes de acceder al dashboard. '
+            'Necesitamos información básica para activar tu cuenta.'
+        )
+        return redirect('edit_client_profile')
 
     # Get upcoming sessions (confirmed)
     upcoming_sessions = ClassSession.objects.filter(
