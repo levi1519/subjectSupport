@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.gis.admin import GISModelAdmin
-from .models import ServiceArea, TutorLead, ClassSession, NotificacionExpansion
+from .models import ServiceArea, TutorLead, ClassSession, NotificacionExpansion, Level, SubjectLevel
 
 
 @admin.register(ServiceArea)
@@ -141,3 +141,87 @@ class NotificacionExpansionAdmin(admin.ModelAdmin):
         updated = queryset.update(notificado=False, fecha_notificacion=None)
         self.message_user(request, f'{updated} notificación(es) marcada(s) como pendiente(s)')
     marcar_como_pendiente.short_description = 'Marcar como pendiente'
+
+
+@admin.register(Level)
+class LevelAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for Level model.
+    Permite gestionar niveles educativos (Primaria, Secundaria, etc.).
+    """
+    list_display = ['name', 'order', 'created_at', 'updated_at']
+    list_filter = ['created_at']
+    search_fields = ['name']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['order', 'name']
+
+    fieldsets = (
+        ('Información del Nivel', {
+            'fields': ('name', 'order')
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    list_editable = ['order']
+
+
+@admin.register(SubjectLevel)
+class SubjectLevelAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for SubjectLevel model.
+    Permite gestionar combinaciones de Materia + Nivel Educativo.
+    """
+    list_display = ['subject', 'level', 'created_at']
+    list_filter = ['level', 'subject', 'created_at']
+    search_fields = ['subject__name', 'level__name']
+    readonly_fields = ['created_at']
+    ordering = ['level__order', 'subject__name']
+
+    fieldsets = (
+        ('Combinación Materia-Nivel', {
+            'fields': ('subject', 'level'),
+            'description': 'Selecciona una materia y un nivel educativo. Esta combinación será asignada a tutores.'
+        }),
+        ('Metadatos', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+
+    # Filtros en barra lateral
+    list_filter = ['level', 'created_at']
+
+    # Autocomplete para búsquedas más rápidas con muchos registros
+    autocomplete_fields = ['subject']
+
+    # Acciones personalizadas
+    actions = ['duplicate_for_all_levels']
+
+    def duplicate_for_all_levels(self, request, queryset):
+        """
+        Acción para duplicar materias seleccionadas en todos los niveles.
+        Útil cuando se agrega una materia nueva que existe en múltiples niveles.
+        """
+        duplicated_count = 0
+        
+        for subject_level in queryset:
+            # Obtener todos los niveles
+            all_levels = Level.objects.all()
+            
+            for level in all_levels:
+                # Crear SubjectLevel si no existe
+                _, created = SubjectLevel.objects.get_or_create(
+                    subject=subject_level.subject,
+                    level=level
+                )
+                if created:
+                    duplicated_count += 1
+        
+        self.message_user(
+            request, 
+            f'{duplicated_count} nueva(s) combinación(es) Materia-Nivel creada(s)'
+        )
+    duplicate_for_all_levels.short_description = 'Duplicar materia en todos los niveles'

@@ -18,7 +18,7 @@ class TutorProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'Perfil de Tutor'
     fk_name = 'user'
-    filter_horizontal = ['subjects']
+    filter_horizontal = ['subjects_taught', 'subjects']  # Incluir ambos durante transición
 
 
 class ClientProfileInline(admin.StackedInline):
@@ -65,16 +65,23 @@ class UserAdmin(BaseUserAdmin):
 @admin.register(TutorProfile)
 class TutorProfileAdmin(admin.ModelAdmin):
     """Admin configuration for TutorProfile model"""
-    list_display = ['user', 'get_subjects_display', 'hourly_rate', 'phone_number', 'created_at']
+    list_display = ['user', 'get_subjects_taught_display', 'get_subjects_legacy_display', 'hourly_rate', 'phone_number', 'created_at']
     search_fields = ['user__name', 'user__email', 'phone_number']
     list_filter = ['created_at']
     readonly_fields = ['created_at']
-    filter_horizontal = ['subjects']
+    filter_horizontal = ['subjects_taught', 'subjects']  # Ambos campos durante transición
 
-    def get_subjects_display(self, obj):
-        """Display subjects as comma-separated list"""
-        return ", ".join([subject.name for subject in obj.subjects.all()[:3]])
-    get_subjects_display.short_description = 'Materias'
+    def get_subjects_taught_display(self, obj):
+        """Display SubjectLevel combinations as comma-separated list"""
+        subject_levels = obj.subjects_taught.all()[:3]
+        return ", ".join([f"{sl.subject.name} ({sl.level.name})" for sl in subject_levels]) or "Ninguno"
+    get_subjects_taught_display.short_description = 'Materias + Niveles (Nuevo)'
+
+    def get_subjects_legacy_display(self, obj):
+        """Display legacy subjects as comma-separated list"""
+        subjects = obj.subjects.all()[:3]
+        return ", ".join([subject.name for subject in subjects]) or "Ninguno"
+    get_subjects_legacy_display.short_description = 'Materias (Legacy)'
 
 
 @admin.register(ClientProfile)
