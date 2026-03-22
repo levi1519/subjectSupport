@@ -16,8 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from core import views as core_views
-from accounts import views as accounts_views
+from apps.academicTutoring.core import views as core_views
+from apps.academicTutoring.accounts import views as accounts_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,18 +27,18 @@ urlpatterns = [
 
     # GRUPO ESTUDIANTES (Restricción: SOLO MILAGRO)
     # Todas estas rutas están protegidas por middleware para ciudad_data=True
-    path('estudiantes/', include('accounts.urls_estudiantes')),
+    path('estudiantes/', include('apps.academicTutoring.accounts.urls_estudiantes')),
 
     # GRUPO TUTORES (Restricción: TODO ECUADOR)
     # Todas estas rutas están protegidas por middleware para country='Ecuador'
-    path('tutores/', include('accounts.urls_tutores')),
+    path('tutores/', include('apps.academicTutoring.accounts.urls_tutores')),
 
     # Perfiles de usuario (sin restricción geográfica, requiere login)
-    path('accounts/', include('accounts.urls')),
+    path('accounts/', include('apps.academicTutoring.accounts.urls')),
 
     # Logout global (sin restricción geográfica)
     path('accounts/logout/', accounts_views.logout_view, name='logout'),
 
     # Core URLs (sesiones, etc.)
-    path('', include('core.urls')),
+    path('', include('apps.academicTutoring.core.urls')),
 ]

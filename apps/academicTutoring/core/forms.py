@@ -1,6 +1,6 @@
 from django import forms
 from .models import TutorLead, ClassSession, NotificacionExpansion
-from accounts.models import User
+from apps.academicTutoring.accounts.models import User
 from datetime import date
 
 

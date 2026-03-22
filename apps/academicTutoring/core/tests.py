@@ -6,16 +6,16 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.utils import timezone
 from datetime import date, time, timedelta
-from core.models import ClassSession, TutorLead
-from core.forms import SessionRequestForm, SessionConfirmationForm, TutorLeadForm
-from core.services.meeting_service import (
+from apps.academicTutoring.core.models import ClassSession, TutorLead
+from apps.academicTutoring.core.forms import SessionRequestForm, SessionConfirmationForm, TutorLeadForm
+from apps.academicTutoring.core.services.meeting_service import (
     generate_google_meet_url,
     generate_zoom_url,
     generate_custom_meeting_url,
     create_meeting_for_session,
     update_session_with_meeting
 )
-from accounts.test_utils import UserFactory
+from apps.academicTutoring.accounts.test_utils import UserFactory
 
 
 class ClassSessionModelTest(TestCase):

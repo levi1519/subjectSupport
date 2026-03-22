@@ -10,7 +10,7 @@ El polígono es una aproximación del área urbana y rural del cantón.
 
 from django.core.management.base import BaseCommand
 from django.contrib.gis.geos import Polygon
-from core.models import ServiceArea
+from apps.academicTutoring.core.models import ServiceArea
 
 
 class Command(BaseCommand):

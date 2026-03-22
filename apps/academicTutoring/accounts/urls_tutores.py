@@ -5,7 +5,7 @@ Solo accesibles si country='Ecuador'.
 """
 from django.urls import path
 from . import views
-from core import views as core_views
+from apps.academicTutoring.core import views as core_views
 
 urlpatterns = [
     # Landing de tutores

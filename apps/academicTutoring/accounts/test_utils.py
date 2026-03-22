@@ -1,7 +1,7 @@
 """
 Test utilities and factories for accounts app
 """
-from accounts.models import User, TutorProfile, ClientProfile
+from apps.academicTutoring.accounts.models import User, TutorProfile, ClientProfile
 
 
 class UserFactory:

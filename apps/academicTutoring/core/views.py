@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.views.generic import View
 from .models import ClassSession, NotificacionExpansion
 from .forms import SessionRequestForm, SessionConfirmationForm, NotificacionExpansionForm
-from accounts.models import User, TutorProfile
+from apps.academicTutoring.accounts.models import User, TutorProfile
 from .services.meeting_service import update_session_with_meeting
 from .utils.geo import get_available_service_areas, get_client_ip
 import logging

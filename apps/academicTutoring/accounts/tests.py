@@ -5,9 +5,9 @@ Tests user authentication, registration, profiles, and dashboards
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from accounts.models import TutorProfile, ClientProfile
-from accounts.forms import TutorRegistrationForm, ClientRegistrationForm
-from accounts.test_utils import UserFactory
+from apps.academicTutoring.accounts.models import TutorProfile, ClientProfile
+from apps.academicTutoring.accounts.forms import TutorRegistrationForm, ClientRegistrationForm
+from apps.academicTutoring.accounts.test_utils import UserFactory
 
 User = get_user_model()
 

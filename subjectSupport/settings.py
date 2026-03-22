@@ -122,8 +122,8 @@ if GIS_AVAILABLE:
     INSTALLED_APPS.append('django.contrib.gis')
 
 INSTALLED_APPS += [
-    'accounts',
-    'core',
+    'apps.academicTutoring.accounts',
+    'apps.academicTutoring.core',
 ]
 
 MIDDLEWARE = [
@@ -136,7 +136,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Middleware de restricción geográfica (debe ir después de SessionMiddleware)
-    'core.middleware.GeoRestrictionMiddleware',
+    'apps.academicTutoring.core.middleware.GeoRestrictionMiddleware',
 ]
 
 ROOT_URLCONF = 'subjectSupport.urls'
