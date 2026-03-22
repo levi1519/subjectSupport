@@ -1,0 +1,66 @@
+{
+  "requirements": {
+    "description": "Requisitos y especificaciones para las vistas de la aplicación",
+    "views": [
+      {
+        "name": "TutorLoginView",
+        "purpose": "Login para tutores",
+        "requirements": [
+          "Validar user_type == 'tutor'",
+          "Redirigir a /admin/ si is_superuser o is_staff",
+          "Redirigir a tutor_dashboard si usuario regular"
+        ]
+      },
+      {
+        "name": "StudentLoginView",
+        "purpose": "Login para estudiantes/clientes",
+        "requirements": [
+          "Validar user_type == 'client'",
+          "Redirigir a /admin/ si is_superuser o is_staff",
+          "Redirigir a client_dashboard si usuario regular"
+        ]
+      },
+      {
+        "name": "tutor_dashboard",
+        "purpose": "Dashboard de tutores",
+        "requirements": [
+          "Verificar autenticación",
+          "Verificar user_type == 'tutor'",
+          "Permitir acceso a superusers/staff",
+          "Validar TutorProfile existe (redirect si no)",
+          "Mostrar sesiones pendientes y próximas"
+        ]
+      },
+      {
+        "name": "client_dashboard",
+        "purpose": "Dashboard de clientes/estudiantes",
+        "requirements": [
+          "Verificar autenticación",
+          "Verificar user_type == 'client'",
+          "Permitir acceso a superusers/staff",
+          "Validar ClientProfile existe (redirect si no)",
+          "Mostrar tutores disponibles y sesiones"
+        ]
+      },
+      {
+        "name": "edit_tutor_profile",
+        "purpose": "Editar perfil de tutor",
+        "requirements": [
+          "Formulario con subjects_taught (SubjectLevel)",
+          "Filtro horizontal para selección múltiple",
+          "Validar campos requeridos",
+          "Guardar y redirigir a dashboard"
+        ]
+      },
+      {
+        "name": "edit_client_profile",
+        "purpose": "Editar perfil de cliente",
+        "requirements": [
+          "Formulario con información personal",
+          "Validar campos requeridos",
+          "Guardar y redirigir a dashboard"
+        ]
+      }
+    ]
+  }
+}
