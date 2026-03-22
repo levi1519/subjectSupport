@@ -1,0 +1,28 @@
+{
+  "accounts_app_context": {
+    "purpose": "User authentication and profile management",
+    "models": [
+      {
+        "name": "User",
+        "description": "Custom Django User model with user_type field",
+        "fields": ["user_type", "email", "first_name", "last_name", "password"]
+      },
+      {
+        "name": "TutorProfile",
+        "description": "Extended profile for tutors with teaching details",
+        "relationships": ["User (1-to-1)", "Subject (M-to-M)"]
+      },
+      {
+        "name": "ClientProfile",
+        "description": "Extended profile for clients with learning preferences",
+        "relationships": ["User (1-to-1)"]
+      }
+    ],
+    "key_views": [
+      "LoginView - Authentication",
+      "RegisterView - User registration",
+      "ProfileView - Profile management"
+    ],
+    "middleware_integrated": "None - works with Django auth middleware"
+  }
+}

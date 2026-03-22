@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "app": "academicTutoring.accounts",
+    "version": "1.0.0",
+    "description": "User authentication and profile management for tutors and clients",
+    "created": "2026-03-22",
+    "rfc2119": "https://tools.ietf.org/html/rfc2119"
+  },
+  "MUST": [
+    "Authentication MUST use Django's built-in authentication system",
+    "User passwords MUST be hashed using Django's default password hasher",
+    "User model MUST support custom user types (tutor/client)",
+    "All profile creation MUST be transactional",
+    "User session MUST timeout after 24 hours of inactivity",
+    "Admin actions MUST redirect to authorized dashboard",
+    "Login form validation MUST check for case-insensitive email conflicts",
+    "Password reset MUST send verification email"
+  ],
+  "SHOULD": [
+    "Registration form SHOULD provide real-time validation",
+    "User profiles SHOULD include avatar images",
+    "Authentication SHOULD log failed login attempts",
+    "Email verification SHOULD be required before profile access",
+    "User settings SHOULD be editable without re-authentication"
+  ],
+  "MAY": [
+    "Email notifications MAY be sent on profile updates",
+    "Social authentication MAY be integrated in future versions",
+    "Two-factor authentication MAY be added as security enhancement",
+    "User activity logs MAY be stored for audit purposes"
+  ],
+  "MUST_NOT": [
+    "User passwords MUST NOT be stored in plain text",
+    "Session tokens MUST NOT be exposed in URLs",
+    "Personal data MUST NOT be logged to console in production",
+    "CSRF protection MUST NOT be disabled"
+  ]
+}
