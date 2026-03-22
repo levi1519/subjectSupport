@@ -1,0 +1,31 @@
+{
+  "context": {
+    "description": "Contexto y documentación de vistas",
+    "domain": "SubjectSupport - Platform de tutoría en línea",
+    "authentication_flow": {
+      "1_login": {
+        "views": ["TutorLoginView", "StudentLoginView", "CustomLoginView"],
+        "purpose": "Autenticar usuarios",
+        "next_action": "Redirigir según rol (admin, tutor, cliente)"
+      },
+      "2_dashboard": {
+        "views": ["tutor_dashboard", "client_dashboard"],
+        "purpose": "Vista principal después de login",
+        "requirements": [
+          "Validar que el usuario tenga perfil",
+          "Si no existe perfil, redirigir a edición"
+        ]
+      },
+      "3_profile_management": {
+        "views": ["edit_tutor_profile", "edit_client_profile"],
+        "purpose": "Crear y editar perfiles de usuario",
+        "requirements": ["Validar datos requeridos", "Guardar y redirigir a dashboard"]
+      }
+    },
+    "key_decisions": {
+      "profile_creation": "Si no existe perfil en dashboard, redirigir a edición (prevenir IntegrityError)",
+      "superuser_access": "Superusers redirigidos a /admin/ en login",
+      "level_filtering": "Tutores especifican materia + nivel exacto que enseñan"
+    }
+  }
+}

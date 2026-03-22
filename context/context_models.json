@@ -1,0 +1,38 @@
+{
+  "context": {
+    "description": "Contexto y documentación de modelos",
+    "domain": "SubjectSupport - Platform de tutoría en línea",
+    "models_context": {
+      "Subject": {
+        "purpose": "Representa materias/asignaturas que se pueden enseñar",
+        "domain": "Catálogo de materias disponibles en la plataforma",
+        "relationships": "Relacionada con Level a través de SubjectLevel"
+      },
+      "Level": {
+        "purpose": "Representa niveles educativos (Primaria, Secundaria, Universidad, etc.)",
+        "domain": "Clasificación de estudiantes por nivel académico",
+        "relationships": "Relacionada con Subject a través de SubjectLevel"
+      },
+      "SubjectLevel": {
+        "purpose": "Intermedia que vincula Subject con Level",
+        "domain": "Permite especificar 'Matemáticas de Primaria' vs 'Matemáticas de Universidad'",
+        "relationships": "ForeignKey a Subject y Level, ManyToMany desde TutorProfile"
+      },
+      "User": {
+        "purpose": "Usuario de la plataforma (Tutor o Cliente)",
+        "domain": "Gestión de autenticación y autorización",
+        "relationships": "OneToOne con TutorProfile o ClientProfile"
+      },
+      "TutorProfile": {
+        "purpose": "Información extendida de tutores",
+        "domain": "Catalogo de tutores, sus materias, experiencia y tarifa",
+        "relationships": "OneToOne con User, ManyToMany con SubjectLevel"
+      },
+      "ClientProfile": {
+        "purpose": "Información extendida de estudiantes/clientes",
+        "domain": "Perfil de estudiantes buscando tutores",
+        "relationships": "OneToOne con User"
+      }
+    }
+  }
+}

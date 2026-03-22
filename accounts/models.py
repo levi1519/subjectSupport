@@ -73,13 +73,23 @@ class TutorProfile(models.Model):
         on_delete=models.CASCADE,
         related_name='tutor_profile'
     )
-    # ManyToMany relationship with Subject model
+    # ManyToMany relationship with SubjectLevel model (refactorización)
+    # Permite especificar materias Y niveles que enseña el tutor
+    subjects_taught = models.ManyToManyField(
+        'core.SubjectLevel',
+        related_name='tutors',
+        verbose_name='Materias y Niveles',
+        blank=True,
+        help_text='Materias y niveles educativos que enseña este tutor'
+    )
+    # DEPRECATED: Mantener por compatibilidad con código legacy
+    # TODO: Eliminar después de migración completa
     subjects = models.ManyToManyField(
         Subject,
-        related_name='tutors',
-        verbose_name='Materias',
+        related_name='tutors_legacy',
+        verbose_name='Materias (Legacy)',
         blank=True,
-        help_text='Materias que enseña este tutor'
+        help_text='[DEPRECADO] Use subjects_taught en su lugar'
     )
     # Hourly rate for tutoring sessions
     hourly_rate = models.DecimalField(

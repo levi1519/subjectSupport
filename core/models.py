@@ -277,3 +277,65 @@ class ClassSession(models.Model):
         from datetime import datetime
         session_datetime = datetime.combine(self.scheduled_date, self.scheduled_time)
         return session_datetime < datetime.now()
+
+
+class Level(models.Model):
+    """
+    Modelo para niveles educativos (ej: Primaria, Secundaria, Universidad).
+    
+    Permite organizar las materias por nivel académico para mejor filtrado
+    y búsqueda de tutores según el nivel que necesita el estudiante.
+    """
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Nombre del Nivel',
+        help_text='Ej: Primaria, Secundaria, Bachillerato, Universidad'
+    )
+    order = models.IntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de visualización (menor primero)'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'name']
+        verbose_name = 'Nivel Educativo'
+        verbose_name_plural = 'Niveles Educativos'
+
+    def __str__(self):
+        return self.name
+
+
+class SubjectLevel(models.Model):
+    """
+    Modelo intermedio que relaciona Subject con Level.
+    
+    Permite que una misma materia (ej: Matemáticas) exista en múltiples
+    niveles educativos (Matemáticas de Primaria, Matemáticas de Universidad).
+    Los tutores especifican qué combinación Subject+Level pueden enseñar.
+    """
+    subject = models.ForeignKey(
+        'accounts.Subject',
+        on_delete=models.CASCADE,
+        related_name='subject_levels',
+        verbose_name='Materia'
+    )
+    level = models.ForeignKey(
+        Level,
+        on_delete=models.CASCADE,
+        related_name='subject_levels',
+        verbose_name='Nivel'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('subject', 'level')]
+        ordering = ['level__order', 'subject__name']
+        verbose_name = 'Materia por Nivel'
+        verbose_name_plural = 'Materias por Nivel'
+
+    def __str__(self):
+        return f"{self.subject.name} - {self.level.name}"

@@ -1,0 +1,356 @@
+================================================================================
+    INFORME DE SCRIPTS Y ARCHIVOS .PY - SubjectSupport
+    Documentación de Scripts de Testing, Verificación y Automatización
+    Fecha: Marzo 22, 2026
+================================================================================
+
+TABLA DE CONTENIDOS
+================================================================================
+1. Introducción
+2. Scripts de Testing
+3. Scripts de Verificación
+4. Scripts de Automatización
+5. Flujo de Uso Recomendado
+6. Estructura del Proyecto
+
+================================================================================
+1. INTRODUCCIÓN
+================================================================================
+
+Este documento describe todos los archivos .py que NO forman parte de la 
+configuración principal de Django (settings.py, manage.py, wsgi.py, etc.) 
+ni de las aplicaciones (accounts/, core/, subjectsSuport/).
+
+Estos scripts tienen propósitos específicos de testing, verificación y 
+automatización del proyecto.
+
+Total de Scripts: 11 archivos .py + 2 scripts de shell/powershell
+
+================================================================================
+2. SCRIPTS DE TESTING - VALIDAR FUNCIONALIDAD
+================================================================================
+
+Propósito: Probar funcionalidades específicas de la aplicación
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ test_server.py                                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Propósito: Verificar que Django arranca correctamente                       │
+│ Función: Valida que todas las configuraciones están OK                      │
+│ Casos de prueba:                                                            │
+│   ✅ Django setup (versión, configuración correcta)                         │
+│   ✅ Database connectivity (conexión a BD)                                  │
+│   ✅ Apps configuration (apps instaladas correctamente)                     │
+│   ✅ Settings validation (configuración de settings.py)                     │
+│ Uso: python test_server.py                                                  │
+│ Cuando usar: Antes de iniciar desarrollo local, después de cambios servers  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ test_registration.py                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Propósito: Probar flujo completo de registro de usuarios                    │
+│ Función: Simula registro de tutores y clientes                              │
+│ Casos de prueba:                                                            │
+│   ✅ Registro de tutor                                                      │
+│   ✅ Registro de cliente/estudiante                                         │
+│   ✅ Validación de datos requeridos                                         │
+│   ✅ Creación de perfiles asociados                                         │
+│   ✅ Login post-registro                                                    │
+│ Uso: python test_registration.py                                            │
+│ Cuando usar: Después de cambios en forms de registro, modelos User profile  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ test_api_response.py                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Propósito: Validar respuestas de APIs externas                              │
+│ Función: Probar integración con servicios externos                          │
+│ Casos de prueba:                                                            │
+│   ✅ Conectividad API externa                                               │
+│   ✅ Formato de respuesta                                                   │
+│   ✅ Manejo de errores                                                      │
+│   ✅ Timeouts                                                               │
+│ Uso: python test_api_response.py                                            │
+│ Cuando usar: Después de cambios en integraciones externas                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ test_geolocation.py                                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Propósito: Probar funcionalidad de geolocalización                          │
+│ Función: Valida que GeoDjango funciona correctamente                        │
+│ Casos de prueba:                                                            │
+│   ✅ GDAL library availability (disponibilidad GDAL)                        │
+│   ✅ GeoPy integration (integración con GeoPy)                              │
+│   ✅ Location queries (búsquedas por ubicación)                             │
+│   ✅ Distance calculations (cálculos de distancia)                          │
+│ Uso: python test_geolocation.py                                             │
+│ Cuando usar: Después de cambios en core/models.py (ServiceArea, etc)       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ test_ipgeolocation.py                                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Propósito: Probar API de geolocalización por IP                             │
+│ Función: Valida conversión IP → Ubicación (Country, City)                   │
+│ Casos de prueba:                                                            │
+│   ✅ API connectivity                                                       │
+│   ✅ IP parsing                                                             │
+│   ✅ Country/City detection                                                 │
+│   ✅ Error handling                                                         │
+│ Uso: python test_ipgeolocation.py                                           │
+│ Cuando usar: Cambios en IP geolocation backend, nuevos proveedores         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ test_fixes.py                                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Propósito: Validar que los fixes aplicados funcionan                        │
+│ Función: Regresión testing - verifica que fixes no se rompan                │
+│ Casos de prueba:                                                            │
+│   ✅ Admin redirect fix (superuser → /admin/)                               │
+│   ✅ Redirect loop prevention (bypass para admin)                           │
+│   ✅ IntegrityError prevention (dashboard profile validation)               │
+│   ✅ UX improvements (selector de asignaturas)                              │
+│   ✅ Navbar consistency (Mi Perfil link)                                    │
+│ Uso: python test_fixes.py                                                   │
+│ Cuando usar: Después de aplicar hotfixes, antes de deployment              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ test_logging.py                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Propósito: Verificar sistema de logging                                     │
+│ Función: Validatelogging configuration y output                             │
+│ Casos de prueba:                                                            │
+│   ✅ Logger initialization                                                  │
+│   ✅ Log levels (DEBUG, INFO, WARNING, ERROR)                               │
+│   ✅ File rotation                                                          │
+│   ✅ Output formatting                                                      │
+│ Uso: python test_logging.py                                                 │
+│ Cuando usar: Cambios en settings.py logging, debugging issues              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ test_case_sensitivity.py                                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Propósito: Probar sensibilidad de mayúsculas/minúsculas en búsquedas        │
+│ Función: Valida que búsquedas sean case-insensitive cuando corresponda      │
+│ Casos de prueba:                                                            │
+│   ✅ Subject search (búsqueda de materias)                                  │
+│   ✅ User search (búsqueda de usuarios)                                     │
+│   ✅ Location search (búsqueda de ubicaciones)                              │
+│ Uso: python test_case_sensitivity.py                                        │
+│ Cuando usar: Cambios en búsqueda, modelos con many-to-many                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ test_session_fix.py                                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Propósito: Probar manejo correcto de sesiones                               │
+│ Función: Valida serialización de sesiones y cookies                         │
+│ Casos de prueba:                                                            │
+│   ✅ Session creation                                                       │
+│   ✅ Session persistence                                                    │
+│   ✅ Session expiry                                                         │
+│   ✅ Cookie handling                                                        │
+│ Uso: python test_session_fix.py                                             │
+│ Cuando usar: Cambios en login/logout, settings de sesión                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ test_provincia_fallback.py                                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Propósito: Probar fallback de ubicación (provincia/provincia)                │
+│ Función: Valida que GeoIP2 fallback funciona correctamente                  │
+│ Casos de prueba:                                                            │
+│   ✅ Province detection                                                     │
+│   ✅ Fallback to province when city unavailable                             │
+│   ✅ Data accuracy                                                          │
+│ Uso: python test_provincia_fallback.py                                      │
+│ Cuando usar: Cambios en GeoIP2 setup, después de actualizar BD              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+3. SCRIPTS DE VERIFICACIÓN - VALIDAR CONFIGURACIÓN
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ verify_admin.py                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Propósito: Verificar que Django admin está configurado correctamente        │
+│ Función: Chequea que /admin/ y ModelAdmins estén registrados                │
+│ Validaciones:                                                               │
+│   ✅ django.contrib.admin en INSTALLED_APPS                                 │
+│   ✅ URL /admin/ configurada                                                │
+│   ✅ Todos los ModelAdmins registrados                                      │
+│   ✅ Permisos de admin                                                      │
+│ Uso: python verify_admin.py                                                 │
+│ Cuando usar: Después de cambios en urls.py, admin.py, INSTALLED_APPS      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+4. SCRIPTS DE AUTOMATIZACIÓN - BUILD Y EJECUCIÓN
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ run_dev.ps1 (PowerShell - Windows)                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Propósito: Ejecutar servidor de desarrollo en Windows                       │
+│ Función: Activa venv, aplica migraciones, inicia servidor                   │
+│ Pasos:                                                                      │
+│   1. Activa virtual environment (env/)                                      │
+│   2. Ejecuta python manage.py migrate (BD up to date)                       │
+│   3. Inicia servidor: python manage.py runserver                            │
+│ Uso: ./run_dev.ps1 o . .\run_dev.ps1                                        │
+│ Cuando usar: Desarrollo local en Windows                                    │
+│ Acceso: http://localhost:8000/                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ build.sh (Bash - Linux/Mac)                                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Propósito: Script de construcción y deployment                              │
+│ Función: Automatiza build process para producción                           │
+│ Pasos típicos:                                                              │
+│   1. Cleanup de archivos temporales                                         │
+│   2. Install/update dependencies                                            │
+│   3. Collect static files                                                   │
+│   4. Run migrations                                                         │
+│   5. Run tests                                                              │
+│   6. Deploy (si aplica)                                                     │
+│ Uso: bash build.sh o ./build.sh                                             │
+│ Cuando usar: CI/CD pipeline, deployment a producción                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+5. FLUJO DE USO RECOMENDADO
+================================================================================
+
+DESARROLLO LOCAL:
+  1. Activar venv: . .\env\Scripts\Activate.ps1 (Windows)
+  2. Correr dev: ./run_dev.ps1
+  3. Antes de commit:
+     - python test_server.py (verificar setup)
+     - python test_registration.py (si tocaste auth)
+     - python test_fixes.py (verificar no rompiste nada)
+
+TESTING ESPECÍFICO:
+  - Cambié models → python test_registration.py
+  - Cambié geolocation → python test_geolocation.py
+  - Cambié login/sessions → python test_session_fix.py
+  - Cambié admin → python verify_admin.py
+
+BEFORE DEPLOYMENT:
+  1. python test_server.py
+  2. python test_fixes.py
+  3. python test_registration.py
+  4. bash build.sh
+  5. Deploy
+
+CI/CD PIPELINE:
+  - build.sh ejecuta automáticamente (o equivalente de tests)
+
+================================================================================
+6. ESTRUCTURA DEL PROYECTO
+================================================================================
+
+SubjectSupport/
+├── manage.py                           ← Django management
+├── requirements.txt                    ← Dependencias Python
+├── db.sqlite3                          ← Base de datos local
+│
+├── SCRIPTS DE TESTING:
+│   ├── test_server.py                  ← Setup Django ✅
+│   ├── test_registration.py            ← Registro usuarios 🔐
+│   ├── test_api_response.py            ← APIs externas 🌐
+│   ├── test_geolocation.py             ← Geolocalización 📍
+│   ├── test_ipgeolocation.py           ← IP → Ciudad 🌍
+│   ├── test_fixes.py                   ← Regresión testing 🔧
+│   ├── test_logging.py                 ← Sistema logs 📝
+│   ├── test_case_sensitivity.py        ← Búsquedas 🔤
+│   ├── test_session_fix.py             ← Sesiones 🍪
+│   └── test_provincia_fallback.py      ← Fallback ubicación 📍
+│
+├── SCRIPTS DE VERIFICACIÓN:
+│   └── verify_admin.py                 ← Admin config 🔍
+│
+├── SCRIPTS DE AUTOMATIZACIÓN:
+│   ├── run_dev.ps1                     ← Dev Windows ⚙️
+│   └── build.sh                        ← Build/Deploy 🏗️
+│
+├── CARPETAS DJANGO:
+│   ├── subjectSupport/                 ← Settings, URLs, WSGI
+│   ├── accounts/                       ← App: Usuarios, Perfiles
+│   ├── core/                           ← App: Modelos core (ServiceArea, etc)
+│   ├── templates/                      ← Templates HTML
+│   └── staticfiles/                    ← CSS, JS, Assets
+│
+├── NUEVAS CARPETAS DOCUMENTACIÓN:
+│   ├── requirements/                   ← Requisitos JSON
+│   │   ├── models_requirements.json
+│   │   └── views_requirements.json
+│   ├── context/                        ← Contexto documentación
+│   │   ├── context_models.json
+│   │   └── context_views.json
+│   └── tests/                          ← Tests adicionales
+│       ├── tests_models.py
+│       └── tests_views.py
+
+================================================================================
+7. RESUMEN RÁPIDO
+================================================================================
+
+¿Cuándo usar cada script?
+
+TEST_SERVER.PY
+  → Después de git pull, antes de iniciar dev
+  → Verificar que el servidor arranca sin errores
+
+TEST_REGISTRATION.PY
+  → Cambios en forms.py, models.py (User/Profile)
+  → Nuevas funcionalidades en registro
+
+TEST_FIXES.PY
+  → Antes de commit si tocaste vistas de login/dashboard
+  → Verificación de regresiones
+
+VERIFY_ADMIN.PY
+  → Cambios en admin.py o INSTALLED_APPS
+  → Después de agregar nuevos modelos
+
+RUN_DEV.PS1
+  → Diario - ejecutar servidor local en Windows
+
+BUILD.SH
+  → Deployment a producción
+  → CI/CD pipeline
+
+================================================================================
+INFORMACIÓN TÉCNICA
+================================================================================
+
+Requisitos:
+  - Python 3.8+
+  - Django 4.0+
+  - Virtual environment activado
+  - BD SQLite (local) o PostgreSQL (producción)
+
+Configuración:
+  - DJANGO_SETTINGS_MODULE = 'subjectSupport.settings'
+  - Archivo .env con credenciales sensibles
+  - settings.py en subjectSupport/settings.py
+
+Dependencias especiales:
+  - GeoDjango (GDAL) - para geolocalización
+  - django-gis (PostGIS) - opcional para producción
+  - ipaddress, geoip2 - para IP geolocation
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================
+
+Última actualización: Marzo 22, 2026
+Versión: 1.0
+Autor: GitHub Copilot
