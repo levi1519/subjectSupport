@@ -91,18 +91,22 @@ if not DEBUG:
     # En producción siempre usar GIS (PostGIS estará disponible)
     GIS_AVAILABLE = True
 else:
-    # En desarrollo, verificar si GDAL está instalado
-    try:
-        from django.contrib.gis.db.backends.spatialite.base import DatabaseWrapper  # noqa: F401
-        GIS_AVAILABLE = True
-    except (ImportError, Exception):
-        GIS_AVAILABLE = False
-        import warnings
-        warnings.warn(
-            "GDAL not available in development. GIS features disabled locally. "
-            "To enable: install OSGeo4W (Windows) or gdal-bin (Linux/Mac). "
-            "Production will use PostGIS normally."
-        )
+    # En desarrollo LOCAL, deshabilitar temporalmente GIS (GDAL no instalado)
+    # Para habilitar: instalar GDAL y descomentar la siguiente línea
+    GIS_AVAILABLE = False
+    
+    # # Descomentar esto cuando GDAL esté instalado en Windows
+    # try:
+    #     from django.contrib.gis.db.backends.spatialite.base import DatabaseWrapper  # noqa: F401
+    #     GIS_AVAILABLE = True
+    # except (ImportError, Exception):
+    #     GIS_AVAILABLE = False
+    #     import warnings
+    #     warnings.warn(
+    #         "GDAL not available in development. GIS features disabled locally. "
+    #         "To enable: install OSGeo4W (Windows) or gdal-bin (Linux/Mac). "
+    #         "Production will use PostGIS normally."
+    #     )
 
 INSTALLED_APPS = [
     'django.contrib.admin',

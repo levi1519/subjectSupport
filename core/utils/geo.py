@@ -22,13 +22,19 @@ from django.core.cache import cache
 logger = logging.getLogger(__name__)
 
 # Verificar si GIS está disponible
-try:
-    from django.contrib.gis.geos import Point
-    from core.models import ServiceArea
-    GIS_AVAILABLE = True
-except ImportError:
-    GIS_AVAILABLE = False
-    logger.warning("GIS not available - using fallback mode")
+GIS_AVAILABLE = getattr(settings, 'GIS_AVAILABLE', False)
+Point = None
+ServiceArea = None
+
+if GIS_AVAILABLE:
+    try:
+        from django.contrib.gis.geos import Point
+        from core.models import ServiceArea
+    except (ImportError, Exception) as e:
+        logger.warning(f"GIS not available in geo.py: {e} - using fallback mode")
+        GIS_AVAILABLE = False
+else:
+    logger.info("GIS disabled in development - using fallback mode")
 
 
 def get_client_ip(request):

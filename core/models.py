@@ -3,13 +3,18 @@ from django.conf import settings
 from django.utils import timezone
 import uuid
 
-# Importar GIS models solo si está disponible
-try:
-    from django.contrib.gis.db import models as gis_models
-    GIS_AVAILABLE = True
-except ImportError:
-    gis_models = models  # Fallback a models normales
-    GIS_AVAILABLE = False
+# Importar GIS models solo si está disponible en settings
+# En desarrollo sin GDAL, usar models normales
+GIS_AVAILABLE = getattr(settings, 'GIS_AVAILABLE', False)
+
+if GIS_AVAILABLE:
+    try:
+        from django.contrib.gis.db import models as gis_models
+    except (ImportError, Exception):
+        gis_models = models
+        GIS_AVAILABLE = False
+else:
+    gis_models = models
 
 
 class ServiceArea(gis_models.Model):

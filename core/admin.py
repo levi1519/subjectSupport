@@ -1,6 +1,16 @@
 from django.contrib import admin
-from django.contrib.gis.admin import GISModelAdmin
+from django.conf import settings
 from .models import ServiceArea, TutorLead, ClassSession, NotificacionExpansion, Level, SubjectLevel
+
+# Importar GISModelAdmin solo si está disponible
+GIS_AVAILABLE = getattr(settings, 'GIS_AVAILABLE', False)
+if GIS_AVAILABLE:
+    try:
+        from django.contrib.gis.admin import GISModelAdmin
+    except (ImportError, Exception):
+        GISModelAdmin = admin.ModelAdmin
+else:
+    GISModelAdmin = admin.ModelAdmin
 
 
 @admin.register(ServiceArea)
