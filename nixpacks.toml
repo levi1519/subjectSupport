@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["gdal", "postgresql"]
+nixPkgs = ["gdal", "postgresql", "python312"]
 
 [phases.install]
 cmds = [
