@@ -1,0 +1,301 @@
+{
+  "phase1_verdict": {
+    "metadata": {
+      "project_name": "subjectsSuport",
+      "run_date": "2026-03-28T05:19:05.744Z",
+      "phase_id": 1,
+      "engine_version": "ArchitectGuard-v2.2-RFC"
+    },
+    "audit_verdict": "FAIL",
+    "metrics": {
+      "total_files": 8,
+      "passed": 7,
+      "blocked": 1,
+      "skipped": 0,
+      "total_issues": 7
+    },
+    "detailed_log": {
+      "accounts/models": {
+        "status": "BLOCKED",
+        "reason": "Audit completed — violations confirmed by critics",
+        "deepseek_verdict": "REJECTED",
+        "kimi_verdict": "APPROVED",
+        "final_verdict": "REJECTED",
+        "file_hash": "9403_from django.db import models\r\nfrom django.contrib.auth.models import AbstractUser\r\nfrom django.core._({\r\n                'parent_email': 'parent_email is required when is_minor=True.'\r\n            })\r\n",
+        "shell_validation": {
+          "status": "SKIPPED",
+          "reason": "LLM already REJECTED — Shell Gate not executed",
+          "layer": "accounts/models",
+          "timestamp": "2026-03-28T05:16:38.763Z"
+        },
+        "precision_class": "LLM_REJECTED",
+        "tech_violations": 7,
+        "biz_violations": 0,
+        "debt_flags": 0,
+        "violations_detail": {
+          "technical": [
+            {
+              "rule_id": "BK-MOD-01",
+              "line_or_function": "User.save() method",
+              "code_snippet": "    def save(self, *args, **kwargs):\n        if not self.username:\n            base = self.email.split('@')[0]\n            username = base\n            counter = 1\n            while User.objects.filter(username=username).exclude(pk=self.pk).exists():",
+              "fix_required": "Move username generation logic to a custom manager method. Model save() methods should not contain complex business logic or database queries."
+            },
+            {
+              "rule_id": "BK-MOD-01",
+              "line_or_function": "Subject.save() method",
+              "code_snippet": "    def save(self, *args, **kwargs):\n        if not self.slug:\n            self.slug = slugify(self.name)\n        super().save(*args, **kwargs)",
+              "fix_required": "Move slug generation logic to a custom manager method. Model save() methods should not contain business logic."
+            },
+            {
+              "rule_id": "BK-MOD-01",
+              "line_or_function": "ClientProfile.clean() method",
+              "code_snippet": "    def clean(self):\n        \"\"\"Validate parent_email is required when is_minor=True\"\"\"\n        if self.is_minor and not self.parent_email:\n            raise ValidationError({\n                'parent_email': 'parent_email is required when is_minor=True.'\n            })",
+              "fix_required": "Move validation logic to a service layer. Model clean() methods should not contain complex validation logic."
+            },
+            {
+              "rule_id": "BK-PERF-03",
+              "line_or_function": "TutorProfileManager.get_tutors_categorized_by_location()",
+              "code_snippet": "        same_city = base_qs.filter(city__iexact=city)\n        same_country = base_qs.filter(\n            country__iexact=country\n        ).exclude(city__iexact=city)\n        others = base_qs.exclude(country__iexact=country)",
+              "fix_required": "This method creates multiple queries that could lead to N+1 issues. Use a single annotated queryset with priority ordering instead of separate queries."
+            },
+            {
+              "rule_id": "REQ-MOD-ACC-001",
+              "line_or_function": "User model user_type field",
+              "code_snippet": "    user_type = models.CharField(\n    max_length=10,\n    choices=USER_TYPE_CHOICES,\n    blank=True,\n    default='',\n    verbose_name='Tipo de Usuario'\n    )",
+              "fix_required": "user_type field has blank=True and default='' which violates REQ-MOD-ACC-001: 'Required fields MUST NOT have null=True or blank=True'. user_type should be required for all users."
+            },
+            {
+              "rule_id": "REQ-MOD-ACC-002",
+              "line_or_function": "ClientProfile parent_email field",
+              "code_snippet": "    parent_email = models.EmailField(\n        blank=True,\n        null=True,\n        verbose_name='Correo del padre/tutor legal',\n        help_text='Requerido para estudiantes menores de edad'\n    )",
+              "fix_required": "parent_email has blank=True, null=True which violates REQ-MOD-ACC-002: 'ClientProfile parent_email MUST NOT be empty when is_minor=True'. The field should be required when is_minor=True."
+            },
+            {
+              "rule_id": "REQ-MOD-ACC-003",
+              "line_or_function": "TutorProfile hourly_rate field",
+              "code_snippet": "    hourly_rate = models.DecimalField(\n        max_digits=6,\n        decimal_places=2,\n        null=True,\n        blank=True,\n        verbose_name='Tarifa por Hora (USD)',\n        help_text='Precio por hora de tutoría en dólares'\n    )",
+              "fix_required": "hourly_rate has null=True, blank=True which violates REQ-MOD-ACC-003: 'TutorProfile hourly_rate MUST support decimal values max_digits=6, decimal_places=2'. The field should be required for tutors."
+            }
+          ],
+          "business": [],
+          "debt_flags": []
+        }
+      },
+      "accounts/forms": {
+        "status": "CLOSED",
+        "deepseek_verdict": "APPROVED",
+        "kimi_verdict": "APPROVED",
+        "final_verdict": "APPROVED",
+        "file_hash": "16422_from django import forms\r\nfrom django.contrib.auth.forms import UserCreationForm, AuthenticationForm_          self.user.save()\r\n        if commit:\r\n            profile.save()\r\n        return profile\r\n",
+        "shell_validation": {
+          "timestamp": "2026-03-28T05:16:59.597013Z",
+          "layer": "accounts/forms",
+          "checks": {
+            "import_clean": true,
+            "forms_valid": [
+              "TutorRegistrationForm",
+              "ClientRegistrationForm",
+              "LoginForm",
+              "TutorSubjectsForm"
+            ]
+          },
+          "status": "PASS",
+          "precision_classification": "TRUE_POSITIVE"
+        },
+        "precision_class": "TRUE_POSITIVE",
+        "tech_violations": 0,
+        "biz_violations": 0,
+        "debt_flags": 0,
+        "violations_detail": {
+          "technical": [],
+          "business": [],
+          "debt_flags": []
+        }
+      },
+      "accounts/serializers": {
+        "status": "CLOSED",
+        "deepseek_verdict": "APPROVED",
+        "kimi_verdict": "APPROVED",
+        "final_verdict": "APPROVED",
+        "file_hash": "4153_\"\"\"\r\nDjango REST Framework Serializers for accounts app.\r\nHandles serialization of Subject and Tutor_y_rate',\r\n            'city',\r\n            'country'\r\n        ]\r\n        read_only_fields = fields\r\n",
+        "shell_validation": {
+          "timestamp": "2026-03-28T05:17:20.608732Z",
+          "layer": "accounts/serializers",
+          "checks": {
+            "import_clean": true,
+            "no_fields_all": true
+          },
+          "status": "PASS",
+          "precision_classification": "TRUE_POSITIVE"
+        },
+        "precision_class": "TRUE_POSITIVE",
+        "tech_violations": 0,
+        "biz_violations": 0,
+        "debt_flags": 0,
+        "violations_detail": {
+          "technical": [],
+          "business": [],
+          "debt_flags": []
+        }
+      },
+      "accounts/views": {
+        "status": "CLOSED",
+        "deepseek_verdict": "APPROVED",
+        "kimi_verdict": "APPROVED",
+        "final_verdict": "APPROVED",
+        "file_hash": "15918_from django.shortcuts import render, redirect, get_object_or_404\r\nfrom django.contrib.auth import lo_View.as_view()\r\nregister_client = RegisterClientView.as_view()\r\nlogout_view = LogoutView.as_view()\r\n",
+        "shell_validation": {
+          "timestamp": "2026-03-28T05:17:41.406502Z",
+          "layer": "accounts/views",
+          "checks": {
+            "import_clean": true,
+            "views_exist": [
+              "RegisterTutorView",
+              "RegisterClientView",
+              "CustomLoginView",
+              "TutorDashboardView",
+              "ClientDashboardView",
+              "LogoutView"
+            ],
+            "mixins_applied": [
+              "LoginRequiredMixin en TutorDashboardView",
+              "LoginRequiredMixin en ClientDashboardView"
+            ]
+          },
+          "status": "PASS",
+          "precision_classification": "TRUE_POSITIVE"
+        },
+        "precision_class": "TRUE_POSITIVE",
+        "tech_violations": 0,
+        "biz_violations": 0,
+        "debt_flags": 0,
+        "violations_detail": {
+          "technical": [],
+          "business": [],
+          "debt_flags": []
+        }
+      },
+      "academicTutoring/models": {
+        "status": "CLOSED",
+        "deepseek_verdict": "APPROVED",
+        "kimi_verdict": "APPROVED",
+        "final_verdict": "APPROVED",
+        "file_hash": "13134_from datetime import timedelta\r\nfrom django.db import models\r\nfrom django.conf import settings\r\nfrom_as por Nivel'\r\n\r\n    def __str__(self):\r\n        return f\"{self.subject.name} - {self.level.name}\"\r\n",
+        "shell_validation": {
+          "timestamp": "2026-03-28T05:18:02.478810Z",
+          "layer": "academicTutoring/models",
+          "checks": {
+            "import_clean": true,
+            "manager_methods": [
+              "get_tutor_sessions",
+              "get_client_sessions"
+            ],
+            "query_compilation": "OK",
+            "cross_app_import": "OK",
+            "tutorlead_expiration": true
+          },
+          "status": "PASS",
+          "precision_classification": "TRUE_POSITIVE"
+        },
+        "precision_class": "TRUE_POSITIVE",
+        "tech_violations": 0,
+        "biz_violations": 0,
+        "debt_flags": 0,
+        "violations_detail": {
+          "technical": [],
+          "business": [],
+          "debt_flags": []
+        }
+      },
+      "academicTutoring/forms": {
+        "status": "CLOSED",
+        "deepseek_verdict": "APPROVED",
+        "kimi_verdict": "APPROVED",
+        "final_verdict": "APPROVED",
+        "file_hash": "6919_from django import forms\r\nfrom .models import TutorLead, ClassSession, NotificacionExpansion\r\nfrom a_            'max_length': 'El nombre de la ciudad es demasiado largo.',\r\n            },\r\n        }\r\n",
+        "shell_validation": {
+          "timestamp": "2026-03-28T05:18:23.044491Z",
+          "layer": "academicTutoring/forms",
+          "checks": {
+            "import_clean": true,
+            "forms_found": [
+              "NotificacionExpansionForm",
+              "SessionConfirmationForm",
+              "SessionRequestForm",
+              "TutorLeadForm"
+            ]
+          },
+          "status": "PASS",
+          "precision_classification": "TRUE_POSITIVE"
+        },
+        "precision_class": "TRUE_POSITIVE",
+        "tech_violations": 0,
+        "biz_violations": 0,
+        "debt_flags": 0,
+        "violations_detail": {
+          "technical": [],
+          "business": [],
+          "debt_flags": []
+        }
+      },
+      "academicTutoring/views": {
+        "status": "CLOSED",
+        "deepseek_verdict": "APPROVED",
+        "kimi_verdict": "APPROVED",
+        "final_verdict": "APPROVED",
+        "file_hash": "16868_from django.shortcuts import render, redirect, get_object_or_404\r\nfrom django.contrib.auth.decorator_Si no es POST, redirigir a servicio_no_disponible\r\n        return redirect('servicio_no_disponible')",
+        "shell_validation": {
+          "timestamp": "2026-03-28T05:18:44.476611Z",
+          "layer": "academicTutoring/views",
+          "checks": {
+            "import_clean": true,
+            "views_exist": [
+              "GeoRootRouterView",
+              "TutorSelectionView"
+            ],
+            "security_mixin": "TutorSelectionView tiene LoginRequiredMixin"
+          },
+          "status": "PASS",
+          "precision_classification": "TRUE_POSITIVE"
+        },
+        "precision_class": "TRUE_POSITIVE",
+        "tech_violations": 0,
+        "biz_violations": 0,
+        "debt_flags": 0,
+        "violations_detail": {
+          "technical": [],
+          "business": [],
+          "debt_flags": []
+        }
+      },
+      "academicTutoring/middleware": {
+        "status": "CLOSED",
+        "deepseek_verdict": "APPROVED",
+        "kimi_verdict": "APPROVED",
+        "final_verdict": "APPROVED",
+        "file_hash": "5472_\"\"\"\r\nMiddleware para restricción geográfica del servicio.\r\n\r\nNUEVA ARQUITECTURA GEODJANGO:\r\n- Usa co_ uso posterior\r\n        request.geo_data = geo_result\r\n\r\n        return self.get_response(request)\r\n",
+        "shell_validation": {
+          "timestamp": "2026-03-28T05:19:05.125235Z",
+          "layer": "academicTutoring/middleware",
+          "checks": {
+            "import_clean": true,
+            "middlewares_found": [
+              "GeoRestrictionMiddleware"
+            ]
+          },
+          "status": "PASS",
+          "precision_classification": "TRUE_POSITIVE"
+        },
+        "precision_class": "TRUE_POSITIVE",
+        "tech_violations": 0,
+        "biz_violations": 0,
+        "debt_flags": 0,
+        "violations_detail": {
+          "technical": [],
+          "business": [],
+          "debt_flags": []
+        }
+      }
+    }
+  }
+}

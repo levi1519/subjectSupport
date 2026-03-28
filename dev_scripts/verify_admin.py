@@ -52,7 +52,7 @@ def check_admin_migrations():
         return False, str(e)
 
 
-def main():
+def run_probe():
     print("=" * 60)
     print("VERIFICACIÓN DE CONFIGURACIÓN DEL ADMIN DE DJANGO")
     print("=" * 60)

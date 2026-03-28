@@ -1,0 +1,94 @@
+{
+  "project_id": "subjectsupport-thesis",
+  "layer": "views",
+  "app": "academicTutoring",
+  "parent_requirements": "globalRequirements.json",
+  "version": "2.0",
+  "traceability": {
+    "functional": ["RF-001", "RF-005", "RF-006", "RF-010"],
+    "non_functional": ["RNF-001", "RNF-002", "RNF-004", "RNF-006", "RNF-009"]
+  },
+  "requirements": [
+    {
+      "id": "REQ-VIEW-AT-001",
+      "module": "GeoRootRouterView",
+      "parent_trace": ["RF-001", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "GeoRootRouterView MUST redirect users based on geolocation and ServiceArea membership (RF-001)",
+          "GeoRootRouterView MUST use geo_data from request object populated by middleware (RF-001)",
+          "GeoRootRouterView MUST be implemented as CBV (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "GeoRootRouterView MUST NOT implement geolocation logic inline (RNF-004)"
+        ]
+      },
+      "out_of_scope": [
+        "Geolocation API calls (COVERED_BY_MIDDLEWARE)"
+      ]
+    },
+    {
+      "id": "REQ-VIEW-AT-002",
+      "module": "TutorSelectionView",
+      "parent_trace": ["RF-001", "RF-004", "RNF-001", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "TutorSelectionView MUST use LoginRequiredMixin + UserPassesTestMixin with test_func: user_type=='client' (RNF-002)",
+          "TutorSelectionView MUST call TutorProfileManager.get_tutors_by_location() — MUST NOT filter inline (RNF-004)",
+          "TutorSelectionView MUST be implemented as CBV with get_context_data() (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "TutorSelectionView MUST NOT contain location-based filtering logic (RNF-004)",
+          "TutorSelectionView MUST NOT access tutor_profile inside loops without select_related (RNF-001)",
+          "TutorSelectionView MUST NOT be accessible to tutor users (RF-001)"
+        ]
+      },
+      "out_of_scope": [
+        "Tutor prioritization logic (COVERED_BY_MANAGERS)"
+      ]
+    },
+    {
+      "id": "REQ-VIEW-AT-003",
+      "module": "Session Management Views",
+      "parent_trace": ["RF-005", "RF-006", "RNF-002", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "RequestSessionView MUST use UserPassesTestMixin: user_type=='client' (RNF-002)",
+          "ConfirmSessionView MUST use UserPassesTestMixin: user_type=='tutor' AND owns session (RNF-002)",
+          "CancelSessionView MUST validate user is tutor OR client associated with session (RF-005)",
+          "MeetingRoomView MUST validate user is tutor OR client associated with session (RF-005)",
+          "All session views MUST delegate lifecycle logic to academicTutoring.services (RNF-004)",
+          "All session views MUST be implemented as CBVs (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "Session views MUST NOT contain status update logic inline (RNF-004)",
+          "Session views MUST NOT contain meeting URL generation logic (RNF-004)",
+          "Session views MUST NOT be accessible to unauthorized users (RNF-002)"
+        ]
+      },
+      "out_of_scope": [
+        "Session lifecycle logic (COVERED_BY_SERVICES)",
+        "Meeting platform integration (COVERED_BY_SERVICES)"
+      ]
+    },
+    {
+      "id": "REQ-VIEW-AT-004",
+      "module": "Rating and Complaint Views",
+      "parent_trace": ["RF-010", "RNF-002", "RNF-007"],
+      "contracts": {
+        "MUST": [
+          "Rating view MUST validate session is completed before allowing rating (RF-010)",
+          "Complaint view MUST be accessible to students, minors, and legal tutors (RF-010)",
+          "Complaint view MUST send complaint to Django admin for review (RF-010)"
+        ],
+        "MUST_NOT": [
+          "Rating view MUST NOT allow rating without completed session (RF-010)",
+          "Complaint view MUST NOT publish complaints without admin review (RF-010)"
+        ]
+      },
+      "out_of_scope": [
+        "Automatic content moderation (DEFERRED)"
+      ]
+    }
+  ]
+}

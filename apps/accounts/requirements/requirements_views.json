@@ -1,0 +1,91 @@
+{
+  "project_id": "subjectsupport-thesis",
+  "layer": "views",
+  "app": "accounts",
+  "parent_requirements": "globalRequirements.json",
+  "version": "2.0",
+  "traceability": {
+    "functional": ["RF-001", "RF-002", "RF-003"],
+    "non_functional": ["RNF-002", "RNF-004", "RNF-006", "RNF-007", "RNF-009"]
+  },
+  "requirements": [
+    {
+      "id": "REQ-VIEW-ACC-001",
+      "module": "Registration Views",
+      "parent_trace": ["RF-002", "RF-003", "RNF-002", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "Student registration view MUST be geo-restricted to Milagro city only (RF-001)",
+          "Registration views MUST use CBV with LoginRequiredMixin and UserPassesTestMixin (RNF-004)",
+          "Registration views MUST use appropriate form classes — MUST NOT instantiate forms inline (RNF-004)",
+          "Minor registration view MUST notify admin via Django admin after form submission (RF-003)"
+        ],
+        "MUST_NOT": [
+          "Registration views MUST NOT contain form validation logic (RNF-004)",
+          "Registration views MUST NOT contain profile creation logic — MUST delegate to services.py (RNF-004)"
+        ]
+      },
+      "out_of_scope": [
+        "Geolocation API implementation (COVERED_BY_MIDDLEWARE)",
+        "Form validation (COVERED_BY_FORMS)"
+      ]
+    },
+    {
+      "id": "REQ-VIEW-ACC-002",
+      "module": "Login Views",
+      "parent_trace": ["RF-002", "RNF-002", "RNF-007"],
+      "contracts": {
+        "MUST": [
+          "Login views MUST redirect superusers and staff to /admin/ (RF-002)",
+          "Login views MUST redirect regular users based on user_type (RF-002)",
+          "Login views MUST use CBV pattern (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "Login views MUST NOT reveal whether email exists in system in error messages (RNF-002)"
+        ]
+      },
+      "out_of_scope": [
+        "Token generation (COVERED_BY_AUTH_BACKEND)"
+      ]
+    },
+    {
+      "id": "REQ-VIEW-ACC-003",
+      "module": "Dashboard Views",
+      "parent_trace": ["RF-002", "RF-005", "RNF-001", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "TutorDashboardView MUST use LoginRequiredMixin + UserPassesTestMixin with test_func: user_type=='tutor' (RNF-002)",
+          "ClientDashboardView MUST use LoginRequiredMixin + UserPassesTestMixin with test_func: user_type=='client' (RNF-002)",
+          "Dashboard views MUST call ClassSessionManager methods — MUST NOT build querysets inline (RNF-004)",
+          "Dashboard views MUST use CBV with get_context_data() for context (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "Dashboard views MUST NOT contain query filtering or ordering logic (RNF-004)",
+          "Tutors MUST NOT access client dashboard and vice versa (RF-002)"
+        ]
+      },
+      "out_of_scope": [
+        "Session management logic (COVERED_BY_SERVICES)",
+        "Query optimization (COVERED_BY_MANAGERS)"
+      ]
+    },
+    {
+      "id": "REQ-VIEW-ACC-004",
+      "module": "Profile Edit Views",
+      "parent_trace": ["RF-002", "RF-004", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "Profile edit views MUST use CBV with UserPassesTestMixin for role validation (RNF-002)",
+          "Profile edit views MUST delegate save logic to accounts.services (RNF-004)",
+          "Profile edit views MUST use appropriate form classes (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "Profile edit views MUST NOT contain profile update logic inline (RNF-004)"
+        ]
+      },
+      "out_of_scope": [
+        "Profile update business logic (COVERED_BY_SERVICES)"
+      ]
+    }
+  ]
+}

@@ -1,40 +1,103 @@
+# ============================================================
 # Python
+# ============================================================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
 
-# Entorno virtual (CRÍTICO - no subir)
+# ============================================================
+# Entorno virtual — NUNCA subir
+# ============================================================
 env/
 venv/
 ENV/
 .venv/
 
+# ============================================================
 # Django
+# ============================================================
 *.log
 db.sqlite3
 db.sqlite3-journal
 media/
 staticfiles/
 
-# Environment (CRÍTICO - no subir)
+# ============================================================
+# Variables de entorno — NUNCA subir
+# ============================================================
 .env
 .env.local
+.env.example
 
-# IDE
+# ============================================================
+# IDE y OS
+# ============================================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.claude/settings.local.json
-
-# OS
+.claude/
 .DS_Store
 Thumbs.db
 
+# ============================================================
 # Build
+# ============================================================
 build/
 dist/
 *.egg-info/
+
+# ============================================================
+# ArchitectGuard — archivos generados automáticamente
+# No tienen valor en main — se regeneran con cada run
+# ============================================================
+accumulated_context.json
+phase2_accumulated_context.json
+evolution_log.json
+MASTER_REPORT.json
+phase1_verdict.json
+phase2_verdict.json
+phase3_verdict.json
+PHASE1_REPORT.txt
+PHASE2_REPORT.txt
+PHASE3_REPORT.txt
+CRITIC_REPORT_phase*.txt
+
+# ============================================================
+# ArchitectGuard — operacional de AG
+# Pertenece al entorno de desarrollo, no al proyecto Django
+# ============================================================
+shell_tests/
+architectguard/
+
+# ============================================================
+# Tests — artefactos de desarrollo
+# Los tests unitarios SÍ van en main (son parte del código)
+# Los outputs/reportes de tests NO van
+# ============================================================
+apps/*/context/
+apps/*/CRITIC_REPORT/
+apps/*/logs/
+*_unit_report.json
+*_test_output.json
+
+# ============================================================
+# Fixtures de desarrollo — no para producción
+# ============================================================
+apps/*/fixtures/dev_*
+apps/*/fixtures/test_*
+
+
+# Añadir al .gitignore:
+rfc_test_summary.json
+run_rfc_tests.py
+subjectSupport/architech.yaml
+subjectSupport/tests_convergence.py
+system_convergence_report.json
+test_base.py
+test_report_generator.py
+verify_sync.py
+requirements/

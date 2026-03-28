@@ -1,0 +1,124 @@
+{
+  "project_id": "subjectsupport-thesis",
+  "layer": "models",
+  "app": "accounts",
+  "parent_requirements": "globalRequirements.json",
+  "version": "2.0",
+  "traceability": {
+    "functional": ["RF-002", "RF-003", "RF-004"],
+    "non_functional": ["RNF-002", "RNF-004", "RNF-009"]
+  },
+  "requirements": [
+    {
+      "id": "REQ-MOD-ACC-001",
+      "module": "User",
+      "parent_trace": ["RF-002", "RNF-002", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "User model MUST extend AbstractUser with custom user_type field (RF-002)",
+          "Email field MUST be unique and validated with EmailValidator (RF-002)",
+          "User model MUST use email as USERNAME_FIELD (RF-002)",
+          "user_type field MUST have exactly two choices: 'tutor' and 'client' (RF-002)",
+          "All models MUST include verbose_name and verbose_name_plural in Meta (RNF-004)"
+        ],
+        "SHOULD": [
+          "User model SHOULD maintain Django AbstractUser compatibility (RF-002)"
+        ],
+        "MUST_NOT": [
+          "User email MUST NOT accept duplicate values (RF-002)",
+          "user_type MUST NOT accept values outside defined choices (RF-002)",
+          "user_type MUST NOT be modifiable after registration (RF-002)",
+          "Required fields MUST NOT have null=True or blank=True (RNF-004)"
+        ]
+      },
+      "out_of_scope": [
+        "View-level authentication flow (COVERED_BY_VIEWS)",
+        "Form validation logic (COVERED_BY_FORMS)",
+        "Token generation (COVERED_BY_AUTH_BACKEND)"
+      ]
+    },
+    {
+      "id": "REQ-MOD-ACC-002",
+      "module": "ClientProfile",
+      "parent_trace": ["RF-002", "RF-003", "RNF-002", "RNF-008"],
+      "contracts": {
+        "MUST": [
+          "ClientProfile MUST have OneToOne relationship with User (RF-002)",
+          "ClientProfile is_minor field MUST default to False (RF-003)",
+          "ClientProfile MUST have parent_email field for minors (RF-003, RNF-008)",
+          "ClientProfile parent_email MUST be validated with EmailValidator when is_minor=True (RF-003)"
+        ],
+        "SHOULD": [
+          "ClientProfile bio, phone_number, avatar_url, parent_name SHOULD allow null and blank (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "ClientProfile parent_email MUST NOT be empty when is_minor=True (RF-003, RNF-008)",
+          "Model relationships MUST NOT violate referential integrity (RNF-004)"
+        ]
+      },
+      "out_of_scope": [
+        "Parental verification flow (COVERED_BY_VIEWS)",
+        "Form validation for is_minor (COVERED_BY_FORMS)"
+      ]
+    },
+    {
+      "id": "REQ-MOD-ACC-003",
+      "module": "TutorProfile",
+      "parent_trace": ["RF-004", "RNF-002", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "TutorProfile MUST have OneToOne relationship with User (RF-004)",
+          "TutorProfile hourly_rate MUST support decimal values max_digits=6, decimal_places=2 (RF-004)",
+          "TutorProfile data MUST be structured as public information within the platform (RF-004)"
+        ],
+        "SHOULD": [
+          "TutorProfile SHOULD maintain legacy subjects field for backward compatibility (RNF-004)",
+          "TutorProfile hourly_rate, phone_number, bio, experience SHOULD allow null and blank (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "TutorProfile public fields MUST NOT include sensitive personal data (RNF-002)",
+          "Model relationships MUST NOT violate referential integrity (RNF-004)"
+        ]
+      },
+      "out_of_scope": [
+        "Document validation logic (COVERED_BY_ADMIN)",
+        "View-level access control (COVERED_BY_VIEWS)"
+      ]
+    },
+    {
+      "id": "REQ-MOD-ACC-004",
+      "module": "Subject",
+      "parent_trace": ["RF-004", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "Subject name MUST be unique with verbose_name 'Nombre de la Materia' (RF-004)",
+          "Subject slug MUST be auto-generated from name if not provided (RF-004)"
+        ],
+        "MUST_NOT": [
+          "Subject name MUST NOT accept duplicate values (RNF-004)"
+        ]
+      },
+      "out_of_scope": [
+        "Category/tag management (COVERED_BY_ADMIN)"
+      ]
+    },
+    {
+      "id": "REQ-MOD-ACC-005",
+      "module": "TutorProfileManager",
+      "parent_trace": ["RF-001", "RNF-001", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "TutorProfileManager MUST implement get_tutors_by_location(city, country) returning prioritized queryset (RF-001, RNF-001)",
+          "All TutorProfileManager querysets MUST use select_related('user') (RNF-001)",
+          "Priority order MUST be: same city → same country → others (RF-001)"
+        ],
+        "MUST_NOT": [
+          "Location filtering logic MUST NOT be implemented in views (RNF-004)"
+        ]
+      },
+      "out_of_scope": [
+        "PostGIS spatial queries — DEFERRED to production (RF-001 out_of_scope)"
+      ]
+    }
+  ]
+}

@@ -58,7 +58,7 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['']:
     if DEBUG:
         # Default to localhost in development
-        ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+        ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'host.docker.internal']
     else:
         raise ValueError(
             "ALLOWED_HOSTS must be set in production!\n"
@@ -69,6 +69,8 @@ if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['']:
 # Add 'testserver' for Django TestClient (used in unit tests)
 if DEBUG and 'testserver' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('testserver')
+if DEBUG:
+    ALLOWED_HOSTS = ['*']
 
 # CSRF Protection - Trusted origins for AJAX/form submissions
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
@@ -122,8 +124,8 @@ if GIS_AVAILABLE:
     INSTALLED_APPS.append('django.contrib.gis')
 
 INSTALLED_APPS += [
-    'apps.academicTutoring.accounts',
-    'apps.academicTutoring.core',
+    'apps.accounts',
+    'apps.academicTutoring',
 ]
 
 MIDDLEWARE = [
@@ -136,7 +138,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Middleware de restricción geográfica (debe ir después de SessionMiddleware)
-    'apps.academicTutoring.core.middleware.GeoRestrictionMiddleware',
+    'apps.academicTutoring.middleware.GeoRestrictionMiddleware',
 ]
 
 ROOT_URLCONF = 'subjectSupport.urls'
@@ -349,3 +351,6 @@ LOGGING = {
         },
     },
 }
+
+
+ARCHITECTGUARD_SECRET = "ag-subjectsupport-2026"

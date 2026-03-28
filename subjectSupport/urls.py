@@ -16,8 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from apps.academicTutoring.core import views as core_views
-from apps.academicTutoring.accounts import views as accounts_views
+from apps.academicTutoring import views as core_views
+from apps.accounts import views as accounts_views
+from apps.accounts.views_internal import ShellProbeView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,18 +28,20 @@ urlpatterns = [
 
     # GRUPO ESTUDIANTES (Restricción: SOLO MILAGRO)
     # Todas estas rutas están protegidas por middleware para ciudad_data=True
-    path('estudiantes/', include('apps.academicTutoring.accounts.urls_estudiantes')),
+    path('estudiantes/', include('apps.accounts.urls_estudiantes')),
 
     # GRUPO TUTORES (Restricción: TODO ECUADOR)
     # Todas estas rutas están protegidas por middleware para country='Ecuador'
-    path('tutores/', include('apps.academicTutoring.accounts.urls_tutores')),
+    path('tutores/', include('apps.accounts.urls_tutores')),
 
     # Perfiles de usuario (sin restricción geográfica, requiere login)
-    path('accounts/', include('apps.academicTutoring.accounts.urls')),
+    path('accounts/', include('apps.accounts.urls')),
 
     # Logout global (sin restricción geográfica)
     path('accounts/logout/', accounts_views.logout_view, name='logout'),
 
     # Core URLs (sesiones, etc.)
-    path('', include('apps.academicTutoring.core.urls')),
+    path('', include('apps.academicTutoring.urls')),
+
+    path('internal/shell-probe/', ShellProbeView.as_view(), name='shell_probe'),
 ]
