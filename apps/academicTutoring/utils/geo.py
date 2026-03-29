@@ -130,6 +130,21 @@ def get_location_from_ip(ip_address):
 
 
 def is_point_in_service_area(latitude, longitude):
+    
+    """
+        Verifica si un punto geográfico está dentro de alguna área de servicio activa.
+
+        NUEVA LÓGICA GEODJANGO:
+        Realiza consulta espacial PostGIS para verificar si el punto está contenido
+        en algún polígono de ServiceArea activo.
+
+        Args:
+            latitude: Latitud del punto (float)
+            longitude: Longitud del punto (float)
+
+        Returns:
+            tuple: (allowed: bool, service_area: ServiceArea or None)
+        """
     if not GIS_AVAILABLE:
         return True, None
 
@@ -167,12 +182,6 @@ def is_point_in_service_area(latitude, longitude):
     except Exception as e:
         logger.error(f"Error in spatial query: {str(e)}", exc_info=True)
         return True, None
-
-    except Exception as e:
-        logger.error(f"Error in spatial query: {str(e)}", exc_info=True)
-        # En caso de error, permitir acceso por defecto (o podrías denegar)
-        return True, None
-
 
 def check_geo_restriction(request):
     """
