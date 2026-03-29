@@ -51,6 +51,7 @@ class GeoRestrictionMiddleware:
         '/media/',
         '/accounts/logout/',  # Permitir logout siempre
         '/internal/',
+        '/gestion-ss-2026/',
     ]
 
     def __init__(self, get_response):
