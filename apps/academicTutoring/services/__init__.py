@@ -15,28 +15,14 @@ class SessionError(Exception):
 
 @transaction.atomic
 def create_session(tutor, client, form):
-    """
-    Create a new tutoring session.
-    
-    Args:
-        tutor: User instance (must be tutor)
-        client: User instance (must be client)
-        form: SessionRequestForm instance
-        
-    Raises:
-        SessionError: If form is invalid
-        
-    Returns:
-        ClassSession: The created session
-    """
     if not form.is_valid():
-        raise SessionError('Invalid session form data.')
+        return False, None, 'Invalid form data.'
     session = form.save(commit=False)
     session.tutor = tutor
     session.client = client
     session.status = 'pending'
     session.save()
-    return session
+    return True, session, None
 
 
 @transaction.atomic

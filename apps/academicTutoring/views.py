@@ -195,7 +195,7 @@ class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         success, session, error = academic_services.create_session(
             self.tutor,
             self.request.user,
-            form.cleaned_data
+            form  # ← form object, NOT form.cleaned_data
         )
         
         if success:
