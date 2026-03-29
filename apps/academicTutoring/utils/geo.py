@@ -130,58 +130,43 @@ def get_location_from_ip(ip_address):
 
 
 def is_point_in_service_area(latitude, longitude):
-    """
-    Verifica si un punto geográfico está dentro de alguna área de servicio activa.
-
-    NUEVA LÓGICA GEODJANGO:
-    Realiza consulta espacial PostGIS para verificar si el punto está contenido
-    en algún polígono de ServiceArea activo.
-
-    Args:
-        latitude: Latitud del punto (float)
-        longitude: Longitud del punto (float)
-
-    Returns:
-        tuple: (allowed: bool, service_area: ServiceArea or None)
-    """
     if not GIS_AVAILABLE:
-        logger.warning("GIS not available - cannot perform spatial queries")
-        # Fallback: permitir acceso (o podrías denegar)
         return True, None
 
     try:
-        # Convertir coordenadas de string a float (API retorna strings)
-        try:
-            lon_float = float(longitude)
-            lat_float = float(latitude)
-        except (ValueError, TypeError) as conv_error:
-            logger.error(
-                f"Invalid coordinates - cannot convert to float: "
-                f"lat={latitude}, lon={longitude}, error={str(conv_error)}"
-            )
-            return False, None
+        lon_float = float(longitude)
+        lat_float = float(latitude)
+    except (ValueError, TypeError):
+        return False, None
 
-        # Crear punto geográfico (NOTE: order is LON, LAT)
-        user_point = Point(lon_float, lat_float, srid=4326)
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT id, city_name, descripcion, activo
+                FROM "academicTutoring_servicearea"
+                WHERE activo = true
+                AND ST_Contains(area, ST_SetSRID(ST_MakePoint(%s, %s), 4326))
+                LIMIT 1
+            """, [lon_float, lat_float])
+            row = cursor.fetchone()
 
-        logger.info(f"Checking if point ({lat_float}, {lon_float}) is in service area")
-
-        # Consulta espacial: encontrar ServiceArea activa que contenga el punto
-        service_area = ServiceArea.objects.filter(
-            activo=True,
-            area__contains=user_point
-        ).first()
-
-        if service_area:
-            logger.info(
-                f"✓ MATCH: Point ({lat_float}, {lon_float}) is inside {service_area.city_name} service area"
-            )
-            return True, service_area
+        if row:
+            logger.info(f"✓ MATCH: Point ({lat_float}, {lon_float}) is inside {row[1]}")
+            # Crear objeto simple para compatibilidad
+            class SimpleServiceArea:
+                def __init__(self, r):
+                    self.city_name = r[1]
+                    self.descripcion = r[2]
+                    self.activo = r[3]
+            return True, SimpleServiceArea(row)
         else:
-            logger.warning(
-                f"✗ NO MATCH: Point ({lat_float}, {lon_float}) is NOT inside any active service area"
-            )
+            logger.warning(f"✗ NO MATCH: Point ({lat_float}, {lon_float}) not in any service area")
             return False, None
+
+    except Exception as e:
+        logger.error(f"Error in spatial query: {str(e)}", exc_info=True)
+        return True, None
 
     except Exception as e:
         logger.error(f"Error in spatial query: {str(e)}", exc_info=True)
