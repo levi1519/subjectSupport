@@ -2,15 +2,15 @@
   "phase1_verdict": {
     "metadata": {
       "project_name": "subjectsSuport",
-      "run_date": "2026-04-02T21:29:20.494Z",
+      "run_date": "2026-04-02T22:14:07.231Z",
       "phase_id": 1,
       "engine_version": "ArchitectGuard-v2.2-RFC"
     },
-    "audit_verdict": "FAIL",
+    "audit_verdict": "PASS",
     "metrics": {
       "total_files": 9,
-      "passed": 8,
-      "blocked": 1,
+      "passed": 9,
+      "blocked": 0,
       "skipped": 0,
       "total_issues": 0
     },
@@ -224,10 +224,26 @@
         }
       },
       "geoconfig/geo": {
-        "status": "BLOCKED",
-        "reason": "Archivo no encontrado: /home/node/.n8n-files/proyectos/subjectsSuport/apps/geoconfig/geo.py",
-        "verdict": "REJECTED",
-        "file_hash": null,
+        "status": "CLOSED",
+        "deepseek_verdict": "APPROVED",
+        "kimi_verdict": "APPROVED",
+        "final_verdict": "APPROVED",
+        "file_hash": "9891_\"\"\"\r\nUtilidades de geolocalización para restricción geográfica del servicio.\r\n\"\"\"\r\n\r\nimport os\r\nimpo__data']\r\n        logger.info(f\"Test IP set to: {ip_address}\")\r\n        return True\r\n    return False",
+        "shell_validation": {
+          "status": "FAIL",
+          "layer": "geoconfig/geo",
+          "error": {
+            "type": "NetworkError",
+            "message": "Request failed with status code 400",
+            "location": "Shell Gate JS — fetch()"
+          },
+          "timestamp": "2026-04-02T22:14:07.120Z",
+          "precision_classification": "LLM_FALSE_NEGATIVE"
+        },
+        "precision_class": "INFRASTRUCTURE_SKIP",
+        "tech_violations": 0,
+        "biz_violations": 0,
+        "debt_flags": 0,
         "violations_detail": {
           "technical": [],
           "business": [],
