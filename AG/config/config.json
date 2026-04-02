@@ -1,12 +1,14 @@
 {
   "project_name": "subjectsSuport",
   "base_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG",
+  "source_path": "/home/node/.n8n-files/proyectos/subjectsSuport",
 
   "apps": ["accounts", "academicTutoring"],
 
   "phase1": {
     "verdict_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-1/UNIT_REPORT/phase1_verdict.json",
     "report_path":  "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-1/UNIT_REPORT/PHASE1_REPORT.txt",
+    "requirements_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-1",
     "audit_plan": [
       { "app": "accounts",         "layer": "models",      "test_file": "accounts_models_unit_report.json" },
       { "app": "accounts",         "layer": "forms",       "test_file": "accounts_forms_unit_report.json" },
@@ -15,7 +17,9 @@
       { "app": "academicTutoring", "layer": "models",      "test_file": "academicTutoring_models_unit_report.json" },
       { "app": "academicTutoring", "layer": "forms",       "test_file": "academicTutoring_forms_unit_report.json" },
       { "app": "academicTutoring", "layer": "views",       "test_file": "academicTutoring_views_unit_report.json" },
-      { "app": "academicTutoring", "layer": "middleware",  "test_file": "academicTutoring_middleware_unit_report.json" }
+      { "app": "academicTutoring", "layer": "middleware",  "test_file": "academicTutoring_middleware_unit_report.json" },
+      { "app": "geoconfig",        "layer": "geo",         "test_file": "geoconfig_geo_unit_report.json" }
+      
     ]
   },
 
@@ -53,7 +57,7 @@
           "apps/accounts/views.py",
           "apps/accounts/services.py",
           "apps/academicTutoring/views.py",
-          "apps/academicTutoring/services/services.py"
+          "apps/academicTutoring/services/__init__.py"
         ]
       },
       {
@@ -65,14 +69,23 @@
           "apps/accounts/views.py",
           "apps/academicTutoring/views.py"
         ]
+      },
+      {
+        "contract_id": "INT-005",
+        "name": "geo_contracts",
+        "files": [
+          "geoconfig/geo.py",
+          "geoconfig/middleware.py",
+          "apps/academicTutoring/models.py"
+        ]
       }
     ]
   },
 
   "phase3": {
-    "verdict_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE 3/phase3_verdict.json",
-    "report_path":  "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE 3/PHASE3_REPORT.txt",
-    "shell_tests_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE 3/shell_tests/",
+    "verdict_path":     "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-3/phase3_verdict.json",
+    "report_path":      "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-3/PHASE3_REPORT.txt",
+    "shell_tests_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-3/shell_tests/",
     "base_url": "http://host.docker.internal:8000",
     "_note_geo": "En desarrollo SKIP_GEO_CHECK=True — middleware activo pero sin GIS real.",
     "http_tests": [
@@ -92,6 +105,10 @@
     "evolution_log_path":       "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/evolution_log.json",
     "unit_report_path":         "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-1/UNIT_REPORT/",
     "shell_probe_secret":       "ag-subjectsupport-2026",
-    "shell_probe_base_url":     "http://host.docker.internal:8000"
+    "shell_probe_base_url":     "http://host.docker.internal:8000",
+    "debt_log_phase1_path":     "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/debt_log_phase1.json",
+    "debt_log_phase2_path":     "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/debt_log_phase2.json",
+    "debt_log_phase3_path":     "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/debt_log_phase3.json"
+    
   }
 }

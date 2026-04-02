@@ -41,23 +41,13 @@ class RegisterTutorView(FormView):
 
 
 class RegisterClientView(FormView):
-    """Registration view for clients/students - ONLY accessible from Milagro"""
+    """Registration view for clients/students"""
     template_name = 'accounts/register_client.html'
     form_class = ClientRegistrationForm
 
     def dispatch(self, request, *args, **kwargs):
-        """Check geo-restriction before allowing access to registration"""
-        # PROTECCIÓN CRÍTICA: Solo usuarios de Milagro pueden registrarse como estudiantes
-        if not request.user.is_authenticated:
-            allowed, redirect_url = services.validate_student_registration_access(request)
-            if not allowed:
-                messages.error(
-                    request,
-                    'El registro de estudiantes solo está disponible en Milagro. '
-                    'Como estás en otra ciudad de Ecuador, puedes registrarte como tutor.'
-                )
-                return redirect(redirect_url)
-        
+        if request.user.is_authenticated:
+            return redirect('client_dashboard')
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -95,7 +85,7 @@ class CustomLoginView(LoginView):
 
 
 class StudentLoginView(LoginView):
-    """Login view for students - ONLY accessible from Milagro"""
+    """Login view for students"""
     form_class = LoginForm
     template_name = 'accounts/login_student.html'
 
@@ -121,7 +111,7 @@ class StudentLoginView(LoginView):
 
 
 class TutorLoginView(LoginView):
-    """Login view for tutors - Accessible from all Ecuador"""
+    """Login view for tutors"""
     form_class = LoginForm
     template_name = 'accounts/login_tutor.html'
 
@@ -248,7 +238,7 @@ class ManageTutorSubjectsView(LoginRequiredMixin, UserPassesTestMixin, FormView)
     
     def form_valid(self, form):
         """Use services to manage tutor subjects"""
-        success, error = services.manage_tutor_subjects(
+        success, _, error = services.manage_tutor_subjects(
             self.request.user,
             form
         )
@@ -356,7 +346,7 @@ class EditClientProfileView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     
     def form_valid(self, form):
         """Use services to update client profile"""
-        success, error = services.update_client_profile(
+        success, _, error = services.update_client_profile(
             self.request.user,
             form
         )
@@ -393,7 +383,7 @@ class EditTutorProfileView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     
     def form_valid(self, form):
         """Use services to update tutor profile"""
-        success, error = services.update_tutor_profile(
+        success, _, error = services.update_tutor_profile(
             self.request.user,
             form
         )

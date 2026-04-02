@@ -144,7 +144,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Middleware de restricción geográfica (debe ir después de SessionMiddleware)
-    'apps.academicTutoring.middleware.GeoRestrictionMiddleware',
+    'geoconfig.middleware.GeoRestrictionMiddleware',
 ]
 
 ROOT_URLCONF = 'subjectSupport.urls'

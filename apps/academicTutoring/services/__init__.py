@@ -8,6 +8,25 @@ from django.db import transaction
 from ..models import ClassSession
 
 
+def save_expansion_notification(form, request):
+    """Save NotificacionExpansion from form data."""
+    from geoconfig.geo import get_client_ip
+    try:
+        notificacion = form.save(commit=False)
+        notificacion.ip_address = get_client_ip(request)
+        notificacion.ciudad_detectada = request.session.get('geo_city', 'Desconocida')
+        notificacion.save()
+        return True, notificacion, None
+    except Exception as e:
+        return False, None, str(e)
+
+
+def get_service_areas_for_display():
+    """Get active service areas for display in servicio_no_disponible."""
+    from geoconfig.geo import get_available_service_areas
+    return get_available_service_areas()
+
+
 class SessionError(Exception):
     """Custom exception for session-related errors"""
     pass

@@ -11,6 +11,8 @@ Uso:
 """
 import importlib
 import json
+import sys
+import os
 from django.http import JsonResponse
 from django.views import View
 from django.conf import settings
@@ -37,6 +39,12 @@ class ShellProbeView(View):
     Endpoint interno para ArchitectGuard Shell Gate.
     Solo accesible con el header X-AG-Secret correcto.
     """
+
+    SHELL_TESTS_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    'AG', 'PHASE-3', 'shell_tests')
+    if SHELL_TESTS_PATH not in sys.path:
+        sys.path.insert(0, SHELL_TESTS_PATH)
 
     def get(self, request):
         # AUTH: verificar secret header

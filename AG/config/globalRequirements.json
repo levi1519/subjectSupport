@@ -10,26 +10,26 @@
       "id": "RF-001",
       "category": "Geo-Restriction & Country Management",
       "iso_25010": "Functional Suitability → Functional Completeness",
-      "statement": "El sistema MUST soportar múltiples países configurables via CountryConfig sin redeploy.",
+      "statement": "El sistema MUST soportar acceso de usuarios de cualquier país de América Latina via CountryConfig activo.",
       "sub_requirements": [
-        {
-          "id": "RF-001-A",
-          "statement": "Ecuador MUST mantener geo-restriction por polígono PostGIS. Milagro = /estudiantes/, resto Ecuador = /tutores/."
-        },
-        {
-          "id": "RF-001-B",
-          "statement": "Colombia MUST permitir acceso a /estudiantes/ Y /tutores/ sin distinción de ciudad. Geo-restriction MUST NOT aplicar."
-        },
-        {
-          "id": "RF-001-C",
-          "statement": "El middleware MUST resolver routing basado en CountryConfig — MUST NOT tener lógica de país hardcodeada."
-        },
-        {
-          "id": "RF-001-D",
-          "statement": "Países con CountryConfig.active=False MUST NOT tener acceso a ninguna ruta protegida."
-        }
-      ]
+    {
+      "id": "RF-001-A",
+      "statement": "Todos los países LATAM MUST tener CountryConfig con active=True y geo_restricted=False en latam-mvp — sin restricción por ciudad o polígono."
     },
+    {
+      "id": "RF-001-B",
+      "statement": "El middleware MUST permitir acceso completo a /estudiantes/ Y /tutores/ para cualquier país con CountryConfig.active=True — MUST NOT verificar polígono en latam-mvp."
+    },
+    {
+      "id": "RF-001-C",
+      "statement": "El middleware MUST resolver routing basado en CountryConfig — MUST NOT tener lógica de país hardcodeada."
+    },
+    {
+      "id": "RF-001-D",
+      "statement": "Países con CountryConfig.active=False MUST NOT tener acceso a ninguna ruta protegida."
+    }
+  ]
+},
     {
       "id": "RF-002",
       "category": "Authentication & User Management",
@@ -277,7 +277,31 @@
           "statement": "TutorSelectionView MUST poder filtrar tutores por KnowledgeArea cuando se provea en query params."
         }
       ]
+    },
+    {
+  "id": "RF-015",
+  "category": "Cross-Country Matching",
+  "iso_25010": "Functional Suitability → Functional Completeness",
+  "statement": "El sistema MUST permitir matching libre entre estudiantes y tutores de cualquier país LATAM activo.",
+  "sub_requirements": [
+    {
+      "id": "RF-015-A",
+      "statement": "TutorSelectionView MUST mostrar tutores de TODOS los países activos — MUST NOT filtrar por país de origen del estudiante."
+    },
+    {
+      "id": "RF-015-B",
+      "statement": "La geo-restriction MUST aplicar SOLO al acceso a la plataforma — MUST NOT restringir el matching entre usuarios de distintos países."
+    },
+    {
+      "id": "RF-015-C",
+      "statement": "TutorSelectionView MUST ordenar tutores por proximidad de país del estudiante primero — MUST soportar filtro opcional por country_code via query param."
+    },
+    {
+      "id": "RF-015-D",
+      "statement": "El filtro de país en TutorSelectionView MUST NOT filtrar por ciudad — ciudad es sobreingeniería para latam-mvp."
     }
+  ]
+}
   ],
 
   "non_functional_requirements": [

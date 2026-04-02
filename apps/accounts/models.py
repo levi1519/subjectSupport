@@ -102,11 +102,9 @@ class User(AbstractUser):
         verbose_name='Código de País'
     )
     user_type = models.CharField(
-    max_length=10,
-    choices=USER_TYPE_CHOICES,
-    blank=True,
-    default='',
-    verbose_name='Tipo de Usuario'
+        max_length=10,
+        choices=USER_TYPE_CHOICES,
+        verbose_name='Tipo de Usuario'
     )
     is_active = models.BooleanField(default=True)
 
@@ -141,62 +139,63 @@ class TutorProfileManager(models.Manager):
     Provides optimized queries for tutor selection and filtering.
     """
     
-    def get_tutors_by_location(self, city, country):
-        """
-        Get prioritized tutors by location with optimized queries.
-        
-        Args:
-            city: Client's city
-            country: Client's country
-            
-        Returns:
-            QuerySet: Tutors prioritized by location with select_related optimization
-        """
-        # Get all active tutors with optimized queries
-        queryset = self.select_related('user').filter(
-            user__user_type='tutor',
-            user__is_active=True
-        )
-        
-        # Combine with priority: same city > same country > others
-        # Using single annotated queryset with Case/When for optimization
-        prioritized_queryset = queryset.annotate(
-            location_priority=Case(
-                When(city__iexact=city, then=Value(1)),
-                When(country__iexact=country, then=Value(2)),
-                default=Value(3),
-                output_field=IntegerField()
-            )
-        ).order_by('location_priority', 'user__name')
-        
-        return prioritized_queryset
-    
-    def get_tutors_categorized_by_location(self, city, country):
-        base_qs = self.select_related('user').filter(
-            user__user_type='tutor',
-            user__is_active=True
-        ).prefetch_related('subjects', 'subjects_taught')
-
-        same_city = base_qs.filter(city__iexact=city)
-        same_country = base_qs.filter(
-            country__iexact=country
-        ).exclude(city__iexact=city)
-        others = base_qs.exclude(country__iexact=country)
-        all_tutors = self.get_tutors_by_location(city, country).prefetch_related(
-            'subjects', 'subjects_taught'
-        )
-        return {
-            'same_city': same_city,
-            'same_country': same_country,
-            'others': others,
-            'all': all_tutors
-        }
-
     def get_tutors_by_knowledge_area(self, knowledge_area_slug):
-        return TutorProfile.objects.select_related('user').prefetch_related('subjects').filter(
+        return self.select_related('user').prefetch_related(
+            'subjects',
+            'subjects__knowledge_area',
+            'subjects_taught'
+        ).filter(
             subjects__knowledge_area__slug=knowledge_area_slug,
+            user__user_type='tutor',
             user__is_active=True
         ).distinct()
+
+    def get_tutors_fallback(self):
+        """Fallback queryset returning all active tutors ordered by name."""
+        return self.select_related('user').prefetch_related('subjects').filter(
+            user__user_type='tutor',
+            user__is_active=True
+        ).order_by('user__name')
+
+    def filter_by_search(self, queryset, search_query):
+        """Filter tutors by name or subject."""
+        if not search_query:
+            return queryset
+        return queryset.filter(
+            Q(user__name__icontains=search_query) |
+            Q(subjects__name__icontains=search_query)
+        ).distinct()
+
+    def get_tutors_by_country_priority(self, country_code):
+        """
+        Returns all active tutors ordered by country proximity.
+        Same country first (using User.country_code), then others.
+        """
+        return self.select_related('user').prefetch_related(
+            'subjects', 'subjects__knowledge_area'
+        ).filter(
+            user__user_type='tutor',
+            user__is_active=True
+        ).annotate(
+            country_priority=Case(
+                When(user__country_code__iexact=country_code, then=Value(1)),
+                default=Value(2),
+                output_field=IntegerField()
+            )
+        ).order_by('country_priority', 'user__name')
+
+    def get_tutors_filtered_by_country(self, country_code):
+        """
+        Returns active tutors from a specific country only.
+        Filters by User.country_code captured at registration.
+        """
+        return self.select_related('user').prefetch_related(
+            'subjects', 'subjects__knowledge_area'
+        ).filter(
+            user__user_type='tutor',
+            user__is_active=True,
+            user__country_code__iexact=country_code
+        ).order_by('user__name')
 
     def get_profile_for_user(self, user):
         return self.select_related('user').get(user=user)

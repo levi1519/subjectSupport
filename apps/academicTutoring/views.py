@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
+
 from django.views.generic import View, TemplateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse
@@ -11,7 +11,7 @@ from .forms import SessionRequestForm, SessionConfirmationForm, NotificacionExpa
 from . import services as academic_services
 from apps.accounts.models import User, TutorProfile
 from .services.meeting_service import update_session_with_meeting
-from geoconfig.geo import get_available_service_areas, get_client_ip
+from geoconfig.geo import get_available_service_areas
 import logging
 
 logger = logging.getLogger(__name__)
@@ -44,29 +44,16 @@ class GeoRootRouterView(View):
             # Intentar obtener de sesión como fallback
             geo_data = request.session.get('geo_data', {})
 
-        # Obtener información de geolocalización
-        country = geo_data.get('country', 'Unknown')
-        service_area = geo_data.get('service_area')  # Dict con info si está en área de servicio
+        country_config = geo_data.get('country_config')
+        service_area = geo_data.get('service_area')
 
-        logger.info(
-            f"Geo root router: country={country}, service_area={service_area}"
-        )
+        if not country_config or not country_config.get('active'):
+            return redirect('servicio_no_disponible')
 
-        # NUEVA LÓGICA DE REDIRECCIÓN BASADA EN GEOMETRÍA:
-        # 1. Si está dentro del polígono de ServiceArea → Estudiantes
         if service_area:
-            logger.info(f"Redirecting to student_landing (inside service area: {service_area['city_name']})")
             return redirect('student_landing')
 
-        # 2. Si NO está en service area pero SÍ es Ecuador → Tutores
-        elif country == 'Ecuador':
-            logger.info(f"Redirecting to tutor_landing (Ecuador but outside service area)")
-            return redirect('tutor_landing')
-
-        # 3. Si no es Ecuador → Servicio no disponible
-        else:
-            logger.warning(f"User outside Ecuador: country={country}, redirecting to servicio_no_disponible")
-            return redirect('servicio_no_disponible')
+        return redirect('tutor_landing')
 
 
 def landing_page(request):
@@ -96,66 +83,40 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return self.request.user.user_type == 'client'
     
     def get_context_data(self, **kwargs):
-        """Get context data using TutorProfileManager for optimized queries"""
         context = super().get_context_data(**kwargs)
-        
-        # Get client's profile for location-based filtering
+
         try:
-            client_profile = self.request.user.client_profile
-            client_city = client_profile.city
-            client_country = client_profile.country
-        except:
-            client_city = None
-            client_country = None
-        
-        # Get search parameters
-        search_query = self.request.GET.get('search', '')
-        city_filter = self.request.GET.get('city', '')
-        
-        # Use TutorProfileManager for location-based tutor selection
-        if client_city and client_country:
-            prioritized_tutors = TutorProfile.objects.get_tutors_by_location(client_city, client_country)
+            client_country = self.request.user.client_profile.country
+        except Exception:
+            client_country = ''
+
+        # Get filter params
+        search_query   = self.request.GET.get('search', '')
+        country_filter = self.request.GET.get('country', '')
+
+        # Query tutors — country filter takes precedence
+        if country_filter:
+            tutors_qs = TutorProfile.objects.get_tutors_filtered_by_country(country_filter)
+        elif client_country:
+            tutors_qs = TutorProfile.objects.get_tutors_by_country_priority(client_country)
         else:
-            # Fallback to basic active tutors query
-            prioritized_tutors = TutorProfile.objects.select_related('user').filter(
-                user__user_type='tutor',
-                user__is_active=True
-            ).order_by('user__name')
-        
-        # Apply search filters if provided
-        if search_query:
-            prioritized_tutors = prioritized_tutors.filter(
-                Q(user__name__icontains=search_query) |
-                Q(subjects__name__icontains=search_query)
-            ).distinct()
-        
-        if city_filter:
-            prioritized_tutors = prioritized_tutors.filter(city__icontains=city_filter)
-        
-        # Separate tutors by location for template context
-        same_city_tutors = []
-        same_country_tutors = []
-        other_tutors = []
-        
-        for tutor_profile in prioritized_tutors:
-            if client_city and tutor_profile.city == client_city:
-                same_city_tutors.append(tutor_profile.user)
-            elif client_country and tutor_profile.country == client_country:
-                same_country_tutors.append(tutor_profile.user)
-            else:
-                other_tutors.append(tutor_profile.user)
-        
+            tutors_qs = TutorProfile.objects.get_tutors_fallback()
+
+        # Apply knowledge area filter if provided
+        knowledge_area_slug = self.request.GET.get('knowledge_area', '')
+        if knowledge_area_slug:
+            tutors_qs = TutorProfile.objects.get_tutors_by_knowledge_area(knowledge_area_slug)
+
+        # Apply search filter
+        tutors_qs = TutorProfile.objects.filter_by_search(tutors_qs, search_query)
+
         context.update({
-            'tutors': [tutor for tutor in prioritized_tutors],
-            'same_city_tutors': same_city_tutors,
-            'same_country_tutors': same_country_tutors,
-            'other_tutors': other_tutors,
-            'client_city': client_city,
+            'tutors':         tutors_qs,
             'client_country': client_country,
-            'search_query': search_query,
-            'city_filter': city_filter,
+            'search_query':   search_query,
+            'country_filter': country_filter,
         })
-        
+
         return context
 
 
@@ -173,7 +134,12 @@ class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     
     def dispatch(self, request, *args, **kwargs):
         """Get tutor from URL parameter"""
-        self.tutor = get_object_or_404(User, id=kwargs['tutor_id'], user_type='tutor', is_active=True)
+        self.tutor = get_object_or_404(
+            User.objects.select_related('tutor_profile'),
+            id=kwargs['tutor_id'],
+            user_type='tutor',
+            is_active=True
+        )
         return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
@@ -370,7 +336,7 @@ def servicio_no_disponible(request):
     geo_country = request.session.get('geo_country', 'Ecuador')
 
     # Obtener áreas de servicio disponibles (NUEVA LÓGICA GEODJANGO)
-    service_areas = get_available_service_areas()
+    service_areas = academic_services.get_service_areas_for_display()
 
     # Crear formulario pre-llenado con la ciudad detectada
     initial_data = {
@@ -398,14 +364,10 @@ class NotificarmeExpansionView(View):
     def post(self, request):
         form = NotificacionExpansionForm(request.POST)
         if form.is_valid():
-            notificacion = form.save(commit=False)
-
-            # Añadir información de IP y ciudad detectada
-            notificacion.ip_address = get_client_ip(request)
-            notificacion.ciudad_detectada = request.session.get('geo_city', 'Desconocida')
-
-            # Guardar
-            notificacion.save()
+            success, notificacion, error = academic_services.save_expansion_notification(form, request)
+            if not success:
+                messages.error(request, 'Error al procesar tu solicitud.')
+                return redirect('servicio_no_disponible')
 
             logger.info(
                 f"Nueva notificación de expansión: {notificacion.email} "

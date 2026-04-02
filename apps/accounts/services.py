@@ -76,42 +76,42 @@ def register_client(request, form, country_code=''):
 def update_tutor_profile(user, form):
     """
     Updates TutorProfile and User.email atomically.
-    Returns: (success: bool, error: str)
+    Returns: (success: bool, profile: TutorProfile|None, error: str|None)
     """
     if not form.is_valid():
-        return False, 'Invalid form data'
+        return False, None, 'Invalid form data'
     try:
-        form.save()
-        return True, None
+        profile = form.save()
+        return True, profile, None
     except Exception as e:
-        return False, str(e)
+        return False, None, str(e)
 
 
 @transaction.atomic
 def update_client_profile(user, form):
     """
     Updates ClientProfile and User.email atomically.
-    Returns: (success: bool, error: str)
+    Returns: (success: bool, profile: ClientProfile|None, error: str|None)
     """
     if not form.is_valid():
-        return False, 'Invalid form data'
+        return False, None, 'Invalid form data'
     try:
-        form.save()
-        return True, None
+        profile = form.save()
+        return True, profile, None
     except Exception as e:
-        return False, str(e)
+        return False, None, str(e)
 
 
 @transaction.atomic
 def manage_tutor_subjects(user, form):
     """
     Updates TutorProfile.subjects ManyToMany.
-    Returns: (success: bool, error: str)
+    Returns: (success: bool, subjects_queryset|None, error: str|None)
     """
     if not form.is_valid():
-        return False, 'Invalid form data'
+        return False, None, 'Invalid form data'
     try:
-        form.save()
-        return True, None
+        profile = form.save()
+        return True, profile.subjects.all(), None
     except Exception as e:
-        return False, str(e)
+        return False, None, str(e)
