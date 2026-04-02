@@ -12,7 +12,7 @@ accediendo desde una ubicación dentro del área de servicio definida.
 
 import logging
 from django.shortcuts import redirect
-from apps.academicTutoring.utils.geo import check_geo_restriction
+from geoconfig.geo import check_geo_restriction
 
 logger = logging.getLogger(__name__)
 

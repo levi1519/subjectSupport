@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0",
+  "phase": 2,
+  "project": "subjectsSuport",
+  "description": "Contratos de integración entre layers. Valida que los archivos se respetan entre sí, no solo internamente.",
+
+  "integration_contracts": [
+
+    {
+      "id": "INT-001",
+      "name": "models_to_views",
+      "description": "Las vistas DEBEN acceder a los modelos únicamente a través de managers y services. No queries directas en views.",
+      "consumer": { "app": "accounts", "layer": "views" },
+      "provider": { "app": "accounts", "layer": "models" },
+      "rules": [
+        {
+          "id": "INT-001-R1",
+          "severity": "MUST",
+          "statement": "accounts/views.py MUST import from accounts/models.py only via managers or services — never raw QuerySet construction"
+        },
+        {
+          "id": "INT-001-R2",
+          "severity": "MUST NOT",
+          "statement": "accounts/views.py MUST NOT call Model.objects.filter() or Model.objects.get() directly — MUST delegate to managers"
+        },
+        {
+          "id": "INT-001-R3",
+          "severity": "MUST",
+          "statement": "academicTutoring/views.py MUST use ClassSession.objects.get_tutor_sessions() and get_client_sessions() — not raw filters"
+        }
+      ]
+    },
+
+    {
+      "id": "INT-002",
+      "name": "views_to_urls",
+      "description": "Cada URL DEBE apuntar a una vista que existe. Los kwargs de URL DEBEN coincidir con los parámetros de las vistas.",
+      "consumer": { "app": "accounts", "layer": "urls" },
+      "provider": { "app": "accounts", "layer": "views" },
+      "rules": [
+        {
+          "id": "INT-002-R1",
+          "severity": "MUST",
+          "statement": "Every URL pattern in accounts/urls*.py MUST resolve to a view class that exists in accounts/views.py"
+        },
+        {
+          "id": "INT-002-R2",
+          "severity": "MUST",
+          "statement": "Every URL pattern in academicTutoring/urls.py MUST resolve to a view class that exists in academicTutoring/views.py"
+        },
+        {
+          "id": "INT-002-R3",
+          "severity": "MUST NOT",
+          "statement": "No URL pattern MUST NOT reference a view that has been removed or renamed without updating the URL"
+        }
+      ]
+    },
+
+    {
+      "id": "INT-003",
+      "name": "views_to_services",
+      "description": "Las vistas DEBEN delegar lógica de negocio a services.py. No lógica de negocio inline en views.",
+      "consumer": { "app": "accounts", "layer": "views" },
+      "provider": { "app": "accounts", "layer": "services" },
+      "rules": [
+        {
+          "id": "INT-003-R1",
+          "severity": "MUST",
+          "statement": "RegisterTutorView.form_valid() MUST call services.register_tutor() — not inline logic"
+        },
+        {
+          "id": "INT-003-R2",
+          "severity": "MUST",
+          "statement": "RegisterClientView.form_valid() MUST call services.register_client() — not inline logic"
+        },
+        {
+          "id": "INT-003-R3",
+          "severity": "MUST",
+          "statement": "academicTutoring/views.py MUST call academicTutoring/services.py for session lifecycle — create, confirm, cancel"
+        },
+        {
+          "id": "INT-003-R4",
+          "severity": "MUST NOT",
+          "statement": "No view MUST NOT contain transaction.atomic() blocks directly — MUST delegate to services"
+        }
+      ]
+    },
+
+    {
+      "id": "INT-004",
+      "name": "cross_app_contracts",
+      "description": "Contratos entre apps. accounts y academicTutoring DEBEN interoperar sin acoplamiento directo en views ni circular imports.",
+      "consumer": { "app": "academicTutoring", "layer": "models" },
+      "provider": { "app": "accounts", "layer": "models" },
+      "rules": [
+        {
+          "id": "INT-004-R1",
+          "severity": "MUST",
+          "statement": "academicTutoring/models.py MUST reference accounts models only via ForeignKey — no direct method calls across apps"
+        },
+        {
+          "id": "INT-004-R2",
+          "severity": "MUST NOT",
+          "statement": "accounts/models.py MUST NOT import from academicTutoring — dependency is one-directional: academicTutoring → accounts"
+        },
+        {
+          "id": "INT-004-R3",
+          "severity": "MUST",
+          "statement": "TutorDashboardView MUST import ClassSession from academicTutoring.models inside method scope — not at module level to avoid circular imports"
+        },
+        {
+          "id": "INT-004-R4",
+          "severity": "MUST",
+          "statement": "Field references across apps MUST use the actual field name — 'client' not 'student' in ClassSession.select_related()"
+        }
+      ]
+    }
+
+  ],
+
+  "audit_plan": [
+    {
+      "id": "INT-001",
+      "files_to_read": [
+        "apps/accounts/views.py",
+        "apps/accounts/models.py",
+        "apps/accounts/services.py"
+      ]
+    },
+    {
+      "id": "INT-002",
+      "files_to_read": [
+        "apps/accounts/urls.py",
+        "apps/accounts/urls_estudiantes.py",
+        "apps/accounts/urls_tutores.py",
+        "apps/academicTutoring/urls.py"
+      ]
+    },
+    {
+      "id": "INT-003",
+      "files_to_read": [
+        "apps/accounts/views.py",
+        "apps/accounts/services.py",
+        "apps/academicTutoring/views.py",
+        "apps/academicTutoring/services.py"
+      ]
+    },
+    {
+      "id": "INT-004",
+      "files_to_read": [
+        "apps/accounts/models.py",
+        "apps/academicTutoring/models.py",
+        "apps/accounts/views.py",
+        "apps/academicTutoring/views.py"
+      ]
+    }
+  ]
+}

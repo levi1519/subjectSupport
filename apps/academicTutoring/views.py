@@ -11,7 +11,7 @@ from .forms import SessionRequestForm, SessionConfirmationForm, NotificacionExpa
 from . import services as academic_services
 from apps.accounts.models import User, TutorProfile
 from .services.meeting_service import update_session_with_meeting
-from .utils.geo import get_available_service_areas, get_client_ip
+from geoconfig.geo import get_available_service_areas, get_client_ip
 import logging
 
 logger = logging.getLogger(__name__)
