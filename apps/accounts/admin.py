@@ -1,13 +1,23 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, TutorProfile, ClientProfile, Subject
+from .models import User, TutorProfile, ClientProfile, Subject, KnowledgeArea
+
+
+@admin.register(KnowledgeArea)
+class KnowledgeAreaAdmin(admin.ModelAdmin):
+    """Admin configuration for KnowledgeArea model"""
+    list_display = ['name', 'slug', 'created_at']
+    search_fields = ['name']
+    prepopulated_fields = {'slug': ('name',)}
+    readonly_fields = ['created_at']
 
 
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
     """Admin configuration for Subject model"""
-    list_display = ['name', 'slug', 'created_at']
+    list_display = ['name', 'knowledge_area', 'slug', 'created_at']
     search_fields = ['name', 'slug']
+    list_filter = ['knowledge_area']
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ['created_at']
 
@@ -65,9 +75,10 @@ class UserAdmin(BaseUserAdmin):
 @admin.register(TutorProfile)
 class TutorProfileAdmin(admin.ModelAdmin):
     """Admin configuration for TutorProfile model"""
-    list_display = ['user', 'get_subjects_taught_display', 'get_subjects_legacy_display', 'hourly_rate', 'phone_number', 'created_at']
+    list_display = ['user', 'get_subjects_taught_display', 'get_subjects_legacy_display', 'hourly_rate', 'phone_number', 'documents_required', 'created_at']
     search_fields = ['user__name', 'user__email', 'phone_number']
     list_filter = ['created_at']
+    list_editable = ['documents_required']
     readonly_fields = ['created_at']
     filter_horizontal = ['subjects_taught', 'subjects']  # Ambos campos durante transición
 

@@ -39,7 +39,8 @@ def validate_student_registration_access(request):
     return True, None
 
 
-def register_tutor(request, form):
+@transaction.atomic
+def register_tutor(request, form, country_code=''):
     """
     Creates User with user_type='tutor' and associated TutorProfile.
     MUST NOT be called from template logic.
@@ -48,14 +49,15 @@ def register_tutor(request, form):
     if not form.is_valid():
         return False, None, 'Invalid form data'
     try:
-        user = form.save()
+        user = form.save(country_code=country_code)
         login(request, user)
         return True, user, None
     except Exception as e:
         return False, None, str(e)
 
 
-def register_client(request, form):
+@transaction.atomic
+def register_client(request, form, country_code=''):
     """
     Creates User with user_type='client' and associated ClientProfile.
     Returns: (success: bool, user: User, error: str)
@@ -63,7 +65,7 @@ def register_client(request, form):
     if not form.is_valid():
         return False, None, 'Invalid form data'
     try:
-        user = form.save()
+        user = form.save(country_code=country_code)
         login(request, user)
         return True, user, None
     except Exception as e:

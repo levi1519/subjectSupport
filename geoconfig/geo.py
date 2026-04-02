@@ -196,14 +196,19 @@ def check_geo_restriction(request):
             'activo': service_area_obj.activo,
         }
 
+    country_code = location_data.get('country_code', '')
+    country_config = get_country_config(country_code)
+    
     geo_result = {
         'allowed': allowed,
         'city': location_data.get('city', 'Unknown'),
         'region': location_data.get('region', 'Unknown'),
         'country': location_data.get('country', 'Unknown'),
+        'country_code': country_code,
         'latitude': latitude,
         'longitude': longitude,
         'service_area': service_area_data,
+        'country_config': country_config,
         'skip_check': False,
         'ip_address': ip_address
     }
@@ -212,7 +217,7 @@ def check_geo_restriction(request):
 
     logger.info(
         f"Geo restriction result for {ip_address}: "
-        f"allowed={allowed}, service_area={service_area_data}"
+        f"allowed={allowed}, service_area={service_area_data}, country_config={country_config}"
     )
 
     return geo_result
@@ -246,6 +251,40 @@ def get_available_service_areas():
 def set_test_ip(request, ip_address):
     if settings.DEBUG:
         request.session['test_ip'] = ip_address
+
+
+def get_country_config(country_code):
+    """
+    Get CountryConfig for a given country code with caching.
+    Returns CountryConfig dict or None if not found/inactive.
+    """
+    from django.core.cache import cache
+    
+    cache_key = f'country_config_{country_code}'
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+    
+    try:
+        from apps.academicTutoring.models import CountryConfig
+        config = CountryConfig.objects.filter(
+            country_code=country_code,
+            active=True
+        ).first()
+        
+        if config:
+            result = {
+                'country_code': config.country_code,
+                'country_name': config.country_name,
+                'active': config.active,
+                'geo_restricted': config.geo_restricted,
+            }
+            cache.set(cache_key, result, 60)
+            return result
+        return None
+    except Exception as e:
+        logger.error(f"Error getting country config: {str(e)}")
+        return None
         if 'geo_data' in request.session:
             del request.session['geo_data']
         logger.info(f"Test IP set to: {ip_address}")

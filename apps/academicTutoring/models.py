@@ -19,6 +19,39 @@ else:
     gis_models = models
 
 
+class CountryConfig(models.Model):
+    """
+    Configuration for country-specific settings and geo-restrictions.
+    """
+    country_code = models.CharField(
+        max_length=2,
+        unique=True,
+        verbose_name='Código de País'
+    )
+    country_name = models.CharField(
+        max_length=100,
+        verbose_name='Nombre del País'
+    )
+    active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    geo_restricted = models.BooleanField(
+        default=False,
+        verbose_name='Geo Restringido'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'País'
+        verbose_name_plural = 'Países'
+        ordering = ['country_name']
+
+    def __str__(self):
+        return f"{self.country_name} ({self.country_code})"
+
+
 class ServiceArea(gis_models.Model):
     """
     Modelo para definir zonas geográficas de cobertura del servicio usando polígonos.
@@ -26,6 +59,14 @@ class ServiceArea(gis_models.Model):
     Reemplaza la lógica de comparación de strings por consultas espaciales precisas.
     Utiliza PostGIS en producción y SpatiaLite en desarrollo.
     """
+    country_config = models.ForeignKey(
+        CountryConfig,
+        on_delete=models.CASCADE,
+        related_name='service_areas',
+        null=True,
+        blank=True,
+        verbose_name='Configuración de País'
+    )
     city_name = models.CharField(
         max_length=100,
         unique=True,

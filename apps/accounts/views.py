@@ -31,7 +31,8 @@ class RegisterTutorView(FormView):
     form_class = TutorRegistrationForm
 
     def form_valid(self, form):
-        success, user, error = services.register_tutor(self.request, form)
+        country_code = self.request.geo_data.get('country_code', '') if hasattr(self.request, 'geo_data') else ''
+        success, user, error = services.register_tutor(self.request, form, country_code)
         if success:
             messages.success(self.request, '¡Bienvenido! Tu cuenta de tutor ha sido creada exitosamente.')
             return redirect('tutor_dashboard')
@@ -60,7 +61,8 @@ class RegisterClientView(FormView):
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        success, user, error = services.register_client(self.request, form)
+        country_code = self.request.geo_data.get('country_code', '') if hasattr(self.request, 'geo_data') else ''
+        success, user, error = services.register_client(self.request, form, country_code)
         if success:
             messages.success(self.request, '¡Bienvenido! Tu cuenta ha sido creada exitosamente.')
             return redirect('client_dashboard')

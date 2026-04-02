@@ -106,10 +106,11 @@ class TutorRegistrationForm(UserCreationForm):
             raise ValidationError('Las contraseñas no coinciden.')
         return password2
 
-    def save(self, commit=True):
+    def save(self, commit=True, country_code=''):
         user = super().save(commit=False)
         user.user_type = 'tutor'
         user.username = self.cleaned_data['email']
+        user.country_code = country_code
         if commit:
             user.save()
             # Create tutor profile
@@ -220,10 +221,11 @@ class ClientRegistrationForm(UserCreationForm):
 
         return cleaned_data
 
-    def save(self, commit=True):
+    def save(self, commit=True, country_code=''):
         user = super().save(commit=False)
         user.user_type = 'client'
         user.username = self.cleaned_data['email']
+        user.country_code = country_code
         if commit:
             user.save()
             # Create client profile

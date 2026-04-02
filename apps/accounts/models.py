@@ -6,8 +6,45 @@ from django.utils.text import slugify
 from django.db.models import Count, Q, Case, When, IntegerField, Value
 
 
+class KnowledgeArea(models.Model):
+    """Model for knowledge areas (e.g., Sciences, Humanities, Arts)"""
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Nombre del Área'
+    )
+    slug = models.SlugField(
+        max_length=120,
+        unique=True,
+        blank=True,
+        verbose_name='Slug'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Área de Conocimiento'
+        verbose_name_plural = 'Áreas de Conocimiento'
+        ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
 class Subject(models.Model):
     """Model for subjects/materias that tutors can teach"""
+    knowledge_area = models.ForeignKey(
+        KnowledgeArea,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='subjects',
+        verbose_name='Área de Conocimiento'
+    )
     name = models.CharField(
         max_length=100,
         unique=True,
@@ -58,6 +95,12 @@ class User(AbstractUser):
 
     )
     name = models.CharField(max_length=200, verbose_name='Nombre Completo')
+    country_code = models.CharField(
+        max_length=2,
+        blank=True,
+        default='',
+        verbose_name='Código de País'
+    )
     user_type = models.CharField(
     max_length=10,
     choices=USER_TYPE_CHOICES,
@@ -149,6 +192,12 @@ class TutorProfileManager(models.Manager):
             'all': all_tutors
         }
 
+    def get_tutors_by_knowledge_area(self, knowledge_area_slug):
+        return TutorProfile.objects.select_related('user').prefetch_related('subjects').filter(
+            subjects__knowledge_area__slug=knowledge_area_slug,
+            user__is_active=True
+        ).distinct()
+
     def get_profile_for_user(self, user):
         return self.select_related('user').get(user=user)
 
@@ -226,6 +275,10 @@ class TutorProfile(models.Model):
         verbose_name='País'
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    documents_required = models.BooleanField(
+        default=True,
+        verbose_name='Documentos Requeridos'
+    )
 
     # Custom manager
     objects = TutorProfileManager()
