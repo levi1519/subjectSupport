@@ -1,0 +1,57 @@
+[
+  {
+    "id": "DL-P2-001",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-005-R3",
+    "scope": { "app": "academicTutoring", "file_pattern": "services/__init__.py" },
+    "description": "save_expansion_notification importa get_client_ip desde geoconfig.geo inline dentro del método. Esto es intencional para prevenir circular imports — el service layer no puede importar geoconfig a nivel de módulo.",
+    "justification": "Inline import dentro de función es el patrón correcto para prevenir circular imports. Cumple INT-005-R3 al no llamar geoconfig directamente desde views.",
+    "accepted_by": "ruben", "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-002",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-005-R3",
+    "scope": { "app": "academicTutoring", "file_pattern": "services/__init__.py" },
+    "description": "get_service_areas_for_display importa get_available_service_areas inline. Mismo patrón que DL-P2-001.",
+    "justification": "Idéntico a DL-P2-001.",
+    "accepted_by": "ruben", "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+  "id": "DL-P2-003",
+  "status": "active",
+  "type": "false_positive",
+  "rule_id": "INT-003-R5",
+  "scope": { "app": "academicTutoring", "file_pattern": "services/__init__.py" },
+  "description": "confirm_session retorna (bool, object|None, str|None) correctamente. DeepSeek confunde con SessionService.confirm_session legacy en services.py que tiene firma diferente.",
+  "justification": "El __init__.py tiene la firma correcta. El legacy services.py es backward compatibility.",
+  "accepted_by": "ruben", "date": "2026-04-03",
+  "resolution": "ACCEPTED_PERMANENT"
+},
+{
+  "id": "DL-P2-004",
+  "status": "active",
+  "type": "false_positive",
+  "rule_id": "INT-005-R6",
+  "scope": { "app": "academicTutoring", "file_pattern": "views.py" },
+  "description": "GeoRootRouterView.get() accede a geo_data.get('country_config') con manejo correcto de None. DeepSeek reporta violación pero en su propio fix admite que el código es correcto.",
+  "justification": "FP-CHECK — el propio auditor confirma compliance en el campo fix. No es violación.",
+  "accepted_by": "ruben", "date": "2026-04-03",
+  "resolution": "ACCEPTED_PERMANENT"
+},
+{
+  "id": "DL-P2-005",
+  "status": "active",
+  "type": "false_positive",
+  "rule_id": "INT-002-R1",
+  "scope": { "app": "accounts", "file_pattern": "urls.py" },
+  "description": "DeepSeek rechaza INT-002 sin reportar violaciones concretas. Kimi aprueba. 0 violaciones en el reporte. Pattern consistente de falso positivo dimensional en URL resolution.",
+  "justification": "0 technical_violations + Kimi APPROVED = falso positivo de DIM-01. Las URLs fueron verificadas manualmente en corridas anteriores.",
+  "accepted_by": "ruben", "date": "2026-04-03",
+  "resolution": "ACCEPTED_PERMANENT"
+}
+]

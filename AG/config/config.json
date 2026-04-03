@@ -18,69 +18,72 @@
       { "app": "academicTutoring", "layer": "forms",       "test_file": "academicTutoring_forms_unit_report.json" },
       { "app": "academicTutoring", "layer": "views",       "test_file": "academicTutoring_views_unit_report.json" },
       { "app": "academicTutoring", "layer": "middleware",  "test_file": "academicTutoring_middleware_unit_report.json" },
-      { "app": "geoconfig",        "layer": "geo",         "test_file": "geoconfig_geo_unit_report.json" }
+      { "app": "geoconfig",        "layer": "geo",                       "test_file": "geoconfig_geo_unit_report.json" }
       
     ]
   },
 
   "phase2": {
-    "verdict_path":      "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-2/INTEGRATION_REPORT/phase2_verdict.json",
-    "report_path":       "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-2/INTEGRATION_REPORT/PHASE2_REPORT.txt",
-    "requirements_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-2/requirements_integration.json",
-    "integration_plan": [
-      {
-        "contract_id": "INT-001",
-        "name": "models_to_views",
-        "files": [
-          "apps/accounts/views.py",
-          "apps/accounts/models.py",
-          "apps/accounts/services.py"
-        ]
-      },
-      {
-        "contract_id": "INT-002",
-        "name": "views_to_urls",
-        "files": [
-          "apps/accounts/urls.py",
-          "apps/accounts/urls_estudiantes.py",
-          "apps/accounts/urls_tutores.py",
-          "apps/academicTutoring/urls.py",
-          "apps/accounts/views.py",
-          "apps/academicTutoring/views.py",
-          "subjectSupport/urls.py"
-        ]
-      },
-      {
-        "contract_id": "INT-003",
-        "name": "views_to_services",
-        "files": [
-          "apps/accounts/views.py",
-          "apps/accounts/services.py",
-          "apps/academicTutoring/views.py",
-          "apps/academicTutoring/services/__init__.py"
-        ]
-      },
-      {
-        "contract_id": "INT-004",
-        "name": "cross_app_contracts",
-        "files": [
-          "apps/accounts/models.py",
-          "apps/academicTutoring/models.py",
-          "apps/accounts/views.py",
-          "apps/academicTutoring/views.py"
-        ]
-      },
-      {
-        "contract_id": "INT-005",
-        "name": "geo_contracts",
-        "files": [
-          "geoconfig/geo.py",
-          "geoconfig/middleware.py",
-          "apps/academicTutoring/models.py"
-        ]
-      }
-    ]
-  },
+  "requirements_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-2/requirements_integration.json",
+  "accumulated_context_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/phase2_accumulated_context.json",
+  "report_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-2/INTEGRATION_REPORT/PHASE2_REPORT.txt",
+  "verdict_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-2/INTEGRATION_REPORT/phase2_verdict.json",
+  "integration_plan": [
+    {
+      "contract_id": "INT-001",
+      "name": "models_to_views",
+      "files": [
+        "apps/accounts/views.py",
+        "apps/accounts/models.py",
+        "apps/accounts/services.py"
+      ]
+    },
+    {
+      "contract_id": "INT-002",
+      "name": "views_to_urls",
+      "files": [
+        "apps/accounts/urls.py",
+        "apps/accounts/urls_estudiantes.py",
+        "apps/accounts/urls_tutores.py",
+        "apps/academicTutoring/urls.py",
+        "apps/accounts/views.py",
+        "apps/academicTutoring/views.py",
+        "subjectSupport/urls.py"
+      ]
+    },
+    {
+      "contract_id": "INT-003",
+      "name": "views_to_services",
+      "files": [
+        "apps/accounts/views.py",
+        "apps/accounts/services.py",
+        "apps/academicTutoring/views.py",
+        "apps/academicTutoring/services/__init__.py"
+      ]
+    },
+    {
+      "contract_id": "INT-004",
+      "name": "cross_app_contracts",
+      "files": [
+        "apps/accounts/models.py",
+        "apps/academicTutoring/models.py",
+        "apps/accounts/views.py",
+        "apps/academicTutoring/views.py"
+      ]
+    },
+    {
+      "contract_id": "INT-005",
+      "name": "geo_contracts",
+      "files": [
+        "geoconfig/geo.py",
+        "geoconfig/middleware.py",
+        "apps/academicTutoring/utils/geo.py",
+        "apps/academicTutoring/views.py",
+        "apps/academicTutoring/models.py"
+      ]
+    }
+  ]
+},
 
   "phase3": {
     "verdict_path":     "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-3/phase3_verdict.json",

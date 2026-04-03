@@ -11,7 +11,7 @@ from .forms import SessionRequestForm, SessionConfirmationForm, NotificacionExpa
 from . import services as academic_services
 from apps.accounts.models import User, TutorProfile
 from .services.meeting_service import update_session_with_meeting
-from geoconfig.geo import get_available_service_areas
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context = super().get_context_data(**kwargs)
 
         try:
-            client_country = self.request.user.client_profile.country
+            client_country = self.request.user.country_code or ''
         except Exception:
             client_country = ''
 
@@ -213,7 +213,9 @@ class ConfirmSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     def form_valid(self, form):
         """Use academic_services to confirm session"""
         platform = form.cleaned_data.get('meeting_platform', 'google_meet')
-        success, session, error = academic_services.confirm_session(self.session, platform)
+        success, session, error = academic_services.confirm_session(
+            self.session, self.request.user, form
+        )
         
         if success:
             # Show platform-specific success message
@@ -313,7 +315,7 @@ class MeetingRoomView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         
         # Start meeting if tutor is accessing
         if is_host and not self.session.meeting_started:
-            success, session, error = academic_services.start_meeting(self.session)
+            success, session, error = academic_services.start_meeting(self.session, user)
             if success:
                 self.session = session  # Update session with meeting_started=True
         

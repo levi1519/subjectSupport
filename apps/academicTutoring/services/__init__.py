@@ -3,7 +3,7 @@ Service functions for academicTutoring app.
 Handles business logic for session management and tutoring operations.
 """
 
-from django.core.exceptions import ValidationError, PermissionDenied
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from ..models import ClassSession
 
@@ -86,22 +86,16 @@ def cancel_session(session, user):
 def start_meeting(session, user):
     """
     Start a meeting session.
-    
-    Args:
-        session: ClassSession instance
-        user: User starting the meeting (must be tutor)
-        
-    Raises:
-        PermissionDenied: If user is not the tutor
-        
-    Returns:
-        ClassSession: The session with meeting started
+    Returns: (success: bool, session: ClassSession|None, error: str|None)
     """
-    if session.tutor != user:
-        raise PermissionDenied('Only the tutor can start the meeting.')
-    session.meeting_started = True
-    session.save()
-    return session
+    try:
+        if session.tutor != user:
+            return False, None, 'Solo el tutor puede iniciar la reunión.'
+        session.meeting_started = True
+        session.save()
+        return True, session, None
+    except Exception as e:
+        return False, None, str(e)
 
 
 # Backwards compatibility: keep SessionService class for existing code

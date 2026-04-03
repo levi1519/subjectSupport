@@ -1,7 +1,9 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "phase": 2,
   "project": "subjectsSuport",
+  "branch": "latam-mvp",
+  "iso_standard": "ISO/IEC 25010:2011",
   "description": "Contratos de integración entre layers. Valida que los archivos se respetan entre sí, no solo internamente.",
 
   "integration_contracts": [
@@ -27,6 +29,11 @@
           "id": "INT-001-R3",
           "severity": "MUST",
           "statement": "academicTutoring/views.py MUST use ClassSession.objects.get_tutor_sessions() and get_client_sessions() — not raw filters"
+        },
+        {
+          "id": "INT-001-R4",
+          "severity": "MUST",
+          "statement": "TutorSelectionView MUST call TutorProfile.objects.get_tutors_by_country_priority() or get_tutors_filtered_by_country() or get_tutors_fallback() — MUST NOT construct inline querysets"
         }
       ]
     },
@@ -41,7 +48,7 @@
         {
           "id": "INT-002-R1",
           "severity": "MUST",
-          "statement": "Every URL pattern in accounts/urls*.py MUST resolve to a view class that exists in accounts/views.py"
+          "statement": "Every URL pattern in accounts/urls*.py MUST resolve to a view class that exists in accounts/views.py — accepted forms: CBV with as_view(), FBV, or module-level alias created with as_view()"
         },
         {
           "id": "INT-002-R2",
@@ -59,7 +66,7 @@
     {
       "id": "INT-003",
       "name": "views_to_services",
-      "description": "Las vistas DEBEN delegar lógica de negocio a services.py. No lógica de negocio inline en views.",
+      "description": "Las vistas DEBEN delegar lógica de negocio a services.py. Contratos de firma entre caller y callee DEBEN ser consistentes.",
       "consumer": { "app": "accounts", "layer": "views" },
       "provider": { "app": "accounts", "layer": "services" },
       "rules": [
@@ -82,6 +89,21 @@
           "id": "INT-003-R4",
           "severity": "MUST NOT",
           "statement": "No view MUST NOT contain transaction.atomic() blocks directly — MUST delegate to services"
+        },
+        {
+          "id": "INT-003-R5",
+          "severity": "MUST",
+          "statement": "All service functions consumed by views MUST return tuple (bool, object|None, str|None) — MUST NOT raise exceptions toward views as error communication mechanism"
+        },
+        {
+          "id": "INT-003-R6",
+          "severity": "MUST",
+          "statement": "Views MUST unpack service return as (success, result, error) 3-tuple — MUST NOT unpack as 2-tuple (success, error)"
+        },
+        {
+          "id": "INT-003-R7",
+          "severity": "MUST",
+          "statement": "RequestSessionView.form_valid() MUST pass form object to create_session() — MUST NOT pass form.cleaned_data"
         }
       ]
     },
@@ -106,12 +128,57 @@
         {
           "id": "INT-004-R3",
           "severity": "MUST",
-          "statement": "TutorDashboardView MUST import ClassSession from academicTutoring.models inside method scope — not at module level to avoid circular imports"
+          "statement": "TutorDashboardView and ClientDashboardView MUST import ClassSession from academicTutoring.models inside method scope — not at module level to avoid circular imports"
         },
         {
           "id": "INT-004-R4",
           "severity": "MUST",
           "statement": "Field references across apps MUST use the actual field name — 'client' not 'student' in ClassSession.select_related()"
+        },
+        {
+          "id": "INT-004-R5",
+          "severity": "MUST NOT",
+          "statement": "academicTutoring/views.py MUST NOT import geo functions directly from geoconfig — MUST use academic_services or request.geo_data provided by middleware"
+        }
+      ]
+    },
+
+    {
+      "id": "INT-005",
+      "name": "geo_contracts",
+      "description": "Contratos de integración entre geoconfig, middleware, CountryConfig model y views. La capa geo DEBE estar aislada y consumida correctamente.",
+      "consumer": { "app": "academicTutoring", "layer": "middleware" },
+      "provider": { "app": "geoconfig", "layer": "geo" },
+      "rules": [
+        {
+          "id": "INT-005-R1",
+          "severity": "MUST",
+          "statement": "geoconfig/middleware.py MUST import check_geo_restriction exclusively from geoconfig.geo — MUST NOT reimport from apps.academicTutoring.utils"
+        },
+        {
+          "id": "INT-005-R2",
+          "severity": "MUST",
+          "statement": "geoconfig/geo.py MUST import CountryConfig inside function scope using apps.academicTutoring.models — MUST NOT import at module level to avoid circular imports"
+        },
+        {
+          "id": "INT-005-R3",
+          "severity": "MUST",
+          "statement": "Middleware MUST attach geo_data to request object before passing to views — views MUST read geo_data from request.geo_data, never call geoconfig functions directly"
+        },
+        {
+          "id": "INT-005-R4",
+          "severity": "MUST",
+          "statement": "CountryConfig MUST be queried only through get_country_config() in geoconfig/geo.py — MUST NOT be queried directly in middleware or views"
+        },
+        {
+          "id": "INT-005-R5",
+          "severity": "MUST NOT",
+          "statement": "apps/academicTutoring/utils/geo.py MUST NOT contain geo logic — MUST only re-export from geoconfig.geo"
+        },
+        {
+          "id": "INT-005-R6",
+          "severity": "MUST",
+          "statement": "geo_data dict attached to request MUST contain keys: allowed, city, region, country, country_code, latitude, longitude, service_area, skip_check, country_config — views relying on any of these keys MUST handle None gracefully"
         }
       ]
     }
@@ -133,7 +200,8 @@
         "apps/accounts/urls.py",
         "apps/accounts/urls_estudiantes.py",
         "apps/accounts/urls_tutores.py",
-        "apps/academicTutoring/urls.py"
+        "apps/academicTutoring/urls.py",
+        "subjectSupport/urls.py"
       ]
     },
     {
@@ -142,7 +210,7 @@
         "apps/accounts/views.py",
         "apps/accounts/services.py",
         "apps/academicTutoring/views.py",
-        "apps/academicTutoring/services.py"
+        "apps/academicTutoring/services/__init__.py"
       ]
     },
     {
@@ -153,6 +221,105 @@
         "apps/accounts/views.py",
         "apps/academicTutoring/views.py"
       ]
+    },
+    {
+      "id": "INT-005",
+      "files_to_read": [
+        "geoconfig/geo.py",
+        "geoconfig/middleware.py",
+        "apps/academicTutoring/utils/geo.py",
+        "apps/academicTutoring/views.py",
+        "apps/academicTutoring/models.py"
+      ]
+    },
+    {
+        "id": "DL-P2-006",
+        "status": "active",
+        "type": "false_positive",
+        "rule_id": "RF-015-A",
+        "scope": { "app": "academicTutoring", "file_pattern": "views.py" },
+        "description": "get_tutors_by_country_priority() retorna TODOS los tutores activos ordenados — no filtra por país. RF-015-A dice MUST show tutors from ALL active countries — el método cumple porque no excluye ningún país.",
+        "justification": "FP-CHECK — el challenger confunde ordering con filtering. get_tutors_by_country_priority devuelve todos, solo ordena por proximidad.",
+        "accepted_by": "ruben", "date": "2026-04-03",
+        "resolution": "ACCEPTED_PERMANENT"
+    },
+    {
+      "id": "DL-P2-007",
+      "status": "active",
+      "type": "false_positive",
+      "rule_id": "RNF-004",
+      "scope": { "app": "accounts", "file_pattern": "views.py" },
+      "description": "Extracción de country_code desde request.geo_data en views — cubierto por DL-P1-008. Acceso a contexto HTTP no es business logic.",
+      "justification": "DL-P1-008 ya cubre este caso. No requiere fix.",
+      "accepted_by": "ruben", "date": "2026-04-03",
+      "resolution": "ACCEPTED_PERMANENT"
+    },
+    {
+      "id": "DL-P2-008",
+      "status": "active",
+      "type": "false_positive",
+      "rule_id": "RNF-013",
+      "scope": { "app": "accounts", "file_pattern": "services.py" },
+      "description": "register_tutor y register_client tienen @transaction.atomic. El challenger pide verificar scope pero ambas funciones son atómicas completas.",
+      "justification": "FP-CHECK — @transaction.atomic presente y correcto. No requiere fix.",
+      "accepted_by": "ruben", "date": "2026-04-03",
+      "resolution": "ACCEPTED_PERMANENT"
+    },
+    {
+      "id": "DL-P2-009",
+      "status": "active",
+      "type": "false_positive",
+      "rule_id": "RNF-013",
+      "scope": { "app": "academicTutoring", "file_pattern": "services/__init__.py" },
+      "description": "confirm_session tiene @transaction.atomic y solo actualiza ClassSession. El challenger especula sobre scope incompleto sin evidencia.",
+      "justification": "FP-CHECK — no hay operaciones multi-modelo fuera del bloque atómico.",
+      "accepted_by": "ruben", "date": "2026-04-03",
+      "resolution": "ACCEPTED_PERMANENT"
+    },
+    {
+      "id": "DL-P2-010",
+      "status": "active",
+      "type": "false_positive",
+      "rule_id": "RNF-011",
+      "scope": { "app": "accounts", "file_pattern": "urls_estudiantes.py" },
+      "description": "Docstring histórico menciona Milagro. Comentarios no son lógica ejecutable.",
+      "justification": "FP-CHECK — docstrings no son lógica de negocio. RNF-011 aplica a código ejecutable.",
+      "accepted_by": "ruben", "date": "2026-04-03",
+      "resolution": "ACCEPTED_TEMPORARY — actualizar docstrings post-hackathon"
+    },
+    {
+      "id": "DL-P2-011",
+      "status": "active",
+      "type": "false_positive",
+      "rule_id": "RNF-011",
+      "scope": { "app": "accounts", "file_pattern": "urls_tutores.py" },
+      "description": "Docstring histórico menciona Ecuador. Mismo caso que DL-P2-010.",
+      "justification": "FP-CHECK — docstrings no son lógica ejecutable.",
+      "accepted_by": "ruben", "date": "2026-04-03",
+      "resolution": "ACCEPTED_TEMPORARY — actualizar docstrings post-hackathon"
+    },
+    {
+      "id": "DL-P2-012",
+      "status": "active",
+      "type": "false_positive",
+      "rule_id": "RF-001-C",
+      "scope": { "app": "geoconfig", "file_pattern": "middleware.py" },
+      "description": "Middleware RULE-3 verifica geo_restricted — en latam-mvp todos los países tienen geo_restricted=False por lo que este bloque nunca ejecuta. El middleware lee CountryConfig dinámicamente.",
+      "justification": "FP-CHECK — el código es correcto para main branch. En latam-mvp geo_restricted=False para todos los países elimina este path.",
+      "accepted_by": "ruben", "date": "2026-04-03",
+      "resolution": "ACCEPTED_PERMANENT"
+    },
+    {
+      "id": "DL-P2-013",
+      "status": "active",
+      "type": "false_positive",
+      "rule_id": "RNF-011",
+      "scope": { "app": "academicTutoring", "file_pattern": "views.py" },
+      "description": "geo_country = request.session.get('geo_country', 'Ecuador') — default en session.get() cubierto por DL-P1-020.",
+      "justification": "DL-P1-020 ya cubre este caso explícitamente.",
+      "accepted_by": "ruben", "date": "2026-04-03",
+      "resolution": "ACCEPTED_PERMANENT"
     }
+    
   ]
 }
