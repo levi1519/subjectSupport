@@ -137,9 +137,9 @@
                         <div class="mb-4">
                             <h5 class="mb-3">Selecciona tus materias:</h5>
                             
-                            {% if form.subjects %}
+                            {% if form.subjects_taught %}
                                 <div class="subjects-container">
-                                    {% for checkbox in form.subjects %}
+                                    {% for checkbox in form.subjects_taught %}
                                         <div class="subject-checkbox">
                                             {{ checkbox.tag }}
                                             <label for="{{ checkbox.id_for_label }}">
@@ -153,15 +153,15 @@
                                     💡 <strong>Consejo:</strong> Usa <kbd>Ctrl + Clic</kbd> o <kbd>Cmd + Clic</kbd> para seleccionar múltiples asignaturas.
                                 </small>
 
-                                {% if form.subjects.help_text %}
+                                {% if form.subjects_taught.help_text %}
                                     <small class="form-text text-muted d-block mt-2">
-                                        {{ form.subjects.help_text }}
+                                        {{ form.subjects_taught.help_text }}
                                     </small>
                                 {% endif %}
 
-                                {% if form.subjects.errors %}
+                                {% if form.subjects_taught.errors %}
                                     <div class="alert alert-danger mt-2">
-                                        {{ form.subjects.errors }}
+                                        {{ form.subjects_taught.errors }}
                                     </div>
                                 {% endif %}
                             {% else %}
