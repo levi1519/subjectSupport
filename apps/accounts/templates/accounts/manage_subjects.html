@@ -139,19 +139,8 @@
                             
                             {% if form.subjects_taught %}
                                 <div class="subjects-container">
-                                    {% for checkbox in form.subjects_taught %}
-                                        <div class="subject-checkbox">
-                                            {{ checkbox.tag }}
-                                            <label for="{{ checkbox.id_for_label }}">
-                                                {{ checkbox.choice_label }}
-                                            </label>
-                                        </div>
-                                    {% endfor %}
+                                    {{ form.subjects_taught }}
                                 </div>
-
-                                <small class="form-text text-muted d-block mt-2">
-                                    💡 <strong>Consejo:</strong> Usa <kbd>Ctrl + Clic</kbd> o <kbd>Cmd + Clic</kbd> para seleccionar múltiples asignaturas.
-                                </small>
 
                                 {% if form.subjects_taught.help_text %}
                                     <small class="form-text text-muted d-block mt-2">
