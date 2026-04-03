@@ -18,7 +18,10 @@
       { "app": "academicTutoring", "layer": "forms",       "test_file": "academicTutoring_forms_unit_report.json" },
       { "app": "academicTutoring", "layer": "views",       "test_file": "academicTutoring_views_unit_report.json" },
       { "app": "academicTutoring", "layer": "middleware",  "test_file": "academicTutoring_middleware_unit_report.json" },
-      { "app": "geoconfig",        "layer": "geo",                       "test_file": "geoconfig_geo_unit_report.json" }
+      { "app": "geoconfig",        "layer": "geo",                       "test_file": "geoconfig_geo_unit_report.json" },
+      { "app": "accounts",         "layer": "services",                 "test_file": "accounts_services_unit_report.json" },
+      { "app": "academicTutoring", "layer": "services_init",            "test_file": "academicTutoring_services_init_unit_report.json" },
+      { "app": "academicTutoring", "layer": "services_meeting_service", "test_file": "academicTutoring_services_meeting_service_unit_report.json" }
       
     ]
   },
