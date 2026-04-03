@@ -2,7 +2,7 @@
   "phase1_verdict": {
     "metadata": {
       "project_name": "subjectsSuport",
-      "run_date": "2026-04-03T18:35:17.104Z",
+      "run_date": "2026-04-03T20:59:57.380Z",
       "phase_id": 1,
       "engine_version": "ArchitectGuard-v2.2-RFC"
     },
@@ -20,7 +20,7 @@
         "deepseek_verdict": "APPROVED",
         "kimi_verdict": "APPROVED",
         "final_verdict": "APPROVED",
-        "file_hash": "11002_from django.db import models\r\nfrom django.contrib.auth.models import AbstractUser\r\nfrom django.core._({\r\n                'parent_email': 'parent_email is required when is_minor=True.'\r\n            })\r\n",
+        "file_hash": "11009_from django.db import models\r\nfrom django.contrib.auth.models import AbstractUser\r\nfrom django.core._({\r\n                'parent_email': 'parent_email is required when is_minor=True.'\r\n            })\r\n",
         "shell_validation": {
           "status": "FAIL",
           "layer": "accounts/models",
@@ -46,7 +46,7 @@
         "deepseek_verdict": "APPROVED",
         "kimi_verdict": "APPROVED",
         "final_verdict": "APPROVED",
-        "file_hash": "16540_from django import forms\r\nfrom django.contrib.auth.forms import UserCreationForm, AuthenticationForm_          self.user.save()\r\n        if commit:\r\n            profile.save()\r\n        return profile\r\n",
+        "file_hash": "16561_from django import forms\r\nfrom django.contrib.auth.forms import UserCreationForm, AuthenticationForm_          self.user.save()\r\n        if commit:\r\n            profile.save()\r\n        return profile\r\n",
         "shell_validation": {
           "status": "FAIL",
           "layer": "accounts/forms",
@@ -237,7 +237,7 @@
             "message": "Request failed with status code 400",
             "location": "Shell Gate JS — fetch()"
           },
-          "timestamp": "2026-04-03T18:34:42.238Z",
+          "timestamp": "2026-04-03T20:59:13.071Z",
           "precision_classification": "LLM_FALSE_NEGATIVE"
         },
         "precision_class": "INFRASTRUCTURE_SKIP",
@@ -290,7 +290,7 @@
             "message": "Request failed with status code 400",
             "location": "Shell Gate JS — fetch()"
           },
-          "timestamp": "2026-04-03T18:35:03.812Z",
+          "timestamp": "2026-04-03T20:59:41.709Z",
           "precision_classification": "LLM_FALSE_NEGATIVE"
         },
         "precision_class": "INFRASTRUCTURE_SKIP",
@@ -317,7 +317,7 @@
             "message": "Request failed with status code 400",
             "location": "Shell Gate JS — fetch()"
           },
-          "timestamp": "2026-04-03T18:35:17.013Z",
+          "timestamp": "2026-04-03T20:59:57.268Z",
           "precision_classification": "LLM_FALSE_NEGATIVE"
         },
         "precision_class": "INFRASTRUCTURE_SKIP",

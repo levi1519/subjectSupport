@@ -273,7 +273,7 @@ class TutorSubjectsForm(forms.ModelForm):
     Formulario para que los tutores gestionen las materias que enseñan.
     Permite selección múltiple de materias existentes.
     """
-    subjects = forms.ModelMultipleChoiceField(
+    subjects_taught = forms.ModelMultipleChoiceField(
         queryset=Subject.objects.all().order_by('name'),
         required=False,
         widget=forms.SelectMultiple(attrs={
@@ -286,12 +286,12 @@ class TutorSubjectsForm(forms.ModelForm):
 
     class Meta:
         model = TutorProfile
-        fields = ['subjects']
+        fields = ['subjects_taught']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Personalizar mensajes de error
-        self.fields['subjects'].error_messages = {
+        self.fields['subjects_taught'].error_messages = {
             'required': 'Por favor selecciona al menos una materia.',
         }
 
