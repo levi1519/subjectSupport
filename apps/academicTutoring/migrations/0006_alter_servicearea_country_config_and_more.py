@@ -4,6 +4,16 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def clear_service_areas(apps, schema_editor):
+    """
+    En latam-mvp geo_restricted=False para todos los países.
+    ServiceArea no se usa — limpiar para evitar FK violation
+    antes de aplicar el constraint NOT NULL en country_config.
+    """
+    ServiceArea = apps.get_model('academicTutoring', 'ServiceArea')
+    ServiceArea.objects.all().delete()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -11,6 +21,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(clear_service_areas, migrations.RunPython.noop),
         migrations.AlterField(
             model_name='servicearea',
             name='country_config',
