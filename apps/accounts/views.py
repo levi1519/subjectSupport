@@ -93,8 +93,8 @@ class StudentLoginView(LoginView):
         user = form.get_user()
         # Verify user is actually a student
         if user.user_type != 'client':
-            messages.error(self.request, 'Esta es la página de inicio de sesión para estudiantes. Por favor usa el login de tutores.')
-            return redirect('tutor_login')
+            form.add_error(None, 'Credenciales incorrectas.')
+            return self.form_invalid(form)
         messages.success(self.request, f'¡Bienvenido de nuevo, {user.name}!')
         return super().form_valid(form)
 
@@ -119,8 +119,8 @@ class TutorLoginView(LoginView):
         user = form.get_user()
         # Verify user is actually a tutor
         if user.user_type != 'tutor':
-            messages.error(self.request, 'Esta es la página de inicio de sesión para tutores. Por favor usa el login de estudiantes.')
-            return redirect('student_login')
+            form.add_error(None, 'Credenciales incorrectas.')
+            return self.form_invalid(form)
         messages.success(self.request, f'¡Bienvenido de nuevo, {user.name}!')
         return super().form_valid(form)
 

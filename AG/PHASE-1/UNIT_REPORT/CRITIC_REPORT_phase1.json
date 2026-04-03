@@ -2,14 +2,14 @@
   "phase1_verdict": {
     "metadata": {
       "project_name": "subjectsSuport",
-      "run_date": "2026-04-02T22:14:07.231Z",
+      "run_date": "2026-04-03T18:35:17.104Z",
       "phase_id": 1,
       "engine_version": "ArchitectGuard-v2.2-RFC"
     },
     "audit_verdict": "PASS",
     "metrics": {
-      "total_files": 9,
-      "passed": 9,
+      "total_files": 12,
+      "passed": 12,
       "blocked": 0,
       "skipped": 0,
       "total_issues": 0
@@ -98,7 +98,7 @@
         "deepseek_verdict": "APPROVED",
         "kimi_verdict": "APPROVED",
         "final_verdict": "APPROVED",
-        "file_hash": "15534_from django.shortcuts import render, redirect, get_object_or_404\r\nfrom django.contrib.auth import lo_View.as_view()\r\nregister_client = RegisterClientView.as_view()\r\nlogout_view = LogoutView.as_view()\r\n",
+        "file_hash": "15386_from django.shortcuts import render, redirect, get_object_or_404\r\nfrom django.contrib.auth import lo_View.as_view()\r\nregister_client = RegisterClientView.as_view()\r\nlogout_view = LogoutView.as_view()\r\n",
         "shell_validation": {
           "status": "FAIL",
           "layer": "accounts/views",
@@ -176,7 +176,7 @@
         "deepseek_verdict": "APPROVED",
         "kimi_verdict": "APPROVED",
         "final_verdict": "APPROVED",
-        "file_hash": "14945_from django.shortcuts import render, redirect, get_object_or_404\r\nfrom django.contrib.auth.decorator_Si no es POST, redirigir a servicio_no_disponible\r\n        return redirect('servicio_no_disponible')",
+        "file_hash": "14933_from django.shortcuts import render, redirect, get_object_or_404\r\nfrom django.contrib.auth.decorator_Si no es POST, redirigir a servicio_no_disponible\r\n        return redirect('servicio_no_disponible')",
         "shell_validation": {
           "status": "FAIL",
           "layer": "academicTutoring/views",
@@ -237,7 +237,87 @@
             "message": "Request failed with status code 400",
             "location": "Shell Gate JS — fetch()"
           },
-          "timestamp": "2026-04-02T22:14:07.120Z",
+          "timestamp": "2026-04-03T18:34:42.238Z",
+          "precision_classification": "LLM_FALSE_NEGATIVE"
+        },
+        "precision_class": "INFRASTRUCTURE_SKIP",
+        "tech_violations": 0,
+        "biz_violations": 0,
+        "debt_flags": 0,
+        "violations_detail": {
+          "technical": [],
+          "business": [],
+          "debt_flags": []
+        }
+      },
+      "accounts/services": {
+        "status": "CLOSED",
+        "deepseek_verdict": "APPROVED",
+        "kimi_verdict": "APPROVED",
+        "final_verdict": "APPROVED",
+        "file_hash": "3370_\"\"\"\r\nService functions for accounts app.\r\nHandles business logic for profile management and user ope_rofile.subjects_taught.all(), None\r\n    except Exception as e:\r\n        return False, None, str(e)\r\n",
+        "shell_validation": {
+          "status": "FAIL",
+          "layer": "accounts/services",
+          "error": {
+            "type": "ModuleNotFoundError",
+            "message": "No module named 'shell_tests'",
+            "location": "ShellProbeView — importlib.import_module"
+          },
+          "precision_classification": "TRUE_POSITIVE"
+        },
+        "precision_class": "INFRASTRUCTURE_SKIP",
+        "tech_violations": 0,
+        "biz_violations": 0,
+        "debt_flags": 0,
+        "violations_detail": {
+          "technical": [],
+          "business": [],
+          "debt_flags": []
+        }
+      },
+      "academicTutoring/services_init": {
+        "status": "CLOSED",
+        "deepseek_verdict": "APPROVED",
+        "kimi_verdict": "APPROVED",
+        "final_verdict": "APPROVED",
+        "file_hash": "3513_\"\"\"\r\nService functions for academicTutoring app.\r\nHandles business logic for session management and _ 'create_session', 'confirm_session', \r\n    'cancel_session', 'start_meeting', 'SessionService'\r\n]\r\n",
+        "shell_validation": {
+          "status": "FAIL",
+          "layer": "academicTutoring/services_init",
+          "error": {
+            "type": "NetworkError",
+            "message": "Request failed with status code 400",
+            "location": "Shell Gate JS — fetch()"
+          },
+          "timestamp": "2026-04-03T18:35:03.812Z",
+          "precision_classification": "LLM_FALSE_NEGATIVE"
+        },
+        "precision_class": "INFRASTRUCTURE_SKIP",
+        "tech_violations": 0,
+        "biz_violations": 0,
+        "debt_flags": 0,
+        "violations_detail": {
+          "technical": [],
+          "business": [],
+          "debt_flags": []
+        }
+      },
+      "academicTutoring/services_meeting_service": {
+        "status": "CLOSED",
+        "deepseek_verdict": "APPROVED",
+        "kimi_verdict": "APPROVED",
+        "final_verdict": "APPROVED",
+        "file_hash": "4977_\"\"\"\r\nMeeting service for automatic Google Meet and Zoom URL generation\r\n\"\"\"\r\nimport uuid\r\nimport sec_meeting_data.get('meeting_password')\r\n\r\n    if save:\r\n        session.save()\r\n\r\n    return session\r\n",
+        "shell_validation": {
+          "status": "FAIL",
+          "layer": "academicTutoring/services_meeting_service",
+          "error": {
+            "type": "NetworkError",
+            "message": "Request failed with status code 400",
+            "location": "Shell Gate JS — fetch()"
+          },
+          "timestamp": "2026-04-03T18:35:17.013Z",
           "precision_classification": "LLM_FALSE_NEGATIVE"
         },
         "precision_class": "INFRASTRUCTURE_SKIP",

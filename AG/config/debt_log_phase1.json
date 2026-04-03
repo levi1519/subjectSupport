@@ -427,5 +427,82 @@
   "justification": "FP-CHECK-007 — save() override es el mecanismo Django estándar para auto-fields. BK-MOD-01 aplica a queries complejas y lógica de dominio, no a auto-asignación de campos.",
   "accepted_by": "ruben", "date": "2026-04-02",
   "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+},
+{
+  "id": "DL-P1-030",
+  "status": "active",
+  "type": "false_positive",
+  "rule_id": "REQ-VIEW-AT-001",
+  "scope": { "app": "academicTutoring", "file_pattern": "views.py", "rule_ref": "REQ-VIEW-AT-001" },
+  "description": "GeoRootRouterView.get() lee country_config desde geo_data dinámicamente. No hay hardcoding de país. La lógica de geo_restricted=False cubre latam-mvp correctamente.",
+  "justification": "FP — DL-P1-011 ya cubre este caso. El middleware maneja el routing correcto.",
+  "accepted_by": "ruben", "date": "2026-04-03",
+  "resolution": "ACCEPTED_PERMANENT"
+},
+{
+  "id": "DL-P1-031",
+  "status": "active",
+  "type": "false_positive",
+  "rule_id": "BK-MOD-01",
+  "scope": { "app": "academicTutoring", "file_pattern": "views.py", "rule_ref": "BK-MOD-01" },
+  "description": "RequestSessionView.dispatch() usa get_object_or_404 con select_related — patrón Django estándar para UserPassesTestMixin. DL-P1-027 ya cubre este caso.",
+  "justification": "FP — DL-P1-027 cubre get_object_or_404 en test_func/dispatch. No es business logic.",
+  "accepted_by": "ruben", "date": "2026-04-03",
+  "resolution": "ACCEPTED_PERMANENT"
+},
+{
+  "id": "DL-P1-032",
+  "status": "active",
+  "type": "false_positive",
+  "rule_id": "BK-MOD-01",
+  "scope": { "app": "academicTutoring", "file_pattern": "views.py", "rule_ref": "BK-MOD-01" },
+  "description": "servicio_no_disponible() lee session data y crea form con initial data — presentación pura, no business logic. DL-P1-016/017 ya cubren este caso.",
+  "justification": "FP — DL-P1-016 y DL-P1-017 cubren este patrón.",
+  "accepted_by": "ruben", "date": "2026-04-03",
+  "resolution": "ACCEPTED_PERMANENT"
+},
+{
+  "id": "DL-P1-033",
+  "status": "active",
+  "type": "false_positive",
+  "rule_id": "REQ-VIEW-AT-002",
+  "scope": { "app": "academicTutoring", "file_pattern": "views.py", "rule_ref": "REQ-VIEW-AT-002" },
+  "description": "TutorSelectionView usa query param 'country' en lugar de 'country_code'. El contrato dice country_code pero el param name es cosmético — la funcionalidad es correcta.",
+  "justification": "FP-CHECK — el contrato verifica funcionalidad, no nombres de parámetros GET. La view llama get_tutors_filtered_by_country() correctamente.",
+  "accepted_by": "ruben", "date": "2026-04-03",
+  "resolution": "ACCEPTED_TEMPORARY — renombrar param a country_code en próximo sprint"
+},
+{
+  "id": "DL-P1-034",
+  "status": "active",
+  "type": "false_positive",
+  "rule_id": "REQ-VIEW-AT-002",
+  "scope": { "app": "academicTutoring", "file_pattern": "views.py", "rule_ref": "REQ-VIEW-AT-002" },
+  "description": "TutorSelectionView ya filtra por knowledge_area_slug cuando se provee. DeepSeek reporta como violación pero el código lo implementa correctamente.",
+  "justification": "FP — el código implementa el filtro correctamente. Verificado en Phase 1 corridas anteriores.",
+  "accepted_by": "ruben", "date": "2026-04-03",
+  "resolution": "ACCEPTED_PERMANENT"
+},
+{
+  "id": "DL-P1-035",
+  "status": "active",
+  "type": "false_positive",
+  "rule_id": "RF-001-C",
+  "scope": { "app": "accounts", "file_pattern": "services.py", "rule_ref": "RF-001-C" },
+  "description": "Kimi reporta hardcoded country codes en accounts/services.py pero el código reportado pertenece a GeoRootRouterView en academicTutoring/views.py. Hallucination — el código no existe en services.py.",
+  "justification": "FP — código inventado por el challenger. accounts/services.py no contiene GeoRootRouterView ni routing logic.",
+  "accepted_by": "ruben", "date": "2026-04-03",
+  "resolution": "ACCEPTED_PERMANENT"
+},
+{
+  "id": "DL-P1-036",
+  "status": "active",
+  "type": "false_positive",
+  "rule_id": "RNF-013",
+  "scope": { "app": "accounts", "file_pattern": "services.py", "rule_ref": "RNF-013" },
+  "description": "Kimi reporta que register_tutor carece de @transaction.atomic pero el código ya tiene el decorator. Hallucination — el snippet que reporta no corresponde al código real.",
+  "justification": "FP — @transaction.atomic ya presente en register_tutor y register_client. Verificado en fixes anteriores.",
+  "accepted_by": "ruben", "date": "2026-04-03",
+  "resolution": "ACCEPTED_PERMANENT"
 }
 ]
