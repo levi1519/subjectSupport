@@ -166,6 +166,20 @@
                     </div>
                     {% endif %}
 
+                    {% if profile.cedula %}
+                    <div class="info-item">
+                        <div class="info-label">Cédula / Identificación</div>
+                        <div class="info-value">{{ profile.cedula }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if profile.birth_date %}
+                    <div class="info-item">
+                        <div class="info-label">Fecha de nacimiento</div>
+                        <div class="info-value">{{ profile.birth_date|date:"d/m/Y" }}</div>
+                    </div>
+                    {% endif %}
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="info-item">
