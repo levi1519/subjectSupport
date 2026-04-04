@@ -235,7 +235,18 @@ class ManageTutorSubjectsView(LoginRequiredMixin, UserPassesTestMixin, FormView)
             messages.info(self.request, 'Tu perfil ha sido creado. Por favor completa tu información.')
         kwargs['instance'] = profile
         return kwargs
-    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from .models import Subject
+        subjects = Subject.objects.select_related('knowledge_area').order_by('knowledge_area__name', 'name')
+        subjects_by_area = {}
+        for subject in subjects:
+            area_name = subject.knowledge_area.name if subject.knowledge_area else 'Sin área'
+            subjects_by_area.setdefault(area_name, []).append(subject)
+        context['subjects_by_area'] = subjects_by_area
+        return context
+
     def form_valid(self, form):
         """Use services to manage tutor subjects"""
         success, _, error = services.manage_tutor_subjects(

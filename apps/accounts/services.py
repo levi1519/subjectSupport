@@ -18,8 +18,23 @@ def register_tutor(request, form, country_code=''):
     if not form.is_valid():
         return False, None, 'Invalid form data'
     try:
-        user = form.save(country_code=country_code)
-        profile = user.tutor_profile
+        user = form.save(commit=False, country_code=country_code)
+        birth_date = getattr(form.instance, 'birth_date', None) or form.cleaned_data.get('birth_date')
+        if birth_date:
+            from datetime import date
+            today = date.today()
+            age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+            if age < 18:
+                return False, None, 'El tutor debe ser mayor de 18 años.'
+        user.save()
+        profile = TutorProfile.objects.create(
+            user=user,
+            bio=form.cleaned_data.get('bio', ''),
+            experience=form.cleaned_data.get('experience', '')
+        )
+        subjects = form.cleaned_data.get('subjects')
+        if subjects:
+            profile.subjects.set(subjects)
         geo_data = getattr(request, 'geo_data', None)
         if geo_data:
             city = geo_data.get('city', '')

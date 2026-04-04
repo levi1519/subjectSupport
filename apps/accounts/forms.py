@@ -34,6 +34,12 @@ class TutorRegistrationForm(UserCreationForm):
         }),
         label='Experiencia'
     )
+    cedula = forms.CharField(
+        required=False,
+        max_length=20,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
+        label='Cédula / Identificación',
+    )
 
     class Meta:
         model = User
@@ -143,6 +149,12 @@ class ClientRegistrationForm(UserCreationForm):
             'placeholder': 'Nombre del padre o tutor legal'
         }),
         label='Nombre del padre/tutor legal'
+    )
+    cedula = forms.CharField(
+        required=False,
+        max_length=20,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
+        label='Cédula / Identificación',
     )
 
     class Meta:
@@ -274,12 +286,9 @@ class TutorSubjectsForm(forms.ModelForm):
     Permite selección múltiple de materias existentes.
     """
     subjects_taught = forms.ModelMultipleChoiceField(
-        queryset=Subject.objects.all().order_by('name'),
+        queryset=Subject.objects.all().order_by('knowledge_area__name', 'name'),
         required=False,
-        widget=forms.SelectMultiple(attrs={
-            'class': 'form-control',
-            'size': '7'
-        }),
+        widget=forms.CheckboxSelectMultiple(),
         label='Materias que enseño',
         help_text='Selecciona todas las materias que puedes enseñar (mantén Ctrl/Cmd para selección múltiple)'
     )
@@ -294,6 +303,12 @@ class TutorSubjectsForm(forms.ModelForm):
         self.fields['subjects_taught'].error_messages = {
             'required': 'Por favor selecciona al menos una materia.',
         }
+
+    def clean_subjects_taught(self):
+        subjects = self.cleaned_data.get('subjects_taught')
+        if subjects and subjects.count() > 5:
+            raise forms.ValidationError('Solo puedes seleccionar un máximo de 5 materias.')
+        return subjects
 
 
 class ClientProfileEditForm(forms.ModelForm):
@@ -330,10 +345,16 @@ class ClientProfileEditForm(forms.ModelForm):
         label='Biografía',
         help_text='Información adicional sobre ti (opcional)'
     )
+    cedula = forms.CharField(
+        required=False,
+        max_length=20,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
+        label='Cédula / Identificación',
+    )
 
     class Meta:
         model = ClientProfile
-        fields = ['phone_number', 'bio']
+        fields = ['phone_number', 'bio', 'cedula']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -416,10 +437,16 @@ class TutorProfileEditForm(forms.ModelForm):
         label='Tarifa por Hora (USD)',
         help_text='Precio por hora de tutoría (opcional)'
     )
+    cedula = forms.CharField(
+        required=False,
+        max_length=20,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
+        label='Cédula / Identificación',
+    )
 
     class Meta:
         model = TutorProfile
-        fields = ['phone_number', 'bio', 'experience', 'hourly_rate']
+        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'cedula']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)

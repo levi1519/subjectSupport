@@ -273,6 +273,8 @@ class TutorProfile(models.Model):
         default='Ecuador',
         verbose_name='País'
     )
+    birth_date = models.DateField(null=True, blank=True, verbose_name='Fecha de nacimiento')
+    cedula = models.CharField(max_length=20, blank=True, null=True, verbose_name='Cédula / Identificación')
     created_at = models.DateTimeField(auto_now_add=True)
     documents_required = models.BooleanField(
         default=True,
@@ -288,6 +290,14 @@ class TutorProfile(models.Model):
 
     def __str__(self):
         return f"Perfil de {self.user.name}"
+
+    @property
+    def age(self):
+        if not self.birth_date:
+            return None
+        from datetime import date
+        today = date.today()
+        return today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
 
 
 class ClientProfile(models.Model):
@@ -344,6 +354,8 @@ class ClientProfile(models.Model):
         default='Ecuador',
         verbose_name='País'
     )
+    birth_date = models.DateField(null=True, blank=True, verbose_name='Fecha de nacimiento')
+    cedula = models.CharField(max_length=20, blank=True, null=True, verbose_name='Cédula / Identificación')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
