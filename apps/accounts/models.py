@@ -147,11 +147,9 @@ class TutorProfileManager(models.Manager):
     
     def get_tutors_by_knowledge_area(self, knowledge_area_slug, active_codes=None):
         queryset = self.select_related('user').prefetch_related(
-            'subjects',
-            'subjects__knowledge_area',
-            'subjects_taught'
+            'subjects_taught__knowledge_area'
         ).filter(
-            subjects__knowledge_area__slug=knowledge_area_slug,
+            subjects_taught__knowledge_area__slug=knowledge_area_slug,
             user__user_type='tutor',
             user__is_active=True
         ).distinct()
@@ -161,7 +159,7 @@ class TutorProfileManager(models.Manager):
 
     def get_tutors_fallback(self, active_codes=None):
         """Fallback queryset returning all active tutors ordered by name."""
-        queryset = self.select_related('user').prefetch_related('subjects').filter(
+        queryset = self.select_related('user').prefetch_related('subjects_taught').filter(
             user__user_type='tutor',
             user__is_active=True
         )
@@ -184,7 +182,7 @@ class TutorProfileManager(models.Manager):
         Same country first (using User.country_code), then others.
         """
         queryset = self.select_related('user').prefetch_related(
-            'subjects', 'subjects__knowledge_area'
+            'subjects_taught', 'subjects_taught__knowledge_area'
         ).filter(
             user__user_type='tutor',
             user__is_active=True
@@ -205,7 +203,7 @@ class TutorProfileManager(models.Manager):
         Filters by User.country_code captured at registration.
         """
         queryset = self.select_related('user').prefetch_related(
-            'subjects', 'subjects__knowledge_area'
+            'subjects_taught', 'subjects_taught__knowledge_area'
         ).filter(
             user__user_type='tutor',
             user__is_active=True,
@@ -240,11 +238,10 @@ class TutorProfile(models.Model):
     # ManyToMany relationship with SubjectLevel model (refactorización)
     # Permite especificar materias Y niveles que enseña el tutor
     subjects_taught = models.ManyToManyField(
-        'academicTutoring.SubjectLevel',
-        related_name='tutors',
-        verbose_name='Materias y Niveles',
+        'Subject',
+        related_name='tutors_taught',
+        verbose_name='Materias que enseña',
         blank=True,
-        help_text='Materias y niveles educativos que enseña este tutor'
     )
     # DEPRECATED: Mantener por compatibilidad con código legacy
     # TODO: Eliminar después de migración completa

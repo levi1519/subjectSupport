@@ -57,7 +57,7 @@
             <div class="location-badge">
                 <i class="bi bi-geo-alt-fill"></i>
                 {% if geo_city %}
-                    Detectamos que estás en: <strong>{{ geo_city }}, {{ geo_region }}</strong>
+                    Detectamos que estás en: <strong>{{ geo_city }}{% if geo_country %}, {{ geo_country }}{% endif %}</strong>
                 {% else %}
                     Ubicación: <strong>{{ geo_country|default:"Desconocida" }}</strong>
                 {% endif %}
