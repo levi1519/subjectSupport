@@ -32,18 +32,15 @@ def register_tutor(request, form, country_code=''):
             bio=form.cleaned_data.get('bio', ''),
             experience=form.cleaned_data.get('experience', '')
         )
+        geo_data = getattr(request, 'geo_data', {}) or {}
+        if geo_data.get('city'):
+            profile.city = geo_data['city']
+        if geo_data.get('country'):
+            profile.country = geo_data['country']
+        profile.save()
         subjects = form.cleaned_data.get('subjects')
         if subjects:
-            profile.subjects.set(subjects)
-        geo_data = getattr(request, 'geo_data', None)
-        if geo_data:
-            city = geo_data.get('city', '')
-            country = geo_data.get('country', '')
-            if city:
-                profile.city = city
-            if country:
-                profile.country = country
-            profile.save()
+            profile.subjects_taught.set(subjects)
         login(request, user)
         return True, user, None
     except Exception as e:
@@ -61,15 +58,12 @@ def register_client(request, form, country_code=''):
     try:
         user = form.save(country_code=country_code)
         profile = user.client_profile
-        geo_data = getattr(request, 'geo_data', None)
-        if geo_data:
-            city = geo_data.get('city', '')
-            country = geo_data.get('country', '')
-            if city:
-                profile.city = city
-            if country:
-                profile.country = country
-            profile.save()
+        geo_data = getattr(request, 'geo_data', {}) or {}
+        if geo_data.get('city'):
+            profile.city = geo_data['city']
+        if geo_data.get('country'):
+            profile.country = geo_data['country']
+        profile.save()
         login(request, user)
         return True, user, None
     except Exception as e:
@@ -115,8 +109,10 @@ def manage_tutor_subjects(user, form):
     if not form.is_valid():
         return False, None, 'Invalid form data'
     try:
-        profile, subjects = form.save()
+        profile = form.save(commit=False)
+        subjects = form.cleaned_data['subjects_taught']
         profile.subjects_taught.set(subjects)
+        profile.save()
         return True, profile.subjects_taught.all(), None
     except Exception as e:
         return False, None, str(e)
