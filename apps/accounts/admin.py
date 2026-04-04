@@ -63,18 +63,13 @@ class UserAdmin(BaseUserAdmin):
     )
 
     def get_inline_instances(self, request, obj=None):
+        if not obj:
+            return list()
         inlines = []
-        if obj is None:
-            user_type = request.POST.get('user_type', '')
-            if user_type == 'tutor':
-                inlines.append(TutorProfileInline(self.model, self.admin_site))
-            elif user_type == 'client':
-                inlines.append(ClientProfileInline(self.model, self.admin_site))
-        else:
-            if obj.user_type == 'tutor':
-                inlines.append(TutorProfileInline(self.model, self.admin_site))
-            elif obj.user_type == 'client':
-                inlines.append(ClientProfileInline(self.model, self.admin_site))
+        if obj.user_type == 'tutor':
+            inlines.append(TutorProfileInline(self.model, self.admin_site))
+        elif obj.user_type == 'client':
+            inlines.append(ClientProfileInline(self.model, self.admin_site))
         return inlines
 
 
