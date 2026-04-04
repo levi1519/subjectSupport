@@ -107,6 +107,8 @@ class User(AbstractUser):
         default='',
         verbose_name='Código de País'
     )
+    birth_date = models.DateField(null=True, blank=True, verbose_name='Fecha de nacimiento')
+    cedula = models.CharField(max_length=20, blank=True, null=True, verbose_name='Cédula / Identificación')
     user_type = models.CharField(
         max_length=10,
         choices=USER_TYPE_CHOICES,
@@ -281,12 +283,14 @@ class TutorProfile(models.Model):
     # Location fields for GeoRestrictionMiddleware
     city = models.CharField(
         max_length=100,
-        default='Milagro',
+        blank=True,
+        default='',
         verbose_name='Ciudad'
     )
     country = models.CharField(
         max_length=100,
-        default='Ecuador',
+        blank=True,
+        default='',
         verbose_name='País'
     )
     birth_date = models.DateField(null=True, blank=True, verbose_name='Fecha de nacimiento')
@@ -362,12 +366,14 @@ class ClientProfile(models.Model):
     # Location fields for GeoRestrictionMiddleware
     city = models.CharField(
         max_length=100,
-        default='Milagro',
+        blank=True,
+        default='',
         verbose_name='Ciudad'
     )
     country = models.CharField(
         max_length=100,
-        default='Ecuador',
+        blank=True,
+        default='',
         verbose_name='País'
     )
     birth_date = models.DateField(null=True, blank=True, verbose_name='Fecha de nacimiento')

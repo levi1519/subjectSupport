@@ -40,6 +40,11 @@ class TutorRegistrationForm(UserCreationForm):
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
         label='Cédula / Identificación',
     )
+    birth_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Fecha de nacimiento',
+    )
 
     class Meta:
         model = User
@@ -125,6 +130,8 @@ class TutorRegistrationForm(UserCreationForm):
                 bio=self.cleaned_data.get('bio', ''),
                 experience=self.cleaned_data.get('experience', '')
             )
+            profile.cedula = self.cleaned_data.get('cedula', '')
+            profile.save()
             # Save ManyToMany relationships (subjects)
             subjects = self.cleaned_data.get('subjects')
             if subjects:
@@ -155,6 +162,11 @@ class ClientRegistrationForm(UserCreationForm):
         max_length=20,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
         label='Cédula / Identificación',
+    )
+    birth_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Fecha de nacimiento',
     )
 
     class Meta:
@@ -241,11 +253,13 @@ class ClientRegistrationForm(UserCreationForm):
         if commit:
             user.save()
             # Create client profile
-            ClientProfile.objects.create(
+            profile = ClientProfile.objects.create(
                 user=user,
                 is_minor=self.cleaned_data.get('is_minor', False),
                 parent_name=self.cleaned_data.get('parent_name', '')
             )
+            profile.cedula = self.cleaned_data.get('cedula', '')
+            profile.save()
         return user
 
 
@@ -307,7 +321,12 @@ class TutorSubjectsForm(forms.ModelForm):
     def clean_subjects_taught(self):
         subjects = self.cleaned_data.get('subjects_taught')
         if subjects and subjects.count() > 5:
-            raise forms.ValidationError('Solo puedes seleccionar un máximo de 5 materias.')
+            raise forms.ValidationError(
+                'Solo puedes seleccionar un máximo de 5 materias. '
+                'Has seleccionado %(count)d.',
+                code='too_many',
+                params={'count': subjects.count()}
+            )
         return subjects
 
 
@@ -351,10 +370,15 @@ class ClientProfileEditForm(forms.ModelForm):
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
         label='Cédula / Identificación',
     )
+    birth_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Fecha de nacimiento',
+    )
 
     class Meta:
         model = ClientProfile
-        fields = ['phone_number', 'bio', 'cedula']
+        fields = ['phone_number', 'bio', 'cedula', 'birth_date']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -443,10 +467,15 @@ class TutorProfileEditForm(forms.ModelForm):
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
         label='Cédula / Identificación',
     )
+    birth_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Fecha de nacimiento',
+    )
 
     class Meta:
         model = TutorProfile
-        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'cedula']
+        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'cedula', 'birth_date']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
