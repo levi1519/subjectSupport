@@ -203,23 +203,12 @@
                         <div class="mb-3">
                             <strong>Materias que enseñas:</strong>
                             <p class="text-muted">
-                                {% if profile.subjects_taught.all %}
-                                    {% for subject in profile.subjects_taught.all %}
+                                {% if profile.subjects.all %}
+                                    {% for subject in profile.subjects.all %}
                                         {{ subject.name }}{% if not forloop.last %}, {% endif %}
                                     {% endfor %}
                                 {% else %}
                                     <span class="text-warning">No has especificado materias aún</span>
-                                {% endif %}
-                            </p>
-                        </div>
-
-                        <div class="mb-3">
-                            <strong>Tarifa por hora:</strong>
-                            <p class="text-muted">
-                                {% if profile.hourly_rate %}
-                                    ${{ profile.hourly_rate }}
-                                {% else %}
-                                    <span class="text-warning">No has especificado tu tarifa</span>
                                 {% endif %}
                             </p>
                         </div>

@@ -110,7 +110,7 @@
                                         <th>Fecha</th>
                                         <th>Hora</th>
                                         <th>Duración</th>
-                                        <th>Tutor</th>
+                                        <th>Plataforma</th>
                                         <th>Estado</th>
                                         <th>Enlace</th>
                                         <th>Acciones</th>
@@ -124,7 +124,11 @@
                                             <td>{{ session.scheduled_date|date:"d/m/Y" }}</td>
                                             <td>{{ session.scheduled_time|time:"H:i" }}</td>
                                             <td>{{ session.get_duration_display }}</td>
-                                            <td>{{ session.tutor.name }}</td>
+                                            <td>
+                                                <span class="badge bg-info text-dark">
+                                                    {{ session.get_meeting_platform_display }}
+                                                </span>
+                                            </td>
                                             <td><span class="badge badge-confirmed">Confirmada</span></td>
                                             <td>
                                                 {% if session.meeting_url %}
