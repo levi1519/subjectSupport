@@ -58,6 +58,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'manage_subjects' %}">Mis Materias</a>
                     </li>
+                    {% if user.country_code %}
+                        <li class="nav-item">
+                            <span class="nav-link text-muted">{{ user.country_code|upper }}</span>
+                        </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
                     </li>
@@ -68,7 +73,13 @@
 
     <div class="dashboard-header">
         <div class="container">
-            <h1 class="display-5 fw-bold">Bienvenido, {{ user.name }}!</h1>
+            <h1 class="display-5 fw-bold">Bienvenido, {{ user.name }}!
+                {% if user.country_code %}
+                    <span title="{{ user.country_code }}">
+                        {{ user.country_code|upper }}
+                    </span>
+                {% endif %}
+            </h1>
             <p class="lead mb-0">Panel de Control del Tutor</p>
             {% if pending_count > 0 %}
                 <span class="badge bg-warning text-dark mt-2">{{ pending_count }} solicitud{{ pending_count|pluralize:"es" }} pendiente{{ pending_count|pluralize:"s" }}</span>
@@ -108,7 +119,11 @@
                                     {% for session in pending_sessions %}
                                         <tr>
                                             <td>{{ session.client.name }}</td>
-                                            <td>{{ session.subject }}</td>
+                                            <td>{{ session.subject }}
+                                                {% if session.tutor.tutor_profile.hourly_rate %}
+                                                    <small class="text-muted">💰 ${{ session.tutor.tutor_profile.hourly_rate }}/hora</small>
+                                                {% endif %}
+                                            </td>
                                             <td>{{ session.scheduled_date|date:"d/m/Y" }}</td>
                                             <td>{{ session.scheduled_time|time:"H:i" }}</td>
                                             <td>{{ session.get_duration_display }}</td>
@@ -151,7 +166,11 @@
                                     {% for session in upcoming_sessions %}
                                         <tr>
                                             <td>{{ session.client.name }}</td>
-                                            <td>{{ session.subject }}</td>
+                                            <td>{{ session.subject }}
+                                                {% if session.tutor.tutor_profile.hourly_rate %}
+                                                    <small class="text-muted">💰 ${{ session.tutor.tutor_profile.hourly_rate }}/hora</small>
+                                                {% endif %}
+                                            </td>
                                             <td>{{ session.scheduled_date|date:"d/m/Y" }}</td>
                                             <td>{{ session.scheduled_time|time:"H:i" }}</td>
                                             <td>{{ session.get_duration_display }}</td>
