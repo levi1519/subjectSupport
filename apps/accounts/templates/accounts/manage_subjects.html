@@ -147,7 +147,7 @@
                                                        name="subjects_taught"
                                                        value="{{ subject.id }}"
                                                        id="subject_{{ subject.id }}"
-                                                       {% if subject in form.subjects_taught.value %}checked{% endif %}>
+                                                       {% if subject.id in form.subjects_taught.value %}checked{% endif %}>
                                                 <label class="form-check-label" for="subject_{{ subject.id }}">
                                                     {{ subject.name }}
                                                 </label>
@@ -172,11 +172,11 @@
                         </div>
                     </form>
 
-                    {% if profile.subjects.count > 0 %}
+                    {% if profile.subjects_taught.count > 0 %}
                         <div class="mt-5 pt-4 border-top">
                             <h6 class="text-muted mb-3">Materias seleccionadas actualmente:</h6>
                             <div class="d-flex flex-wrap gap-2">
-                                {% for subject in profile.subjects.all %}
+                                {% for subject in profile.subjects_taught.all %}
                                     <span class="badge bg-primary fs-6 px-3 py-2">
                                         {{ subject.name }}
                                     </span>

@@ -93,10 +93,11 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Get active country codes
         from geoconfig.geo import get_active_country_codes
         active_codes = get_active_country_codes()
+        from apps.academicTutoring.models import CountryConfig
 
         # Get filter params
         search_query   = self.request.GET.get('search', '')
-        country_filter = self.request.GET.get('country', '')
+        country_filter = self.request.GET.get('country_code', '')
 
         # Query tutors — country filter takes precedence
         if country_filter:
@@ -121,6 +122,7 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             'client_country': client_country,
             'search_query':   search_query,
             'country_filter': country_filter,
+            'countries':      CountryConfig.objects.filter(active=True).order_by('country_name'),
         })
 
         return context
