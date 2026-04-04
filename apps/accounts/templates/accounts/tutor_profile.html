@@ -157,20 +157,6 @@
                         <div class="info-value">{{ user.email }}</div>
                     </div>
 
-                    {% if profile.cedula %}
-                    <div class="info-item">
-                        <div class="info-label">Cédula / Identificación</div>
-                        <div class="info-value">{{ profile.cedula }}</div>
-                    </div>
-                    {% endif %}
-
-                    {% if profile.birth_date %}
-                    <div class="info-item">
-                        <div class="info-label">Fecha de nacimiento</div>
-                        <div class="info-value">{{ profile.birth_date|date:"d/m/Y" }}</div>
-                    </div>
-                    {% endif %}
-
                     <div class="row">
                         <div class="col-md-6">
                             <div class="info-item">
@@ -216,9 +202,9 @@
                 <div class="profile-card">
                     <h3 class="section-title">📚 Mis Materias</h3>
                     
-                    {% if profile.subjects_taught.count > 0 %}
+                    {% if profile.subjects.count > 0 %}
                         <div class="mb-3">
-                            {% for subject in profile.subjects_taught.all %}
+                            {% for subject in profile.subjects.all %}
                                 <span class="subject-badge">{{ subject.name }}</span>
                             {% endfor %}
                         </div>
@@ -241,7 +227,7 @@
                     
                     <div class="info-item">
                         <div class="info-label">Materias Activas</div>
-                        <div class="info-value">{{ profile.subjects_taught.count }}</div>
+                        <div class="info-value">{{ profile.subjects.count }}</div>
                     </div>
 
                     <div class="info-item">

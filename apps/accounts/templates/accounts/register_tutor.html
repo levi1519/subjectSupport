@@ -99,34 +99,21 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="{{ form.cedula.id_for_label }}" class="form-label">{{ form.cedula.label }}</label>
-                                {{ form.cedula }}
-                                {% if form.cedula.errors %}
-                                    <div class="text-danger small">{{ form.cedula.errors }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="{{ form.birth_date.id_for_label }}" class="form-label">{{ form.birth_date.label }}</label>
-                                {{ form.birth_date }}
-                                {% if form.birth_date.errors %}
-                                    <div class="text-danger small">{{ form.birth_date.errors }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="{{ form.subjects_taught.id_for_label }}" class="form-label">
-                                    {{ form.subjects_taught.label }} <span class="text-danger">*</span>
+                                <label for="{{ form.subjects.id_for_label }}" class="form-label">
+                                    {{ form.subjects.label }} <span class="text-danger">*</span>
                                 </label>
                                 <div class="subject-selector" id="subjectSelector">
-                                    {{ form.subjects_taught }}
+                                    {{ form.subjects }}
                                 </div>
                                 <div class="subject-count" id="subjectCount">0 de 5 materias seleccionadas</div>
-                                {% if form.subjects_taught.help_text %}
-                                    <div class="form-text">{{ form.subjects_taught.help_text }}</div>
+                                <small class="form-text text-muted d-block mt-1">
+                                    💡 <strong>Consejo:</strong> Usa <kbd>Ctrl + Clic</kbd> o <kbd>Cmd + Clic</kbd> para seleccionar múltiples asignaturas.
+                                </small>
+                                {% if form.subjects.help_text %}
+                                    <div class="form-text">{{ form.subjects.help_text }}</div>
                                 {% endif %}
-                                {% if form.subjects_taught.errors %}
-                                    <div class="text-danger small">{{ form.subjects_taught.errors }}</div>
+                                {% if form.subjects.errors %}
+                                    <div class="text-danger small">{{ form.subjects.errors }}</div>
                                 {% endif %}
                             </div>
 
