@@ -131,69 +131,60 @@
                         </p>
                     </div>
 
-                    <form method="post" action="{% url 'manage_subjects' %}">
-                        {% csrf_token %}
-
-                        <div class="mb-4">
-                            <h5 class="mb-3">Selecciona tus materias:</h5>
-                            
-                            {% if form.subjects_taught.errors %}
-                                <div class="alert alert-danger mt-3">
-                                    {{ form.subjects_taught.errors }}
-                                </div>
-                            {% endif %}
-                            {% if subjects_by_area %}
-                                {% for area_name, area_subjects in subjects_by_area.items %}
-                                    <fieldset class="mb-3">
-                                        <legend class="fw-bold">{{ area_name }}</legend>
-                                        {% for subject in area_subjects %}
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox"
-                                                       name="subjects_taught"
-                                                       value="{{ subject.id }}"
-                                                       id="subject_{{ subject.id }}"
-                                                       {% if subject.id in form.subjects_taught.value %}checked{% endif %}>
-                                                <label class="form-check-label" for="subject_{{ subject.id }}">
-                                                    {{ subject.name }}
-                                                </label>
-                                            </div>
-                                        {% endfor %}
-                                    </fieldset>
-                                {% endfor %}
-                            {% else %}
-                                <div class="alert alert-warning">
-                                    <strong>Atención:</strong> No hay materias disponibles en el sistema.
-                                </div>
-                            {% endif %}
-                        </div>
-
-                        <div class="d-flex gap-3 justify-content-end mt-4">
-                            <a href="{% url 'tutor_dashboard' %}" class="btn btn-secondary">
-                                Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                💾 Guardar Materias
-                            </button>
-                        </div>
-                    </form>
-
-                    {% if profile.subjects_taught.count > 0 %}
-                        <div class="mt-5 pt-4 border-top">
-                            <h6 class="text-muted mb-3">Materias seleccionadas actualmente:</h6>
-                            <div class="d-flex flex-wrap gap-2">
-                                {% for subject in profile.subjects_taught.all %}
-                                    <span class="badge bg-primary fs-6 px-3 py-2">
-                                        {{ subject.name }}
-                                    </span>
-                                {% endfor %}
+                    {% if editing %}
+                        <form method="post" action="{% url 'manage_subjects' %}">
+                            {% csrf_token %}
+                            <div class="mb-4">
+                                <h5 class="mb-3">Selecciona tus materias:</h5>
+                                {% if form.subjects_taught.errors %}
+                                    <div class="alert alert-danger mt-3">
+                                        {{ form.subjects_taught.errors }}
+                                    </div>
+                                {% endif %}
+                                {% if subjects_by_area %}
+                                    {% for area_name, area_subjects in subjects_by_area.items %}
+                                        <fieldset class="mb-3">
+                                            <legend class="fw-bold">{{ area_name }}</legend>
+                                            {% for subject in area_subjects %}
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox"
+                                                           name="subjects_taught"
+                                                           value="{{ subject.id }}"
+                                                           id="subject_{{ subject.id }}"
+                                                           {% if subject.id in form.subjects_taught.value or subject.id|stringformat:"s" in form.subjects_taught.value %}checked{% endif %}>
+                                                    <label class="form-check-label" for="subject_{{ subject.id }}">
+                                                        {{ subject.name }}
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        </fieldset>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="alert alert-warning">
+                                        <strong>Atención:</strong> No hay materias disponibles.
+                                    </div>
+                                {% endif %}
                             </div>
-                        </div>
+                            <div class="d-flex gap-3 justify-content-end mt-4">
+                                <a href="{% url 'manage_subjects' %}" class="btn btn-secondary">Cancelar</a>
+                                <button type="submit" class="btn btn-primary">💾 Guardar Materias</button>
+                            </div>
+                        </form>
                     {% else %}
-                        <div class="mt-5 pt-4 border-top">
-                            <div class="alert alert-info">
-                                <strong>ℹ️ Información:</strong> Aún no has seleccionado ninguna materia.
-                                Selecciona al menos una para que los estudiantes puedan encontrarte.
-                            </div>
+                        <div class="mb-4">
+                            <h5 class="mb-3">Tus materias actuales:</h5>
+                            {% if profile.subjects_taught.all %}
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    {% for subject in profile.subjects_taught.all %}
+                                        <span class="badge bg-primary fs-6 px-3 py-2">{{ subject.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <strong>ℹ️</strong> Aún no has seleccionado ninguna materia.
+                                </div>
+                            {% endif %}
+                            <a href="?edit=1" class="btn btn-outline-primary mt-2">✏️ Editar Materias</a>
                         </div>
                     {% endif %}
                 </div>

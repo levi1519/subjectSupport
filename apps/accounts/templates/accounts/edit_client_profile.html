@@ -120,9 +120,11 @@
                             {% endif %}
                         </div>
 
-                        <div class="alert alert-info">
-                            <strong>📍 Ubicación:</strong> Tu ciudad es <strong>América Latina</strong> (detectada automáticamente).
-                        </div>
+                        {% if profile.city or profile.country %}
+                            <div class="alert alert-info">
+                                <strong>📍 Ubicación:</strong> {{ profile.city }}{% if profile.city and profile.country %}, {% endif %}{{ profile.country }}
+                            </div>
+                        {% endif %}
 
                         <hr class="my-4">
 

@@ -245,6 +245,9 @@ class ManageTutorSubjectsView(LoginRequiredMixin, UserPassesTestMixin, FormView)
             area_name = subject.knowledge_area.name if subject.knowledge_area else 'Sin área'
             subjects_by_area.setdefault(area_name, []).append(subject)
         context['subjects_by_area'] = subjects_by_area
+        profile, _ = TutorProfile.objects.get_or_create_for_user(self.request.user)
+        context['profile'] = profile
+        context['editing'] = self.request.GET.get('edit') == '1' or self.request.method == 'POST'
         return context
 
     def form_valid(self, form):
