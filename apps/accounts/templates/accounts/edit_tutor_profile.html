@@ -72,9 +72,11 @@
 
     <div class="container mt-4 mb-5">
         {% if profile.city or profile.country %}
-            <p class="text-muted">
+            <p class="text-muted mb-3">
                 📍 {{ profile.city }}{% if profile.city and profile.country %}, {% endif %}{{ profile.country }}
             </p>
+        {% else %}
+            <p class="text-muted mb-3">📍 Ubicación no detectada</p>
         {% endif %}
         {% if messages %}
             {% for message in messages %}
