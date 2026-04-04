@@ -25,7 +25,8 @@ def get_client_ip(request):
 
 
 def get_location_from_ip(ip_address):
-    cache_key = f'geo_ip_{ip_address}'
+    from django.conf import settings as django_settings
+    cache_key = f'geo_ip_{django_settings.CACHE_VERSION}_{ip_address}'
     cached_data = cache.get(cache_key)
     if cached_data:
         logger.debug(f"Geo data from cache for IP {ip_address}")
@@ -260,7 +261,8 @@ def get_country_config(country_code):
     """
     from django.core.cache import cache
     
-    cache_key = f'country_config_{country_code}'
+    from django.conf import settings as django_settings
+    cache_key = f'country_config_{django_settings.CACHE_VERSION}_{country_code}'
     cached = cache.get(cache_key)
     if cached:
         return cached
