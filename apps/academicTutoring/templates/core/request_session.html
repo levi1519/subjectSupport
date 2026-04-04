@@ -37,7 +37,13 @@
                             <h6 class="fw-bold">Información del Tutor</h6>
                             <p class="mb-1"><strong>Nombre:</strong> {{ tutor.name }}</p>
                             <p class="mb-1"><strong>Ubicación:</strong> {{ tutor_profile.city }}, {{ tutor_profile.country }}</p>
-                            <p class="mb-0"><strong>Materias:</strong> {{ tutor_profile.subjects }}</p>
+                            <p class="mb-0"><strong>Materias:</strong>
+                    {% if tutor_profile.subjects_taught.all %}
+                        {% for subject in tutor_profile.subjects_taught.all %}{{ subject.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                    {% else %}
+                        No especificadas
+                    {% endif %}
+                </p>
                         </div>
                         {% endif %}
 
