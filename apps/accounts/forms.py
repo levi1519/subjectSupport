@@ -472,10 +472,19 @@ class TutorProfileEditForm(forms.ModelForm):
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         label='Fecha de nacimiento',
     )
+    avatar_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'https://ejemplo.com/mi-foto.jpg'
+        }),
+        label='URL de Foto de Perfil',
+        help_text='Pega el enlace directo a tu foto (Google Drive, Imgur, etc.)'
+    )
 
     class Meta:
         model = TutorProfile
-        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'cedula', 'birth_date']
+        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'cedula', 'birth_date', 'avatar_url']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)

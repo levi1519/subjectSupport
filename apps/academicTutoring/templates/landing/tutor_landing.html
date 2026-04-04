@@ -1,134 +1,91 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SubjectSupport - Tutores</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            border-radius: 20px;
-            padding: 60px 40px;
-            max-width: 600px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            text-align: center;
-        }
-        h1 {
-            color: #f5576c;
-            font-size: 2.5em;
-            margin-bottom: 20px;
-        }
-        .user-type {
-            display: inline-block;
-            background: #f5576c;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            margin-bottom: 30px;
-            font-weight: 600;
-        }
-        p {
-            color: #555;
-            font-size: 1.1em;
-            line-height: 1.6;
-            margin-bottom: 30px;
-        }
-        .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 15px 40px;
-            border-radius: 30px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1em;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
-        }
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
-        }
-        .features {
-            margin-top: 40px;
-            text-align: left;
-        }
-        .feature-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-            color: #555;
-        }
-        .feature-icon {
-            width: 24px;
-            height: 24px;
-            background: #f5576c;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            margin-right: 12px;
-            flex-shrink: 0;
-        }
-    </style>
-</head>
-<body>
+{% extends "base_public.html" %}
+
+{% block title %}SubjectSupport — Sé Tutor{% endblock %}
+
+{% block nav_buttons %}
+    <a href="{% url 'tutor_login' %}" class="btn btn-outline-secondary btn-sm">Iniciar Sesión</a>
+    <a href="{% url 'tutor_register' %}" class="btn btn-accent btn-sm">Registrarme como Tutor</a>
+{% endblock %}
+
+{% block content %}
+<!-- HERO -->
+<section style="background: #1A202C; color: white; padding: 80px 0;">
     <div class="container">
-        <h1>SubjectSupport</h1>
-        <span class="user-type">{{ user_type }}</span>
-
-        <p>
-            Únete a SubjectSupport y comparte tu conocimiento con estudiantes de toda América Latina.
-        </p>
-
-        <div class="features">
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span>Enseña desde cualquier parte de América Latina</span>
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <span class="badge mb-3 px-3 py-2" style="background: #4A6CF7;">Para Tutores 🎓</span>
+                <h1 class="display-5 fw-bold mb-4">Comparte tu conocimiento y genera ingresos</h1>
+                <p class="lead mb-4" style="color: #A0AEC0;">Conecta con estudiantes de toda América Latina. Tú defines tus materias, horarios y tarifas.</p>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{% url 'tutor_register' %}" class="btn btn-accent btn-lg px-4">Comenzar a Enseñar</a>
+                    <a href="{% url 'tutor_login' %}" class="btn btn-outline-light btn-lg px-4">Ya tengo cuenta</a>
+                </div>
             </div>
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span>Define tus propios horarios y tarifas</span>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span>Plataforma integrada con Google Meet y Zoom</span>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span>Gestión de pagos segura y transparente</span>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span>Conecta con estudiantes comprometidos</span>
+            <div class="col-lg-5 text-center mt-4 mt-lg-0">
+                <div style="font-size: 8rem;">🏫</div>
             </div>
         </div>
-
-        <div style="margin-top: 40px;">
-            <a href="{% url 'tutor_register' %}" class="cta-button">Regístrate como Tutor</a>
-        </div>
-
-        <p style="margin-top: 30px; font-size: 0.9em;">
-            ¿Ya tienes cuenta? <a href="{% url 'tutor_login' %}" style="color: #f5576c; font-weight: 600;">Inicia sesión</a>
-        </p>
     </div>
-</body>
-</html>
+</section>
+
+<!-- FEATURES -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center fw-bold mb-5" style="color: var(--primary);">¿Por qué enseñar en SubjectSupport?</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card bg-white">
+                    <div class="feature-icon">💰</div>
+                    <h5 class="fw-bold">Define tu tarifa</h5>
+                    <p class="text-muted">Tú estableces el precio por hora. Sin intermediarios que se queden con tu ganancia.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card bg-white">
+                    <div class="feature-icon">🗓️</div>
+                    <h5 class="fw-bold">Tus horarios</h5>
+                    <p class="text-muted">Acepta o rechaza solicitudes. Enseña cuando más te convenga.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card bg-white">
+                    <div class="feature-icon">🌎</div>
+                    <h5 class="fw-bold">Alcance LATAM</h5>
+                    <p class="text-muted">Llega a estudiantes de 23 países hispanohablantes desde donde estés.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card bg-white">
+                    <div class="feature-icon">📚</div>
+                    <h5 class="fw-bold">Tus materias</h5>
+                    <p class="text-muted">Enseña lo que sabes. Selecciona hasta 5 materias y aparece en búsquedas relevantes.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card bg-white">
+                    <div class="feature-icon">💻</div>
+                    <h5 class="fw-bold">Google Meet integrado</h5>
+                    <p class="text-muted">Comparte el link de reunión directo en la plataforma. Sin complicaciones.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card bg-white">
+                    <div class="feature-icon">✅</div>
+                    <h5 class="fw-bold">Perfil verificado</h5>
+                    <p class="text-muted">Construye tu reputación. Los estudiantes confían en tutores verificados.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="py-5 text-center" style="background: #EBF4FF;">
+    <div class="container">
+        <h2 class="fw-bold mb-3" style="color: var(--primary);">¿Listo para empezar a enseñar?</h2>
+        <p class="text-muted mb-4">Regístrate gratis y comienza a recibir solicitudes de estudiantes hoy.</p>
+        <a href="{% url 'tutor_register' %}" class="btn btn-accent btn-lg px-5">Registrarme como Tutor</a>
+        <p class="mt-3 small text-muted">¿Eres estudiante? <a href="{% url 'student_landing' %}" style="color: var(--accent);">Encuentra tu tutor aquí</a></p>
+    </div>
+</section>
+{% endblock %}
