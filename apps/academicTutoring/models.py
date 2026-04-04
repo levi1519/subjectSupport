@@ -333,6 +333,12 @@ class ClassSession(models.Model):
         null=True,
         verbose_name='Notas'
     )
+    material_url = models.URLField(
+        null=True,
+        blank=True,
+        max_length=500,
+        verbose_name='Material de clase (URL)'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

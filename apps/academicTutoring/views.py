@@ -11,6 +11,7 @@ from .forms import SessionRequestForm, SessionConfirmationForm, NotificacionExpa
 from . import services as academic_services
 from apps.accounts.models import User, TutorProfile
 from .services.meeting_service import update_session_with_meeting
+from .utils import send_cancellation_email
 
 import logging
 
@@ -267,16 +268,27 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
     
     def post(self, request, *args, **kwargs):
         """Cancel the session using academic_services"""
+        # Guardar estado previo para idempotencia (no enviar email si ya estaba cancelada)
+        prev_status = self.session.status
+
         success, session, error = academic_services.cancel_session(
             self.session,
             request.user
         )
-        
+
         if success:
+            # Enviar email SOLO si la sesión NO estaba ya cancelada (idempotencia)
+            if prev_status != 'cancelled':
+                # Determinar contraparte: quien NO canceló recibe el email
+                if request.user == session.tutor:
+                    recipient = session.client
+                else:
+                    recipient = session.tutor
+                send_cancellation_email(session, request.user, recipient)
             messages.info(request, 'La sesión ha sido cancelada.')
         else:
             messages.error(request, f'Error al cancelar sesión: {error}')
-        
+
         return redirect(self.get_success_url())
     
     def get_success_url(self):

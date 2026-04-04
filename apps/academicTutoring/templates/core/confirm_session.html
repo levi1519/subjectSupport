@@ -75,6 +75,12 @@
                                 <p><strong>Notas del estudiante:</strong></p>
                                 <p class="text-muted">{{ session.notes }}</p>
                             {% endif %}
+                            {% if session.material_url %}
+                                <p><strong>📎 Material de clase:</strong></p>
+                                <p><a href="{{ session.material_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-link-45deg"></i> Ver material
+                                </a></p>
+                            {% endif %}
                         </div>
 
                         <form method="post" novalidate>

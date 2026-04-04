@@ -120,8 +120,8 @@
                                         <tr>
                                             <td>{{ session.client.name }}</td>
                                             <td>{{ session.subject }}
-                                                {% if session.tutor.tutor_profile.hourly_rate %}
-                                                    <small class="text-muted">💰 ${{ session.tutor.tutor_profile.hourly_rate }}/hora</small>
+                                                {% if session.tutor.tutor_profile %}
+                                                    <small class="text-muted">💰 ${{ session.tutor.tutor_profile.hourly_rate|default:"N/A" }}/hora</small>
                                                 {% endif %}
                                             </td>
                                             <td>{{ session.scheduled_date|date:"d/m/Y" }}</td>
@@ -167,8 +167,8 @@
                                         <tr>
                                             <td>{{ session.client.name }}</td>
                                             <td>{{ session.subject }}
-                                                {% if session.tutor.tutor_profile.hourly_rate %}
-                                                    <small class="text-muted">💰 ${{ session.tutor.tutor_profile.hourly_rate }}/hora</small>
+                                                {% if session.tutor.tutor_profile %}
+                                                    <small class="text-muted">💰 ${{ session.tutor.tutor_profile.hourly_rate|default:"N/A" }}/hora</small>
                                                 {% endif %}
                                             </td>
                                             <td>{{ session.scheduled_date|date:"d/m/Y" }}</td>
