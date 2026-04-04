@@ -80,21 +80,21 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="card tutor-card">
                         <div class="card-body">
-                            <h5 class="card-title">{{ tutor.name }}</h5>
+                            <h5 class="card-title">{{ tutor.user.name }}</h5>
                             <p class="text-muted small mb-2">
-                                📍 {{ tutor.tutor_profile.city }}, {{ tutor.tutor_profile.country }}
+                                📍 {{ tutor.city }}, {{ tutor.country }}
                             </p>
                             <p class="card-text"><strong>Materias:</strong>
-                                {% if tutor.tutor_profile.subjects_taught.all %}
-                                    {% for subject in tutor.tutor_profile.subjects_taught.all %}{{ subject.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                {% if tutor.subjects_taught.all %}
+                                    {% for subject in tutor.subjects_taught.all %}{{ subject.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
                                 {% else %}
                                     <span class="text-muted">No especificadas</span>
                                 {% endif %}
                             </p>
-                            {% if tutor.tutor_profile.bio %}
-                                <p class="card-text small text-muted">{{ tutor.tutor_profile.bio|truncatewords:15 }}</p>
+                            {% if tutor.bio %}
+                                <p class="card-text small text-muted">{{ tutor.bio|truncatewords:15 }}</p>
                             {% endif %}
-                            <a href="{% url 'request_session' tutor.id %}" class="btn btn-primary w-100">
+                            <a href="{% url 'request_session' tutor.user.id %}" class="btn btn-primary w-100">
                                 Solicitar Clase
                             </a>
                         </div>

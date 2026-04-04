@@ -147,7 +147,7 @@
                                                        name="subjects_taught"
                                                        value="{{ subject.id }}"
                                                        id="subject_{{ subject.id }}"
-                                                       {% if subject.id in form.subjects_taught.value %}checked{% endif %}>
+                                                       {% with current_ids=form.subjects_taught.value %}{% if subject.id in current_ids or subject.id|stringformat:"s" in current_ids %}checked{% endif %}{% endwith %}>
                                                 <label class="form-check-label" for="subject_{{ subject.id }}">
                                                     {{ subject.name }}
                                                 </label>
