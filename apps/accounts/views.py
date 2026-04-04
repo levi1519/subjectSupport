@@ -145,7 +145,7 @@ class DashboardView(LoginRequiredMixin, View):
             return redirect('/admin/')
         
         if request.user.user_type == 'tutor':
-            return redirect('tutor_dashboard')
+            return redirect('manage_subjects')
         else:
             return redirect('client_dashboard')
 
@@ -263,7 +263,7 @@ class ManageTutorSubjectsView(LoginRequiredMixin, UserPassesTestMixin, FormView)
                 '¡Materias actualizadas exitosamente! Ahora los estudiantes podrán '
                 'encontrarte cuando busquen tutores para estas materias.'
             )
-            return redirect('tutor_dashboard')
+            return redirect('manage_subjects')
         else:
             messages.error(
                 self.request,
