@@ -28,7 +28,8 @@ class TutorProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'Perfil de Tutor'
     fk_name = 'user'
-    filter_horizontal = ['subjects_taught', 'subjects']  # Incluir ambos durante transición
+    filter_horizontal = ['subjects_taught']
+    fields = ['bio', 'experience', 'hourly_rate', 'phone_number', 'cedula', 'birth_date', 'city', 'country', 'documents_required']
 
 
 class ClientProfileInline(admin.StackedInline):
@@ -37,7 +38,7 @@ class ClientProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'Perfil de Cliente'
     fk_name = 'user'
-    fields = ['is_minor', 'parent_name', 'phone_number', 'bio']
+    fields = ['is_minor', 'parent_name', 'parent_email', 'phone_number', 'bio', 'cedula', 'birth_date', 'city', 'country']
 
 
 @admin.register(User)
@@ -76,12 +77,12 @@ class UserAdmin(BaseUserAdmin):
 @admin.register(TutorProfile)
 class TutorProfileAdmin(admin.ModelAdmin):
     """Admin configuration for TutorProfile model"""
-    list_display = ['user', 'get_subjects_taught_display', 'get_subjects_legacy_display', 'hourly_rate', 'phone_number', 'documents_required', 'created_at']
+    list_display = ['user', 'get_subjects_taught_display', 'cedula', 'birth_date', 'hourly_rate', 'phone_number', 'documents_required', 'created_at']
     search_fields = ['user__name', 'user__email', 'phone_number']
     list_filter = ['created_at']
     list_editable = ['documents_required']
     readonly_fields = ['created_at']
-    filter_horizontal = ['subjects_taught', 'subjects']  # Ambos campos durante transición
+    filter_horizontal = ['subjects_taught']
 
     def get_subjects_taught_display(self, obj):
         subjects = obj.subjects_taught.all()[:3]
@@ -98,7 +99,7 @@ class TutorProfileAdmin(admin.ModelAdmin):
 @admin.register(ClientProfile)
 class ClientProfileAdmin(admin.ModelAdmin):
     """Admin configuration for ClientProfile model"""
-    list_display = ['user', 'is_minor', 'parent_name', 'created_at']
+    list_display = ['user', 'is_minor', 'parent_name', 'cedula', 'birth_date', 'created_at']
     search_fields = ['user__name', 'user__email', 'parent_name']
     list_filter = ['is_minor', 'created_at']
     readonly_fields = ['created_at']
