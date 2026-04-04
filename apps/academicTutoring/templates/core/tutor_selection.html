@@ -39,7 +39,7 @@
     <div class="search-section">
         <div class="container">
             <h1 class="display-5 fw-bold mb-3">Encuentra tu Tutor Perfecto</h1>
-            <p class="lead mb-4">{% if client_city %}Mostrando tutores priorizados para tu ciudad: {{ client_city }}{% else %}Explora nuestra red de tutores{% endif %}</p>
+            <p class="lead mb-4">{% if client_city %}Mostrando tutores priorizados para tu país: {{ client_city }}{% else %}Explora nuestra red de tutores{% endif %}</p>
 
             <form method="get" class="row g-3">
                 <div class="col-md-6">
@@ -48,7 +48,7 @@
                 </div>
                 <div class="col-md-4">
                     <input type="text" name="city" class="form-control form-control-lg"
-                           placeholder="Filtrar por ciudad..." value="{{ city_filter }}">
+                           placeholder="Filtrar por país..." value="{{ city_filter }}">
                 </div>
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-light btn-lg w-100">Buscar</button>
@@ -69,12 +69,12 @@
 
         {% if same_city_tutors %}
         <div class="mb-5">
-            <h3 class="mb-3">🏘️ Tutores en tu Ciudad ({{ client_city }})</h3>
+            <h3 class="mb-3">🏘️ Tutores en tu País ({{ client_city }})</h3>
             <div class="row g-4">
                 {% for tutor in same_city_tutors %}
                 <div class="col-md-6 col-lg-4">
                     <div class="card tutor-card position-relative">
-                        <span class="badge bg-success priority-badge">Tu Ciudad</span>
+                        <span class="badge bg-success priority-badge">Tu País</span>
                         <div class="card-body">
                             <h5 class="card-title">{{ tutor.name }}</h5>
                             <p class="text-muted small mb-2">
