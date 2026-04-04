@@ -37,6 +37,7 @@ class ClientProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'Perfil de Cliente'
     fk_name = 'user'
+    fields = ['is_minor', 'parent_name', 'phone_number', 'bio']
 
 
 @admin.register(User)
@@ -62,13 +63,18 @@ class UserAdmin(BaseUserAdmin):
     )
 
     def get_inline_instances(self, request, obj=None):
-        if not obj:
-            return list()
         inlines = []
-        if obj.user_type == 'tutor':
-            inlines.append(TutorProfileInline(self.model, self.admin_site))
-        elif obj.user_type == 'client':
-            inlines.append(ClientProfileInline(self.model, self.admin_site))
+        if obj is None:
+            user_type = request.POST.get('user_type', '')
+            if user_type == 'tutor':
+                inlines.append(TutorProfileInline(self.model, self.admin_site))
+            elif user_type == 'client':
+                inlines.append(ClientProfileInline(self.model, self.admin_site))
+        else:
+            if obj.user_type == 'tutor':
+                inlines.append(TutorProfileInline(self.model, self.admin_site))
+            elif obj.user_type == 'client':
+                inlines.append(ClientProfileInline(self.model, self.admin_site))
         return inlines
 
 
@@ -83,10 +89,9 @@ class TutorProfileAdmin(admin.ModelAdmin):
     filter_horizontal = ['subjects_taught', 'subjects']  # Ambos campos durante transición
 
     def get_subjects_taught_display(self, obj):
-        """Display SubjectLevel combinations as comma-separated list"""
-        subject_levels = obj.subjects_taught.all()[:3]
-        return ", ".join([f"{sl.subject.name} ({sl.level.name})" for sl in subject_levels]) or "Ninguno"
-    get_subjects_taught_display.short_description = 'Materias + Niveles (Nuevo)'
+        subjects = obj.subjects_taught.all()[:3]
+        return ", ".join([s.name for s in subjects]) or "Ninguno"
+    get_subjects_taught_display.short_description = 'Materias (Nuevo)'
 
     def get_subjects_legacy_display(self, obj):
         """Display legacy subjects as comma-separated list"""
