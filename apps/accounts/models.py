@@ -173,7 +173,8 @@ class TutorProfileManager(models.Manager):
             return queryset
         return queryset.filter(
             Q(user__name__icontains=search_query) |
-            Q(subjects_taught__name__icontains=search_query)
+            Q(subjects_taught__name__icontains=search_query) |
+            Q(subjects_taught__knowledge_area__name__icontains=search_query)
         ).distinct()
 
     def get_tutors_by_country_priority(self, country_code, active_codes=None):
