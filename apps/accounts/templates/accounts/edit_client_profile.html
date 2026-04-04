@@ -126,6 +126,23 @@
                             <p class="text-muted mb-3">📍 Ubicación no detectada</p>
                         {% endif %}
 
+                        <div class="mb-4">
+                            <label class="form-label">{{ form.avatar_url.label }}</label>
+                            {{ form.avatar_url }}
+                            {% if form.avatar_url.help_text %}
+                                <div class="form-text">{{ form.avatar_url.help_text }}</div>
+                            {% endif %}
+                            {% if form.avatar_url.errors %}
+                                <div class="text-danger small">{{ form.avatar_url.errors }}</div>
+                            {% endif %}
+                            {% if profile.avatar_url %}
+                                <div class="mt-2">
+                                    <img src="{{ profile.avatar_url }}" alt="Foto de perfil"
+                                         style="width:60px;height:60px;border-radius:50%;object-fit:cover;">
+                                </div>
+                            {% endif %}
+                        </div>
+
                         <hr class="my-4">
 
                         <div class="d-flex justify-content-between">
