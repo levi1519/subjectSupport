@@ -145,8 +145,8 @@ class TutorProfileManager(models.Manager):
     Provides optimized queries for tutor selection and filtering.
     """
     
-    def get_tutors_by_knowledge_area(self, knowledge_area_slug):
-        return self.select_related('user').prefetch_related(
+    def get_tutors_by_knowledge_area(self, knowledge_area_slug, active_codes=None):
+        queryset = self.select_related('user').prefetch_related(
             'subjects',
             'subjects__knowledge_area',
             'subjects_taught'
@@ -155,16 +155,19 @@ class TutorProfileManager(models.Manager):
             user__user_type='tutor',
             user__is_active=True
         ).distinct()
+        if active_codes is not None:
+            queryset = queryset.filter(user__country_code__in=active_codes)
+        return queryset
 
-    def get_tutors_fallback(self):
+    def get_tutors_fallback(self, active_codes=None):
         """Fallback queryset returning all active tutors ordered by name."""
-        from apps.academicTutoring.models import CountryConfig
-        active_codes = CountryConfig.objects.filter(active=True).values_list('country_code', flat=True)
-        return self.select_related('user').prefetch_related('subjects').filter(
+        queryset = self.select_related('user').prefetch_related('subjects').filter(
             user__user_type='tutor',
-            user__is_active=True,
-            user__country_code__in=active_codes
-        ).order_by('user__name')
+            user__is_active=True
+        )
+        if active_codes is not None:
+            queryset = queryset.filter(user__country_code__in=active_codes)
+        return queryset.order_by('user__name')
 
     def filter_by_search(self, queryset, search_query):
         """Filter tutors by name or subject."""
@@ -175,20 +178,20 @@ class TutorProfileManager(models.Manager):
             Q(subjects_taught__name__icontains=search_query)
         ).distinct()
 
-    def get_tutors_by_country_priority(self, country_code):
+    def get_tutors_by_country_priority(self, country_code, active_codes=None):
         """
         Returns all active tutors ordered by country proximity.
         Same country first (using User.country_code), then others.
         """
-        from apps.academicTutoring.models import CountryConfig
-        active_codes = CountryConfig.objects.filter(active=True).values_list('country_code', flat=True)
-        return self.select_related('user').prefetch_related(
+        queryset = self.select_related('user').prefetch_related(
             'subjects', 'subjects__knowledge_area'
         ).filter(
             user__user_type='tutor',
-            user__is_active=True,
-            user__country_code__in=active_codes
-        ).annotate(
+            user__is_active=True
+        )
+        if active_codes is not None:
+            queryset = queryset.filter(user__country_code__in=active_codes)
+        return queryset.annotate(
             country_priority=Case(
                 When(user__country_code__iexact=country_code, then=Value(1)),
                 default=Value(2),
@@ -196,21 +199,21 @@ class TutorProfileManager(models.Manager):
             )
         ).order_by('country_priority', 'user__name')
 
-    def get_tutors_filtered_by_country(self, country_code):
+    def get_tutors_filtered_by_country(self, country_code, active_codes=None):
         """
         Returns active tutors from a specific country only.
         Filters by User.country_code captured at registration.
         """
-        from apps.academicTutoring.models import CountryConfig
-        active_codes = CountryConfig.objects.filter(active=True).values_list('country_code', flat=True)
-        return self.select_related('user').prefetch_related(
+        queryset = self.select_related('user').prefetch_related(
             'subjects', 'subjects__knowledge_area'
         ).filter(
             user__user_type='tutor',
             user__is_active=True,
-            user__country_code__iexact=country_code,
-            user__country_code__in=active_codes
-        ).order_by('user__name')
+            user__country_code__iexact=country_code
+        )
+        if active_codes is not None:
+            queryset = queryset.filter(user__country_code__in=active_codes)
+        return queryset.order_by('user__name')
 
     def get_profile_for_user(self, user):
         return self.select_related('user').get(user=user)

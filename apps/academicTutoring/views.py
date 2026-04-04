@@ -109,7 +109,9 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Apply knowledge area filter if provided
         knowledge_area_slug = self.request.GET.get('knowledge_area', '')
         if knowledge_area_slug:
-            tutors_qs = TutorProfile.objects.get_tutors_by_knowledge_area(knowledge_area_slug)
+            tutors_qs = TutorProfile.objects.get_tutors_by_knowledge_area(
+                knowledge_area_slug, active_codes=active_codes
+            )
 
         # Apply search filter
         tutors_qs = TutorProfile.objects.filter_by_search(tutors_qs, search_query)
