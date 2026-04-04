@@ -239,7 +239,7 @@ class ManageTutorSubjectsView(LoginRequiredMixin, UserPassesTestMixin, FormView)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         from .models import Subject
-        subjects = Subject.objects.select_related('knowledge_area').order_by('knowledge_area__name', 'name')
+        subjects = Subject.objects.get_subjects_for_grouping()
         subjects_by_area = {}
         for subject in subjects:
             area_name = subject.knowledge_area.name if subject.knowledge_area else 'Sin área'

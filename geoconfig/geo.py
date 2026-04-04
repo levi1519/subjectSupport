@@ -135,6 +135,8 @@ def check_geo_restriction(request):
             'city': 'Development Mode',
             'region': 'N/A',
             'country': 'N/A',
+            'country_code': None,
+            'country_config': None,
             'latitude': None,
             'longitude': None,
             'service_area': None,

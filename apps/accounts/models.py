@@ -35,8 +35,14 @@ class KnowledgeArea(models.Model):
         return self.name
 
 
+class SubjectManager(models.Manager):
+    def get_subjects_for_grouping(self):
+        return self.select_related('knowledge_area').order_by('knowledge_area__name', 'name')
+
+
 class Subject(models.Model):
     """Model for subjects/materias that tutors can teach"""
+    objects = SubjectManager()
     knowledge_area = models.ForeignKey(
         KnowledgeArea,
         on_delete=models.SET_NULL,
@@ -152,9 +158,12 @@ class TutorProfileManager(models.Manager):
 
     def get_tutors_fallback(self):
         """Fallback queryset returning all active tutors ordered by name."""
+        from apps.academicTutoring.models import CountryConfig
+        active_codes = CountryConfig.objects.filter(active=True).values_list('country_code', flat=True)
         return self.select_related('user').prefetch_related('subjects').filter(
             user__user_type='tutor',
-            user__is_active=True
+            user__is_active=True,
+            user__country_code__in=active_codes
         ).order_by('user__name')
 
     def filter_by_search(self, queryset, search_query):
@@ -171,11 +180,14 @@ class TutorProfileManager(models.Manager):
         Returns all active tutors ordered by country proximity.
         Same country first (using User.country_code), then others.
         """
+        from apps.academicTutoring.models import CountryConfig
+        active_codes = CountryConfig.objects.filter(active=True).values_list('country_code', flat=True)
         return self.select_related('user').prefetch_related(
             'subjects', 'subjects__knowledge_area'
         ).filter(
             user__user_type='tutor',
-            user__is_active=True
+            user__is_active=True,
+            user__country_code__in=active_codes
         ).annotate(
             country_priority=Case(
                 When(user__country_code__iexact=country_code, then=Value(1)),
@@ -189,12 +201,15 @@ class TutorProfileManager(models.Manager):
         Returns active tutors from a specific country only.
         Filters by User.country_code captured at registration.
         """
+        from apps.academicTutoring.models import CountryConfig
+        active_codes = CountryConfig.objects.filter(active=True).values_list('country_code', flat=True)
         return self.select_related('user').prefetch_related(
             'subjects', 'subjects__knowledge_area'
         ).filter(
             user__user_type='tutor',
             user__is_active=True,
-            user__country_code__iexact=country_code
+            user__country_code__iexact=country_code,
+            user__country_code__in=active_codes
         ).order_by('user__name')
 
     def get_profile_for_user(self, user):
