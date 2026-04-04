@@ -107,8 +107,6 @@ class User(AbstractUser):
         default='',
         verbose_name='Código de País'
     )
-    birth_date = models.DateField(null=True, blank=True, verbose_name='Fecha de nacimiento')
-    cedula = models.CharField(max_length=20, blank=True, null=True, verbose_name='Cédula / Identificación')
     user_type = models.CharField(
         max_length=10,
         choices=USER_TYPE_CHOICES,
