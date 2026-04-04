@@ -203,12 +203,12 @@
                         <div class="mb-3">
                             <strong>Materias que enseñas:</strong>
                             <p class="text-muted">
-                                {% if profile.subjects.all %}
-                                    {% for subject in profile.subjects.all %}
-                                        {{ subject.name }}{% if not forloop.last %}, {% endif %}
+                                {% if profile.subjects_taught.all %}
+                                    {% for subject in profile.subjects_taught.all %}
+                                        <span class="badge bg-primary">{{ subject.name }}</span>
                                     {% endfor %}
                                 {% else %}
-                                    <span class="text-warning">No has especificado materias aún</span>
+                                    <p class="text-muted">📌 Aún no has seleccionado materias</p>
                                 {% endif %}
                             </p>
                         </div>

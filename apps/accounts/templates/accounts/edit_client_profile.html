@@ -121,9 +121,9 @@
                         </div>
 
                         {% if profile.city or profile.country %}
-                            <div class="alert alert-info">
-                                <strong>📍 Ubicación:</strong> {{ profile.city }}{% if profile.city and profile.country %}, {% endif %}{{ profile.country }}
-                            </div>
+                            <p class="text-muted">📍 {{ profile.city }}{% if profile.city and profile.country %}, {% endif %}{{ profile.country }}</p>
+                        {% else %}
+                            <p class="text-muted">📍 Ubicación no detectada</p>
                         {% endif %}
 
                         <hr class="my-4">

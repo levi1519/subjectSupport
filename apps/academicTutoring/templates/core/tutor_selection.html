@@ -91,6 +91,11 @@
                                     <span class="text-muted">No especificadas</span>
                                 {% endif %}
                             </p>
+                            {% if tutor.hourly_rate %}
+                                <p class="card-text">
+                                    <strong>💰 Tarifa:</strong> ${{ tutor.hourly_rate }}/hora
+                                </p>
+                            {% endif %}
                             {% if tutor.bio %}
                                 <p class="card-text small text-muted">{{ tutor.bio|truncatewords:15 }}</p>
                             {% endif %}

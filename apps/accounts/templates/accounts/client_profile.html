@@ -166,20 +166,22 @@
                     </div>
                     {% endif %}
 
+                    {% if profile.city or profile.country %}
                     <div class="row">
                         <div class="col-md-6">
                             <div class="info-item">
                                 <div class="info-label">Ciudad</div>
-                                <div class="info-value">América Latina</div>
+                                <div class="info-value">{{ profile.city|default:"No especificada" }}</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="info-item">
                                 <div class="info-label">País</div>
-                                <div class="info-value">América Latina</div>
+                                <div class="info-value">{{ profile.country|default:"No especificado" }}</div>
                             </div>
                         </div>
                     </div>
+                    {% endif %}
 
                     {% if profile.is_minor %}
                     <div class="alert alert-info mt-3">
