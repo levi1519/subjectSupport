@@ -90,17 +90,21 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         except Exception:
             client_country = ''
 
+        # Get active country codes
+        from geoconfig.geo import get_active_country_codes
+        active_codes = get_active_country_codes()
+
         # Get filter params
         search_query   = self.request.GET.get('search', '')
         country_filter = self.request.GET.get('country', '')
 
         # Query tutors — country filter takes precedence
         if country_filter:
-            tutors_qs = TutorProfile.objects.get_tutors_filtered_by_country(country_filter)
+            tutors_qs = TutorProfile.objects.get_tutors_filtered_by_country(country_filter, active_codes=active_codes)
         elif client_country:
-            tutors_qs = TutorProfile.objects.get_tutors_by_country_priority(client_country)
+            tutors_qs = TutorProfile.objects.get_tutors_by_country_priority(client_country, active_codes=active_codes)
         else:
-            tutors_qs = TutorProfile.objects.get_tutors_fallback()
+            tutors_qs = TutorProfile.objects.get_tutors_fallback(active_codes=active_codes)
 
         # Apply knowledge area filter if provided
         knowledge_area_slug = self.request.GET.get('knowledge_area', '')

@@ -289,8 +289,15 @@ def get_country_config(country_code):
     except Exception as e:
         logger.error(f"Error getting country config: {str(e)}")
         return None
-        if 'geo_data' in request.session:
-            del request.session['geo_data']
-        logger.info(f"Test IP set to: {ip_address}")
-        return True
-    return False
+
+
+def get_active_country_codes():
+    """Returns list of active country codes from CountryConfig."""
+    try:
+        from apps.academicTutoring.models import CountryConfig
+        return list(CountryConfig.objects.filter(
+            active=True
+        ).values_list('country_code', flat=True))
+    except Exception as e:
+        logger.error(f"Error getting active country codes: {str(e)}")
+        return []
