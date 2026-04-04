@@ -592,6 +592,179 @@
           "Templates MUST NOT contain copy implying city-level geo-restriction in latam-mvp"
         ]
       }
+    },
+    {
+      "id": "RNF-016",
+      "category": "Usability — Operability",
+      "iso_25010": "Usability → Operability",
+      "statement": "El sistema MUST proveer controles de filtrado nativos compatibles con dispositivos móviles LATAM.",
+      "contracts": {
+        "MUST": [
+          "Country filter in TutorSelectionView MUST render as native <select> element — MUST NOT use free-text input",
+          "<select> MUST populate options from CountryConfig.objects.filter(active=True) — MUST NOT hardcode country list",
+          "Default option MUST be 'Todos los países' with empty value"
+        ],
+        "MUST_NOT": [
+          "Filter MUST NOT require typing country names — this breaks UX on mobile"
+        ]
+      }
+    },
+    {
+      "id": "RNF-017",
+      "category": "Usability — User Interface Aesthetics",
+      "iso_25010": "Usability → Appropriateness Recognizability",
+      "statement": "El panel de administración MUST exponer todos los campos relevantes de perfil de usuario.",
+      "contracts": {
+        "MUST": [
+          "ClientProfileInline MUST include fields: is_minor, parent_name, phone_number, bio",
+          "TutorProfileAdmin list_display MUST show correct subjects_taught via direct Subject.name access",
+          "Admin inlines MUST render correctly on user edit view"
+        ],
+        "MUST_NOT": [
+          "Admin MUST NOT treat subjects_taught as SubjectLevel objects — field is M2M direct to Subject"
+        ]
+      }
+    }
+  ],
+
+  "functional_requirements_extended": [
+    {
+      "id": "RF-019",
+      "category": "Tutor Discovery — Country Filter",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST proveer filtro de país en TutorSelectionView usando <select> nativo con los 23 países LATAM activos.",
+      "contracts": {
+        "MUST": [
+          "TutorSelectionView MUST inject 'countries' context from CountryConfig.objects.filter(active=True).order_by('country_name')",
+          "tutor_selection.html MUST render country filter as <select> with country_code as value",
+          "Default option MUST be 'Todos los países' — returns all tutors without country filter",
+          "Filter MUST use GET param 'country_code' — MUST NOT use 'city' param"
+        ],
+        "MUST_NOT": [
+          "Filter MUST NOT be a free-text input",
+          "Country list MUST NOT be hardcoded in template or view"
+        ]
+      },
+      "layers_affected": ["academicTutoring/views", "tutor_selection.html"]
+    },
+    {
+      "id": "RF-020",
+      "category": "Tutor Profile — Subject Management UX",
+      "iso_25010": "Functional Suitability → Functional Appropriateness",
+      "statement": "El sistema MUST agrupar materias por KnowledgeArea en el formulario de gestión de materias del tutor.",
+      "contracts": {
+        "MUST": [
+          "ManageTutorSubjectsView MUST inject 'subjects_by_area' context: dict of {KnowledgeArea: [Subject]}",
+          "TutorSubjectsForm widget MUST use CheckboxSelectMultiple — MUST NOT use SelectMultiple",
+          "manage_subjects.html MUST render subjects grouped by KnowledgeArea using <fieldset> or optgroup",
+          "TutorSubjectsForm MUST include clean_subjects_taught() validating max 5 subjects selected"
+        ],
+        "MUST_NOT": [
+          "Form MUST NOT allow selection of more than 5 subjects — MUST raise ValidationError",
+          "Widget MUST NOT require Ctrl+Click for multi-selection"
+        ]
+      },
+      "layers_affected": ["accounts/views", "accounts/forms", "manage_subjects.html"]
+    },
+    {
+      "id": "RF-021",
+      "category": "Tutor Document Verification — Admin-Controlled",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST soportar flag de control admin para requerir documentos en registro de nuevos tutores.",
+      "contracts": {
+        "MUST": [
+          "GlobalConfig model MUST include boolean field 'require_tutor_documents' default=False",
+          "register_tutor() service MUST check GlobalConfig.require_tutor_documents before completing registration",
+          "TutorProfile MUST include 'documents_verified' BooleanField default=False",
+          "Tutores registrados ANTES de activar el flag MUST NOT be affected — grandfathering implícito"
+        ],
+        "MUST_NOT": [
+          "Flag MUST NOT be hardcoded — MUST be configurable from Django admin exclusively",
+          "Existing tutor profiles MUST NOT have documents_verified set to False retroactively"
+        ]
+      },
+      "layers_affected": ["accounts/models", "accounts/services", "accounts/admin"],
+      "priority": "post-hackathon"
+    },
+    {
+      "id": "RF-022",
+      "category": "User Age Verification",
+      "iso_25010": "Functional Suitability → Functional Correctness",
+      "statement": "El sistema MUST capturar fecha de nacimiento de tutores y rechazar registro si edad < 18 años.",
+      "contracts": {
+        "MUST": [
+          "TutorProfile MUST include DateField 'birth_date' nullable=True for existing records",
+          "TutorProfile MUST include @property 'age' calculating years from birth_date to date.today()",
+          "TutorRegistrationForm MUST include birth_date field with DateInput widget",
+          "register_tutor() service MUST validate age >= 18 — MUST raise ValidationError if age < 18",
+          "ClientProfile MUST include DateField 'birth_date' nullable=True"
+        ],
+        "MUST_NOT": [
+          "age MUST NOT be stored as a DB field — MUST be calculated property only",
+          "birth_date MUST NOT be required for existing TutorProfile records — nullable migration required"
+        ]
+      },
+      "layers_affected": ["accounts/models", "accounts/forms", "accounts/services"]
+    },
+    {
+      "id": "RF-023",
+      "category": "User Identity — Cédula Capture",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST capturar número de cédula/identificación en registro de tutores y clientes.",
+      "contracts": {
+        "MUST": [
+          "TutorProfile MUST include CharField 'cedula' max_length=20, blank=True, null=True",
+          "ClientProfile MUST include CharField 'cedula' max_length=20, blank=True, null=True",
+          "Registration forms MUST include cedula field as optional (required=False)",
+          "Admin inlines MUST expose cedula field for manual entry"
+        ],
+        "MUST_NOT": [
+          "cedula MUST NOT have format validation in MVP — accept any alphanumeric string",
+          "cedula MUST NOT be required for existing records — nullable migration required"
+        ]
+      },
+      "layers_affected": ["accounts/models", "accounts/forms", "accounts/admin"]
+    },
+    {
+      "id": "RF-024",
+      "category": "Session Booking",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST permitir a estudiantes solicitar sesiones de tutoría con tutores disponibles.",
+      "contracts": {
+        "MUST": [
+          "SessionRequestForm MUST capture: tutor, subject, requested_datetime, duration_minutes, notes",
+          "request_session() service MUST create ClassSession with status='pending'",
+          "Tutor MUST be able to accept or reject pending session requests",
+          "On acceptance, ClassSession status MUST transition to 'confirmed'",
+          "Student and tutor MUST receive notification on status change"
+        ],
+        "MUST_NOT": [
+          "System MUST NOT auto-confirm sessions — tutor approval required",
+          "Double-booking for same tutor+datetime MUST NOT be allowed (RF-006-C)"
+        ]
+      },
+      "layers_affected": ["academicTutoring/views", "academicTutoring/services_init", "academicTutoring/services_meeting_service"],
+      "priority": "hackathon"
+    },
+    {
+      "id": "RF-025",
+      "category": "Meeting Link Management",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST permitir al tutor agregar link de reunión a sesiones confirmadas, visible para ambas partes a la hora acordada.",
+      "contracts": {
+        "MUST": [
+          "ClassSession MUST include URLField 'meet_link' nullable=True",
+          "Tutor MUST be able to add/update meet_link on confirmed sessions from dashboard",
+          "meet_link MUST be visible to student on their dashboard when session status='confirmed'",
+          "meet_link MUST display prominently when current_time >= session scheduled_datetime"
+        ],
+        "MUST_NOT": [
+          "meet_link MUST NOT be auto-generated — tutor provides manually",
+          "meet_link MUST NOT be visible to student before session is confirmed"
+        ]
+      },
+      "layers_affected": ["academicTutoring/models", "academicTutoring/views", "academicTutoring/services_meeting_service"],
+      "priority": "hackathon"
     }
   ]
 }
