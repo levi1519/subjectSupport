@@ -38,7 +38,7 @@ def register_tutor(request, form, country_code=''):
         if geo_data.get('country'):
             profile.country = geo_data['country']
         profile.save()
-        subjects = form.cleaned_data.get('subjects')
+        subjects = form.cleaned_data.get('subjects_taught')
         if subjects:
             profile.subjects_taught.set(subjects)
         login(request, user)
