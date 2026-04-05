@@ -145,7 +145,7 @@ class DashboardView(LoginRequiredMixin, View):
             return redirect('/admin/')
         
         if request.user.user_type == 'tutor':
-            return redirect('manage_subjects')
+            return redirect('tutor_dashboard')
         else:
             return redirect('client_dashboard')
 
