@@ -285,7 +285,9 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
                 else:
                     recipient = session.tutor
                 send_cancellation_email(session, request.user, recipient)
-            messages.info(request, 'La sesión ha sido cancelada.')
+                messages.info(request, f'La sesión ha sido cancelada. Se notificó a {recipient.name}.')
+            else:
+                messages.info(request, 'La sesión ha sido cancelada.')
         else:
             messages.error(request, f'Error al cancelar sesión: {error}')
 
