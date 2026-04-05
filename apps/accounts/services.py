@@ -41,6 +41,7 @@ def register_tutor(request, form, country_code=''):
         subjects = form.cleaned_data.get('subjects_taught')
         if subjects:
             profile.subjects_taught.set(subjects)
+            profile.refresh_from_db()
         login(request, user)
         return True, user, None
     except Exception as e:
