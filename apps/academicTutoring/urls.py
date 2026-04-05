@@ -7,6 +7,7 @@ urlpatterns = [
     path('sessions/request/<int:tutor_id>/', views.RequestSessionView.as_view(), name='request_session'),
     path('sessions/<int:session_id>/confirm/', views.ConfirmSessionView.as_view(), name='confirm_session'),
     path('sessions/<int:session_id>/cancel/', views.CancelSessionView.as_view(), name='cancel_session'),
+    path('sessions/<int:session_id>/complete/', views.CompleteSessionView.as_view(), name='complete_session'),
     path('sessions/<int:session_id>/meeting/', views.MeetingRoomView.as_view(), name='meeting_room'),
     # Geolocalización
     path('servicio-no-disponible/', views.servicio_no_disponible, name='servicio_no_disponible'),

@@ -121,10 +121,14 @@ class SessionConfirmationForm(forms.ModelForm):
 
     class Meta:
         model = ClassSession
-        fields = ['meeting_platform', 'notes']
+        fields = ['meeting_platform', 'meeting_url', 'notes']
         widgets = {
             'meeting_platform': forms.Select(attrs={
                 'class': 'form-select'
+            }),
+            'meeting_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://meet.google.com/xxx-xxxx-xxx'
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -134,6 +138,7 @@ class SessionConfirmationForm(forms.ModelForm):
         }
         labels = {
             'meeting_platform': 'Plataforma de Reunión',
+            'meeting_url': 'Enlace de la reunión',
             'notes': 'Notas adicionales'
         }
         error_messages = {

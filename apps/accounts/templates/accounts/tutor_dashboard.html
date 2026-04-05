@@ -190,6 +190,13 @@
                                                 {% endif %}
                                             </td>
                                             <td>
+                                                <form method="post" action="{% url 'complete_session' session.id %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-success me-1"
+                                                        onclick="return confirm('¿Marcar esta sesión como completada?')">
+                                                        ✓ Completada
+                                                    </button>
+                                                </form>
                                                 <a href="{% url 'cancel_session' session.id %}" class="btn btn-sm btn-outline-danger">Cancelar</a>
                                             </td>
                                         </tr>

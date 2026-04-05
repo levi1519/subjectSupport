@@ -301,6 +301,24 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
             return reverse('client_dashboard')
 
 
+class CompleteSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Mark a confirmed session as completed. Tutor only."""
+
+    def test_func(self):
+        self.session = get_object_or_404(ClassSession, id=self.kwargs['session_id'])
+        return self.request.user == self.session.tutor
+
+    def post(self, request, *args, **kwargs):
+        session = self.session
+        if session.status != 'confirmed':
+            messages.warning(request, 'Solo puedes completar sesiones confirmadas.')
+            return redirect('tutor_dashboard')
+        session.status = 'completed'
+        session.save()
+        messages.success(request, f'Sesión de {session.subject} marcada como completada.')
+        return redirect('tutor_dashboard')
+
+
 class MeetingRoomView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     """
     View for accessing the meeting room for a session.
