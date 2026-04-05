@@ -35,7 +35,7 @@ class RegisterTutorView(FormView):
         success, user, error = services.register_tutor(self.request, form, country_code)
         if success:
             messages.success(self.request, '¡Bienvenido! Tu cuenta de tutor ha sido creada exitosamente.')
-            return redirect('manage_subjects')
+            return redirect('tutor_dashboard')
         messages.error(self.request, error)
         return self.form_invalid(form)
 
