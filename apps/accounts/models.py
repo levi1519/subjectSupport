@@ -215,7 +215,7 @@ class TutorProfileManager(models.Manager):
         return queryset.order_by('user__name')
 
     def get_profile_for_user(self, user):
-        return self.select_related('user').get(user=user)
+        return self.select_related('user').prefetch_related('subjects_taught').get(user=user)
 
     def get_or_create_for_user(self, user):
         return self.get_or_create(user=user)
@@ -223,7 +223,7 @@ class TutorProfileManager(models.Manager):
 
 class ClientProfileManager(models.Manager):
     def get_profile_for_user(self, user):
-        return self.select_related('user').get(user=user)
+        return self.select_related('user').prefetch_related('subjects_taught').get(user=user)
 
     def get_or_create_for_user(self, user):
         return self.get_or_create(user=user)
