@@ -16,7 +16,7 @@ from .forms import (
     ClientProfileEditForm, 
     TutorProfileEditForm
 )
-from .models import TutorProfile, ClientProfile
+from .models import TutorProfile, ClientProfile, Notification
 from . import services
 
 
@@ -179,6 +179,9 @@ class TutorDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             )
         except TutorProfile.DoesNotExist:
             context['profile'] = None
+        context['notifications'] = Notification.objects.filter(
+            recipient=self.request.user, is_read=False
+        )
         return context
 
 
@@ -211,6 +214,9 @@ class ClientDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
             )
         except ClientProfile.DoesNotExist:
             context['profile'] = None
+        context['notifications'] = Notification.objects.filter(
+            recipient=self.request.user, is_read=False
+        )
         return context
 
 

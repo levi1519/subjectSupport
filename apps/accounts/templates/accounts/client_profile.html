@@ -1,3 +1,4 @@
+{% load accounts_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -121,7 +122,7 @@
     <div class="profile-header">
         <div class="container text-center">
             {% if profile.avatar_url %}
-                <img src="{{ profile.avatar_url }}" alt="Foto de perfil"
+                <img src="{{ profile.avatar_url|drive_url }}" alt="Foto de perfil"
                      style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:12px;">
             {% else %}
                 <div style="width:80px;height:80px;border-radius:50%;background:#4A6CF7;display:flex;align-items:center;justify-content:center;color:white;font-size:2rem;margin-bottom:12px;">

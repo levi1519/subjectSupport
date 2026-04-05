@@ -9,13 +9,23 @@ from django.urls import reverse
 from .models import ClassSession, NotificacionExpansion
 from .forms import SessionRequestForm, SessionConfirmationForm, NotificacionExpansionForm
 from . import services as academic_services
-from apps.accounts.models import User, TutorProfile
+from apps.accounts.models import User, TutorProfile, Notification
 from .services.meeting_service import update_session_with_meeting
 from .utils import send_cancellation_email
 
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+@login_required
+def mark_notification_read(request, notif_id):
+    """Mark a notification as read via POST."""
+    if request.method == 'POST':
+        Notification.objects.filter(
+            id=notif_id, recipient=request.user
+        ).update(is_read=True)
+    return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
 
 
 class GeoRootRouterView(View):
@@ -285,6 +295,10 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
                 else:
                     recipient = session.tutor
                 send_cancellation_email(session, request.user, recipient)
+                Notification.objects.create(
+                    recipient=recipient,
+                    message=f'{request.user.name} canceló la clase de {session.subject} del {session.scheduled_date.strftime("%d/%m/%Y")} a las {session.scheduled_time.strftime("%H:%M")}'
+                )
                 messages.info(request, f'La sesión ha sido cancelada. Se notificó a {recipient.name}.')
             else:
                 messages.info(request, 'La sesión ha sido cancelada.')
@@ -316,6 +330,28 @@ class CompleteSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
         session.status = 'completed'
         session.save()
         messages.success(request, f'Sesión de {session.subject} marcada como completada.')
+        return redirect('tutor_dashboard')
+
+
+class UpdateMeetingUrlView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Allow tutor to update meeting_url of a confirmed session."""
+
+    def test_func(self):
+        self.session = get_object_or_404(ClassSession, id=self.kwargs['session_id'])
+        return self.request.user == self.session.tutor
+
+    def post(self, request, *args, **kwargs):
+        session = self.session
+        if session.status != 'confirmed':
+            messages.warning(request, 'Solo puedes actualizar el enlace de sesiones confirmadas.')
+            return redirect('tutor_dashboard')
+        meeting_url = request.POST.get('meeting_url', '').strip()
+        if meeting_url:
+            session.meeting_url = meeting_url
+            session.save()
+            messages.success(request, 'Enlace de reunión actualizado.')
+        else:
+            messages.warning(request, 'El enlace no puede estar vacío.')
         return redirect('tutor_dashboard')
 
 
