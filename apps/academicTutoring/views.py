@@ -370,6 +370,7 @@ class MeetingRoomView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     
     def dispatch(self, request, *args, **kwargs):
         """Validate session status"""
+        self.session = get_object_or_404(ClassSession, id=kwargs['session_id'])
         if self.session.status != 'confirmed':
             messages.warning(request, 'Esta sesión aún no ha sido confirmada.')
             return redirect(self.get_success_url())
