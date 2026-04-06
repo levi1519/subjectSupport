@@ -1,56 +1,31 @@
+{% load static %}
+{% load accounts_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Tutor - SubjectSupport</title>
+    <title>Panel de Tutor - EduLatam</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .dashboard-header {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 40px 0;
-        }
-        .info-card {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-        .navbar-custom {
-            background: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .badge-pending {
-            background-color: #ffc107;
-            color: #000;
-        }
-        .badge-confirmed {
-            background-color: #28a745;
-        }
-        .badge-cancelled {
-            background-color: #dc3545;
-        }
-        .badge-completed {
-            background-color: #6c757d;
-        }
-        .session-table {
-            font-size: 0.9rem;
-        }
-    </style>
+    <!-- EduLatam Theme -->
+    <link rel="stylesheet" href="{% static 'css/edulatam.css' %}">
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-light navbar-custom">
+<body>
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
-            {% if user.is_authenticated %}<a class="navbar-brand fw-bold text-primary" href="{% url 'dashboard' %}">SubjectSupport</a>{% else %}<a class="navbar-brand fw-bold text-primary" href="{% url 'register' %}">SubjectSupport</a>{% endif %}
+            <a class="navbar-brand fw-bold" href="{% url 'tutor_dashboard' %}">EduLatam</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'tutor_dashboard' %}">Mi Panel</a>
+                        <a class="nav-link active" href="{% url 'tutor_dashboard' %}" style="color: var(--primary) !important;">Mi Panel</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'user_profile' %}">Mi Perfil</a>
@@ -71,7 +46,7 @@
         </div>
     </nav>
 
-    <div class="dashboard-header">
+    <div class="dashboard-header" style="padding: 40px 0;">
         <div class="container">
             <h1 class="display-5 fw-bold">Bienvenido, {{ user.name }}!
                 {% if user.country_code %}
@@ -82,7 +57,7 @@
             </h1>
             <p class="lead mb-0">Panel de Control del Tutor</p>
             {% if pending_count > 0 %}
-                <span class="badge bg-warning text-dark mt-2">{{ pending_count }} solicitud{{ pending_count|pluralize:"es" }} pendiente{{ pending_count|pluralize:"s" }}</span>
+                <span class="badge bg-warning mt-2">{{ pending_count }} solicitud{{ pending_count|pluralize:"es" }} pendiente{{ pending_count|pluralize:"s" }}</span>
             {% endif %}
         </div>
     </div>
@@ -112,7 +87,7 @@
         <div class="row">
             <!-- Solicitudes Pendientes -->
             <div class="col-12 mb-4">
-                <div class="info-card">
+                <div class="card info-card">
                     <h5 class="fw-bold mb-3">⏳ Solicitudes Pendientes</h5>
                     {% if pending_sessions %}
                         <div class="table-responsive">
@@ -156,7 +131,7 @@
 
             <!-- Próximas Clases Confirmadas -->
             <div class="col-12 mb-4">
-                <div class="info-card">
+                <div class="card info-card">
                     <h5 class="fw-bold mb-3">📅 Mis Clases Próximas</h5>
                     {% if upcoming_sessions %}
                         <div class="table-responsive">
@@ -187,11 +162,11 @@
                                             <td>{{ session.scheduled_time|time:"H:i" }}</td>
                                             <td>{{ session.get_duration_display }}</td>
                                             <td>
-                                                <span class="badge bg-info text-dark">
+                                                <span class="badge bg-info">
                                                     {{ session.get_meeting_platform_display }}
                                                 </span>
                                             </td>
-                                            <td><span class="badge badge-confirmed">Confirmada</span></td>
+                                            <td><span class="badge bg-success">Confirmada</span></td>
                                             <td>
                                                 {% if session.meeting_url %}
                                                     <a href="{% url 'meeting_room' session.id %}" class="btn btn-sm btn-primary">Iniciar</a>
@@ -248,7 +223,7 @@
 
             <!-- Tu Perfil -->
             <div class="col-md-6 mb-4">
-                <div class="info-card">
+                <div class="card info-card">
                     <h5 class="fw-bold mb-3">👤 Tu Información</h5>
                     <p><strong>Nombre:</strong> {{ user.name }}</p>
                     <p><strong>Email:</strong> {{ user.email }}</p>
@@ -259,7 +234,7 @@
 
             <!-- Perfil de Tutor -->
             <div class="col-md-6 mb-4">
-                <div class="info-card">
+                <div class="card info-card">
                     <h5 class="fw-bold mb-3">📚 Tu Perfil de Tutor</h5>
                     {% if profile %}
                         <div class="mb-3">
@@ -298,20 +273,20 @@
         <!-- Estadísticas Rápidas -->
         <div class="row">
             <div class="col-md-4 mb-3">
-                <div class="info-card text-center">
-                    <h3 class="text-primary">{{ pending_count }}</h3>
+                <div class="card info-card text-center">
+                    <h3 class="text-primary fw-bold">{{ pending_count }}</h3>
                     <p class="text-muted mb-0">Solicitudes Pendientes</p>
                 </div>
             </div>
             <div class="col-md-4 mb-3">
-                <div class="info-card text-center">
-                    <h3 class="text-success">{{ upcoming_sessions|length }}</h3>
+                <div class="card info-card text-center">
+                    <h3 class="text-success fw-bold">{{ upcoming_sessions|length }}</h3>
                     <p class="text-muted mb-0">Clases Confirmadas</p>
                 </div>
             </div>
             <div class="col-md-4 mb-3">
-                <div class="info-card text-center">
-                    <h3 class="text-info">{{ all_active_sessions|length }}</h3>
+                <div class="card info-card text-center">
+                    <h3 class="text-info fw-bold">{{ all_active_sessions|length }}</h3>
                     <p class="text-muted mb-0">Total Sesiones Activas</p>
                 </div>
             </div>

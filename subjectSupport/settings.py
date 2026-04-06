@@ -284,7 +284,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Additional static files directories (if needed)
 STATICFILES_DIRS = [
-    # BASE_DIR / 'static',  # Uncomment if you have a global static folder
+    BASE_DIR / 'static',  # Global static folder for EduLatam CSS
 ]
 
 # Default primary key field type

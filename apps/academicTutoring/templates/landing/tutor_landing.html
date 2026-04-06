@@ -4,21 +4,21 @@
 
 {% block nav_buttons %}
     <a href="{% url 'tutor_login' %}" class="btn btn-outline-secondary btn-sm">Iniciar Sesión</a>
-    <a href="{% url 'tutor_register' %}" class="btn btn-accent btn-sm">Registrarme como Tutor</a>
+    <a href="{% url 'tutor_register' %}" class="btn btn-primary btn-sm">Registrarme como Tutor</a>
 {% endblock %}
 
 {% block content %}
 <!-- HERO -->
-<section style="background: #1A202C; color: white; padding: 80px 0;">
+<section class="dashboard-header" style="padding: 80px 0;">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-7">
-                <span class="badge mb-3 px-3 py-2" style="background: #4A6CF7;">Para Tutores 🎓</span>
+                <span class="badge bg-primary mb-3 px-3 py-2">Para Tutores 🎓</span>
                 <h1 class="display-5 fw-bold mb-4">Comparte tu conocimiento y genera ingresos</h1>
                 <p class="lead mb-4" style="color: #A0AEC0;">Conecta con estudiantes de toda América Latina. Tú defines tus materias, horarios y tarifas.</p>
                 <div class="d-flex gap-3 flex-wrap">
-                    <a href="{% url 'tutor_register' %}" class="btn btn-accent btn-lg px-4">Comenzar a Enseñar</a>
-                    <a href="{% url 'tutor_login' %}" class="btn btn-outline-light btn-lg px-4">Ya tengo cuenta</a>
+                    <a href="{% url 'tutor_register' %}" class="btn btn-primary btn-lg px-4">Comenzar a Enseñar</a>
+                    <a href="{% url 'tutor_login' %}" class="btn btn-outline-secondary btn-lg px-4">Ya tengo cuenta</a>
                 </div>
             </div>
             <div class="col-lg-5 text-center mt-4 mt-lg-0">
@@ -31,45 +31,45 @@
 <!-- FEATURES -->
 <section class="py-5">
     <div class="container">
-        <h2 class="text-center fw-bold mb-5" style="color: var(--primary);">¿Por qué enseñar en SubjectSupport?</h2>
+        <h2 class="section-title text-center fw-bold mb-5">¿Por qué enseñar en SubjectSupport?</h2>
         <div class="row g-4">
             <div class="col-md-4">
-                <div class="feature-card bg-white">
+                <div class="card h-100">
                     <div class="feature-icon">💰</div>
                     <h5 class="fw-bold">Define tu tarifa</h5>
                     <p class="text-muted">Tú estableces el precio por hora. Sin intermediarios que se queden con tu ganancia.</p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="feature-card bg-white">
+                <div class="card h-100">
                     <div class="feature-icon">🗓️</div>
                     <h5 class="fw-bold">Tus horarios</h5>
                     <p class="text-muted">Acepta o rechaza solicitudes. Enseña cuando más te convenga.</p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="feature-card bg-white">
+                <div class="card h-100">
                     <div class="feature-icon">🌎</div>
                     <h5 class="fw-bold">Alcance LATAM</h5>
                     <p class="text-muted">Llega a estudiantes de 23 países hispanohablantes desde donde estés.</p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="feature-card bg-white">
+                <div class="card h-100">
                     <div class="feature-icon">📚</div>
                     <h5 class="fw-bold">Tus materias</h5>
                     <p class="text-muted">Enseña lo que sabes. Selecciona hasta 5 materias y aparece en búsquedas relevantes.</p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="feature-card bg-white">
+                <div class="card h-100">
                     <div class="feature-icon">💻</div>
                     <h5 class="fw-bold">Google Meet integrado</h5>
                     <p class="text-muted">Comparte el link de reunión directo en la plataforma. Sin complicaciones.</p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="feature-card bg-white">
+                <div class="card h-100">
                     <div class="feature-icon">✅</div>
                     <h5 class="fw-bold">Perfil verificado</h5>
                     <p class="text-muted">Construye tu reputación. Los estudiantes confían en tutores verificados.</p>
