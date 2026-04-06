@@ -1,30 +1,40 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Tutor - SubjectSupport</title>
+    <title>Registro de Tutor - EduLatam</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- EduLatam Theme -->
+    <link rel="stylesheet" href="{% static 'css/edulatam.css' %}">
     <style>
         .register-section {
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--dark);
             display: flex;
             align-items: center;
             padding: 40px 0;
         }
         .register-card {
-            background: white;
+            background: var(--surface);
+            border: 1px solid rgba(108, 99, 255, 0.2);
             padding: 40px;
             border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
         .subject-selector {
             max-height: 250px;
             overflow-y: scroll;
-            border: 1px solid #dee2e6;
+            border: 1px solid rgba(108, 99, 255, 0.3);
             border-radius: 8px;
             padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
         }
         .subject-option {
             padding: 10px;
@@ -36,10 +46,10 @@
             align-items: center;
         }
         .subject-option:hover {
-            background: #f8f9fa;
+            background: rgba(108, 99, 255, 0.1);
         }
         .subject-option.selected {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
             color: white;
         }
         .subject-option input[type="checkbox"] {
@@ -50,12 +60,18 @@
         }
         .subject-count {
             font-size: 0.9em;
-            color: #666;
+            color: var(--muted);
             margin-top: 5px;
         }
         .subject-count.limit-reached {
-            color: #dc3545;
+            color: var(--danger);
             font-weight: 600;
+        }
+        legend {
+            color: var(--text) !important;
+        }
+        .form-check-label {
+            color: var(--text);
         }
     </style>
 </head>
@@ -66,7 +82,7 @@
                 <div class="col-md-8 col-lg-6">
                     <div class="register-card">
                         <div class="text-center mb-4">
-                            <h2 class="fw-bold">Registro de Tutor</h2>
+                            <h2 class="fw-bold text-white">Registro de Tutor</h2>
                             <p class="text-muted">Únete a nuestra red de tutores profesionales</p>
                         </div>
 
