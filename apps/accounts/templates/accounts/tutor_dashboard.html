@@ -140,21 +140,21 @@
                     <h5 class="fw-bold mb-3">⏳ Solicitudes Pendientes</h5>
                     {% if pending_sessions %}
                         <div class="table-responsive">
-                            <table class="table table-hover session-table">
+                            <table class="table table-hover session-table table-dark" style="background: var(--surface); color: var(--text); border: none;">
                                 <thead>
-                                    <tr>
-                                        <th>Estudiante</th>
-                                        <th>Materia</th>
-                                        <th>Fecha</th>
-                                        <th>Hora</th>
-                                        <th>Duración</th>
-                                        <th>Acciones</th>
+                                    <tr style="border-color: rgba(255,255,255,0.1);">
+                                        <th style="border-color: rgba(255,255,255,0.1);">Estudiante</th>
+                                        <th style="border-color: rgba(255,255,255,0.1);">Materia</th>
+                                        <th style="border-color: rgba(255,255,255,0.1);">Fecha</th>
+                                        <th style="border-color: rgba(255,255,255,0.1);">Hora</th>
+                                        <th style="border-color: rgba(255,255,255,0.1);">Duración</th>
+                                        <th style="border-color: rgba(255,255,255,0.1);">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for session in pending_sessions %}
-                                        <tr>
-                                            <td class="d-flex align-items-center gap-2">
+                                        <tr style="border-color: rgba(255,255,255,0.1);">
+                                            <td class="d-flex align-items-center gap-2" style="border-color: rgba(255,255,255,0.1);">
                                                 {% if session.client.client_profile.avatar_url %}
                                                     <img src="{{ session.client.client_profile.avatar_url|drive_url }}"
                                                          style="width:28px;height:28px;border-radius:50%;object-fit:cover;">
@@ -165,15 +165,15 @@
                                                 {% endif %}
                                                 {{ session.client.name }}
                                             </td>
-                                            <td>{{ session.subject }}
+                                            <td style="border-color: rgba(255,255,255,0.1);">{{ session.subject }}
                                                 {% if session.tutor.tutor_profile %}
                                                     <small class="text-muted">💰 ${{ session.tutor.tutor_profile.hourly_rate|default:"N/A" }}/hora</small>
                                                 {% endif %}
                                             </td>
-                                            <td>{{ session.scheduled_date|date:"d/m/Y" }}</td>
-                                            <td>{{ session.scheduled_time|time:"H:i" }}</td>
-                                            <td>{{ session.get_duration_display }}</td>
-                                            <td>
+                                            <td style="border-color: rgba(255,255,255,0.1);">{{ session.scheduled_date|date:"d/m/Y" }}</td>
+                                            <td style="border-color: rgba(255,255,255,0.1);">{{ session.scheduled_time|time:"H:i" }}</td>
+                                            <td style="border-color: rgba(255,255,255,0.1);">{{ session.get_duration_display }}</td>
+                                            <td style="border-color: rgba(255,255,255,0.1);">
                                                 <a href="{% url 'confirm_session' session.id %}" class="btn btn-sm btn-success me-1">Confirmar</a>
                                                 <a href="{% url 'cancel_session' session.id %}" class="btn btn-sm btn-outline-danger">Rechazar</a>
                                             </td>

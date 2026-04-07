@@ -210,22 +210,22 @@
                     <h5 class="fw-bold mb-3">⏳ Solicitudes Pendientes</h5>
                     {% if pending_sessions %}
                         <div class="table-responsive">
-                            <table class="table table-hover session-table">
+                            <table class="table table-hover session-table table-dark" style="background: var(--surface); color: var(--text); border: none;">
                                 <thead>
-                                    <tr>
-                                        <th>Tutor</th>
-                                        <th>Materia</th>
-                                        <th>Fecha</th>
-                                        <th>Hora</th>
-                                        <th>Duración</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
+                                    <tr style="border-color: rgba(255,255,255,0.1);">
+                                        <th style="border-color: rgba(255,255,255,0.1);">Tutor</th>
+                                        <th style="border-color: rgba(255,255,255,0.1);">Materia</th>
+                                        <th style="border-color: rgba(255,255,255,0.1);">Fecha</th>
+                                        <th style="border-color: rgba(255,255,255,0.1);">Hora</th>
+                                        <th style="border-color: rgba(255,255,255,0.1);">Duración</th>
+                                        <th style="border-color: rgba(255,255,255,0.1);">Estado</th>
+                                        <th style="border-color: rgba(255,255,255,0.1);">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for session in pending_sessions %}
-                                        <tr>
-                                            <td class="d-flex align-items-center gap-2">
+                                        <tr style="border-color: rgba(255,255,255,0.1);">
+                                            <td class="d-flex align-items-center gap-2" style="border-color: rgba(255,255,255,0.1);">
                                                 {% if session.tutor.tutor_profile.avatar_url %}
                                                     <img src="{{ session.tutor.tutor_profile.avatar_url|drive_url }}"
                                                          style="width:28px;height:28px;border-radius:50%;object-fit:cover;">
@@ -241,11 +241,11 @@
                                                     <small class="text-muted">💰 ${{ session.tutor.tutor_profile.hourly_rate|default:"N/A" }}/hora</small>
                                                 {% endif %}
                                             </td>
-                                            <td>{{ session.scheduled_date|date:"d/m/Y" }}</td>
-                                            <td>{{ session.scheduled_time|time:"H:i" }}</td>
-                                            <td>{{ session.get_duration_display }}</td>
-                                            <td><span class="badge bg-warning text-dark" style="color: #1A1A2E !important; font-weight: 600; padding: 8px 12px;">Pendiente</span></td>
-                                            <td>
+                                            <td style="border-color: rgba(255,255,255,0.1);">{{ session.scheduled_date|date:"d/m/Y" }}</td>
+                                            <td style="border-color: rgba(255,255,255,0.1);">{{ session.scheduled_time|time:"H:i" }}</td>
+                                            <td style="border-color: rgba(255,255,255,0.1);">{{ session.get_duration_display }}</td>
+                                            <td style="border-color: rgba(255,255,255,0.1);"><span class="badge bg-warning text-dark" style="color: #1A1A2E !important; font-weight: 600; padding: 8px 12px;">Pendiente</span></td>
+                                            <td style="border-color: rgba(255,255,255,0.1);">
                                                 <a href="{% url 'cancel_session' session.id %}" class="btn btn-sm btn-outline-danger">Cancelar</a>
                                             </td>
                                         </tr>
