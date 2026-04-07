@@ -41,6 +41,12 @@ class TutorRegistrationForm(UserCreationForm):
         label='Cédula / ID Nacional',
         help_text='Documento de identidad de tu país.',
     )
+    avatar_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://drive.google.com/... o https://mega.nz/...'}),
+        label='Foto de Perfil (opcional)',
+        help_text='Pega el link directo a tu foto (Google Drive, MEGA, Dropbox, etc.)'
+    )
     birth_date = forms.DateField(
         required=True,
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
@@ -159,6 +165,7 @@ class TutorRegistrationForm(UserCreationForm):
                 experience=self.cleaned_data.get('experience', '')
             )
             profile.cedula = self.cleaned_data.get('cedula', '')
+            profile.avatar_url = self.cleaned_data.get('avatar_url', '')
             profile.save()
             # Save ManyToMany relationships (subjects)
             subjects = self.cleaned_data.get('subjects')
@@ -190,6 +197,12 @@ class ClientRegistrationForm(UserCreationForm):
         max_length=20,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
         label='Cédula / Identificación',
+    )
+    avatar_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://drive.google.com/... o https://mega.nz/...'}),
+        label='Foto de Perfil (opcional)',
+        help_text='Pega el link directo a tu foto (Google Drive, MEGA, Dropbox, etc.)'
     )
     birth_date = forms.DateField(
         required=True,
@@ -314,6 +327,7 @@ class ClientRegistrationForm(UserCreationForm):
                 parent_name=self.cleaned_data.get('parent_name', '')
             )
             profile.cedula = self.cleaned_data.get('cedula', '')
+            profile.avatar_url = self.cleaned_data.get('avatar_url', '')
             profile.save()
         return user
 
