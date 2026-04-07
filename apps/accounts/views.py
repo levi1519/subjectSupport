@@ -33,19 +33,19 @@ class RegisterTutorView(FormView):
     form_class = TutorRegistrationForm
 
     def form_valid(self, form):
-        print(f"DEBUG TUTOR: Form validado OK. Datos: {form.cleaned_data.get('email')}")
+        # DEBUG: print(f"DEBUG TUTOR: Form validado OK. Datos: {form.cleaned_data.get('email')}")
         country_code = self.request.geo_data.get('country_code', '') if hasattr(self.request, 'geo_data') else ''
         success, user, error = services.register_tutor(self.request, form, country_code)
         if success:
-            print(f"DEBUG TUTOR: Usuario creado exitosamente, redirigiendo a tutor_dashboard...")
+            # DEBUG: print(f"DEBUG TUTOR: Usuario creado exitosamente, redirigiendo a tutor_dashboard...")
             messages.success(self.request, '¡Bienvenido! Tu cuenta de tutor ha sido creada exitosamente.')
             return redirect('tutor_dashboard')
-        print(f"DEBUG TUTOR: Error en services.register_tutor: {error}")
+        # DEBUG: print(f"DEBUG TUTOR: Error en services.register_tutor: {error}")
         messages.error(self.request, error)
         return self.form_invalid(form)
     
     def form_invalid(self, form):
-        print(f"DEBUG TUTOR: Form INVÁLIDO. Errores: {form.errors.as_json()}")
+        # DEBUG: print(f"DEBUG TUTOR: Form INVÁLIDO. Errores: {form.errors.as_json()}")
         return super().form_invalid(form)
 
 
@@ -60,19 +60,19 @@ class RegisterClientView(FormView):
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        print(f"DEBUG CLIENT: Form validado OK. Datos: {form.cleaned_data.get('email')}")
+        # DEBUG: print(f"DEBUG CLIENT: Form validado OK. Datos: {form.cleaned_data.get('email')}")
         country_code = self.request.geo_data.get('country_code', '') if hasattr(self.request, 'geo_data') else ''
         success, user, error = services.register_client(self.request, form, country_code)
         if success:
-            print(f"DEBUG CLIENT: Usuario creado exitosamente, redirigiendo a client_dashboard...")
+            # DEBUG: print(f"DEBUG CLIENT: Usuario creado exitosamente, redirigiendo a client_dashboard...")
             messages.success(self.request, '¡Bienvenido! Tu cuenta ha sido creada exitosamente.')
             return redirect('client_dashboard')
-        print(f"DEBUG CLIENT: Error en services.register_client: {error}")
+        # DEBUG: print(f"DEBUG CLIENT: Error en services.register_client: {error}")
         messages.error(self.request, error)
         return self.form_invalid(form)
     
     def form_invalid(self, form):
-        print(f"DEBUG CLIENT: Form INVÁLIDO. Errores: {form.errors.as_json()}")
+        # DEBUG: print(f"DEBUG CLIENT: Form INVÁLIDO. Errores: {form.errors.as_json()}")
         return super().form_invalid(form)
 
 
