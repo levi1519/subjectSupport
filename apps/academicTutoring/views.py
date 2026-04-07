@@ -165,7 +165,8 @@ class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         context = super().get_context_data(**kwargs)
         context.update({
             'tutor': self.tutor,
-            'tutor_profile': getattr(self.tutor, 'tutor_profile', None)
+            'tutor_profile': getattr(self.tutor, 'tutor_profile', None),
+            'tutor_subjects': getattr(self.tutor, 'tutor_profile', None).subjects_taught.all() if getattr(self.tutor, 'tutor_profile', None) else []
         })
         return context
     

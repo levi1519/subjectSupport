@@ -148,23 +148,42 @@
                                     </div>
                                 {% endif %}
                                 {% if subjects_by_area %}
-                                    {% for area_name, area_subjects in subjects_by_area.items %}
-                                        <fieldset class="mb-3">
-                                            <legend class="fw-bold">{{ area_name }}</legend>
-                                            {% for subject in area_subjects %}
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox"
-                                                           name="subjects_taught"
-                                                           value="{{ subject.id }}"
-                                                           id="subject_{{ subject.id }}"
-                                                           {% if subject.id in form.subjects_taught.value or subject.id|stringformat:"s" in form.subjects_taught.value %}checked{% endif %}>
-                                                    <label class="form-check-label" for="subject_{{ subject.id }}">
-                                                        {{ subject.name }}
-                                                    </label>
+                                    <div class="accordion" id="subjectsAccordion">
+                                        {% for area_name, area_subjects in subjects_by_area.items %}
+                                            <div class="accordion-item" style="background:var(--surface);border:1px solid rgba(108,99,255,0.2);">
+                                                <h2 class="accordion-header" id="heading_{{ forloop.counter }}">
+                                                    <button class="accordion-button collapsed"
+                                                            type="button"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#collapse_{{ forloop.counter }}"
+                                                            style="background:var(--surface);color:var(--primary);font-weight:600;">
+                                                        {{ area_name }}
+                                                        <span class="badge ms-2" style="background:var(--primary);">
+                                                            {{ area_subjects|length }}
+                                                        </span>
+                                                    </button>
+                                                </h2>
+                                                <div id="collapse_{{ forloop.counter }}"
+                                                     class="accordion-collapse collapse"
+                                                     data-bs-parent="#subjectsAccordion">
+                                                    <div class="accordion-body">
+                                                        {% for subject in area_subjects %}
+                                                            <div class="form-check mb-2">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                       name="subjects_taught"
+                                                                       value="{{ subject.id }}"
+                                                                       id="subject_{{ subject.id }}"
+                                                                       {% if subject.id in form.subjects_taught.value or subject.id|stringformat:"s" in form.subjects_taught.value %}checked{% endif %}>
+                                                                <label class="form-check-label" for="subject_{{ subject.id }}">
+                                                                    {{ subject.name }}
+                                                                </label>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
                                                 </div>
-                                            {% endfor %}
-                                        </fieldset>
-                                    {% endfor %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
                                 {% else %}
                                     <div class="alert alert-warning">
                                         <strong>Atención:</strong> No hay materias disponibles.

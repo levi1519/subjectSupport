@@ -7,6 +7,8 @@ from django.urls import reverse
 from django.views.generic import TemplateView, FormView, UpdateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
+from django.utils import timezone
+from datetime import timedelta
 
 from .forms import (
     TutorRegistrationForm, 
@@ -89,6 +91,13 @@ class StudentLoginView(LoginView):
     form_class = LoginForm
     template_name = 'accounts/login_student.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            if request.user.user_type == 'tutor':
+                return redirect('tutor_dashboard')
+            return redirect('client_dashboard')
+        return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
         user = form.get_user()
         # Verify user is actually a student
@@ -114,6 +123,13 @@ class TutorLoginView(LoginView):
     """Login view for tutors"""
     form_class = LoginForm
     template_name = 'accounts/login_tutor.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            if request.user.user_type == 'tutor':
+                return redirect('tutor_dashboard')
+            return redirect('client_dashboard')
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         user = form.get_user()
@@ -170,9 +186,12 @@ class TutorDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context['upcoming_sessions'] = ClassSession.objects.get_tutor_sessions(
             self.request.user, status='confirmed'
         )
+        cutoff = timezone.now() - timedelta(hours=24)
         context['past_sessions'] = ClassSession.objects.get_tutor_sessions(
             self.request.user, status='completed'
-        )
+        ).filter(updated_at__gte=cutoff) if hasattr(ClassSession, 'updated_at') else ClassSession.objects.get_tutor_sessions(
+            self.request.user, status='completed'
+        ).filter(created_at__gte=cutoff)
         try:
             context['profile'] = TutorProfile.objects.get_profile_for_user(
                 self.request.user
@@ -205,9 +224,12 @@ class ClientDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         context['pending_sessions'] = ClassSession.objects.get_client_sessions(
             self.request.user, status='pending'
         )
+        cutoff = timezone.now() - timedelta(hours=24)
         context['past_sessions'] = ClassSession.objects.get_client_sessions(
             self.request.user, status='completed'
-        )
+        ).filter(updated_at__gte=cutoff) if hasattr(ClassSession, 'updated_at') else ClassSession.objects.get_client_sessions(
+            self.request.user, status='completed'
+        ).filter(created_at__gte=cutoff)
         try:
             context['profile'] = ClientProfile.objects.get_profile_for_user(
                 self.request.user

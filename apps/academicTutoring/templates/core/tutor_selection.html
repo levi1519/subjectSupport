@@ -103,6 +103,17 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="card tutor-card h-100">
                         <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                {% load accounts_filters %}
+                                {% if tutor.avatar_url %}
+                                    <img src="{{ tutor.avatar_url|drive_url }}"
+                                         style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);margin-right:12px;">
+                                {% else %}
+                                    <div style="width:48px;height:48px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.2rem;margin-right:12px;">
+                                        {{ tutor.user.name|slice:":1" }}
+                                    </div>
+                                {% endif %}
+                            </div>
                             <h5 class="card-title">{{ tutor.user.name }}</h5>
                             <p class="text-muted small mb-2">
                                 📍 {{ tutor.city }}, {{ tutor.country }}

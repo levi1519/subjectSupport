@@ -510,10 +510,10 @@ class TutorProfileEditForm(forms.ModelForm):
 
     def clean_hourly_rate(self):
         rate = self.cleaned_data.get('hourly_rate')
-        if rate and rate < 0:
-            raise ValidationError('La tarifa no puede ser negativa.')
-        if rate and rate > 9999:
-            raise ValidationError('La tarifa es demasiado alta.')
+        if rate is not None and rate > 50:
+            raise forms.ValidationError('La tarifa máxima permitida es $50/hora.')
+        if rate is not None and rate < 0:
+            raise forms.ValidationError('La tarifa no puede ser negativa.')
         return rate
 
     def save(self, commit=True):
