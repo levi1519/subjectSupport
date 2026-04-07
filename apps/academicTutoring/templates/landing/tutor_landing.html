@@ -3,7 +3,7 @@
 {% block title %}SubjectSupport — Sé Tutor{% endblock %}
 
 {% block nav_buttons %}
-    <a href="{% url 'tutor_login' %}" class="btn btn-outline-secondary btn-sm">Iniciar Sesión</a>
+    <a href="{% url 'tutor_login' %}" class="btn btn-primary me-2 px-4 py-2 fw-bold" style="border: 2px solid rgba(255,255,255,0.3); background: var(--primary); color: white;">Iniciar Sesión</a>
     <a href="{% url 'tutor_register' %}" class="btn btn-primary btn-sm">Registrarme como Tutor</a>
 {% endblock %}
 
@@ -16,9 +16,13 @@
                 <span class="badge bg-primary mb-3 px-3 py-2">Para Tutores 🎓</span>
                 <h1 class="display-3 fw-bold mb-4 text-white" style="text-shadow: 0 4px 20px rgba(0,0,0,0.5); letter-spacing: 1px;">Comparte tu conocimiento y genera ingresos</h1>
                 <p class="lead mb-4 text-white" style="text-shadow: 0 2px 4px rgba(0,0,0,0.3); font-weight: 500;">Conecta con estudiantes de toda América Latina. Tú defines tus materias, horarios y tarifas.</p>
-                <div class="d-flex gap-3 flex-wrap">
-                    <a href="{% url 'tutor_register' %}" class="btn btn-primary btn-lg px-4">Comenzar a Enseñar</a>
-                    <a href="{% url 'tutor_login' %}" class="btn btn-outline-secondary btn-lg px-4">Ya tengo cuenta</a>
+                <div class="d-flex flex-column flex-md-row gap-3 mt-4">
+                    <a href="{% url 'tutor_register' %}" class="btn btn-primary btn-lg px-5 py-3 fw-bold" style="min-width: 200px;">
+                        Comenzar a Enseñar
+                    </a>
+                    <a href="{% url 'tutor_login' %}" class="btn btn-outline-light btn-lg px-5 py-3 fw-bold" style="min-width: 200px; border-width: 2px;">
+                        Ya tengo cuenta
+                    </a>
                 </div>
             </div>
             <div class="col-lg-5 text-center mt-4 mt-lg-0">
@@ -91,16 +95,25 @@
     </div>
 </section>
 
-<!-- CTA -->
-<section class="py-5 text-center" style="background: #EBF4FF;">
-    <div class="container">
-        <h2 class="fw-bold mb-3" style="color: var(--primary);">¿Listo para empezar a enseñar?</h2>
-        <p class="text-muted mb-4">Regístrate gratis y comienza a recibir solicitudes de estudiantes hoy.</p>
-        <a href="{% url 'tutor_register' %}" class="btn btn-primary btn-lg text-white" style="color: #fff !important; font-weight: 600; padding: 15px 40px; box-shadow: 0 4px 15px rgba(108,99,255,0.4);">Registrarme como Tutor</a>
-        <div style="margin-top: 20px; padding: 10px 20px; background: rgba(255,255,255,0.1); border-radius: 25px; display: inline-block;">
-            <span style="color: rgba(255,255,255,0.9);">¿Eres estudiante?</span>
-            <a href="{% url 'student_landing' %}" style="color: #fff; font-weight: 700; text-decoration: underline; margin-left: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">Encuentra tu tutor aquí →</a>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h2 class="display-5 fw-bold mb-4 text-white" style="text-shadow: 0 2px 10px rgba(0,0,0,0.3);">¿Listo para empezar a enseñar?</h2>
+            <p class="lead mb-5 text-white" style="opacity: 0.9;">Regístrate gratis y comienza a recibir solicitudes de estudiantes hoy.</p>
+            
+            <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-3">
+                <a href="{% url 'tutor_register' %}" class="btn btn-primary btn-lg px-5 py-3 fw-bold" style="font-size: 1.2rem; box-shadow: 0 4px 15px rgba(108,99,255,0.4);">
+                    Registrarme como Tutor
+                </a>
+                
+                <div class="d-flex align-items-center px-4 py-3 rounded-pill" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);">
+                    <span class="text-white me-2">¿Eres estudiante?</span>
+                    <a href="{% url 'student_landing' %}" class="text-white fw-bold text-decoration-underline" style="font-size: 1.1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                        Encuentra tu tutor aquí →
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
-</section>
+</div>
 {% endblock %}
