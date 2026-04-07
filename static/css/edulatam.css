@@ -361,6 +361,26 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text);
 }
 
+/* Fix textos negros Bootstrap */
+.accordion-button { color: var(--primary) !important; }
+.accordion-button:not(.collapsed) { color: var(--primary) !important; background: rgba(108,99,255,0.1) !important; }
+.accordion-button::after { filter: invert(1); }
+.accordion-body { color: var(--text) !important; }
+.form-check-label { color: var(--text) !important; }
+.card-title { color: var(--text) !important; }
+.card-text { color: var(--muted) !important; }
+.card-body { color: var(--text) !important; }
+.badge.text-dark { color: var(--dark) !important; }
+select option { background: var(--surface) !important; color: var(--text) !important; }
+.btn-light { background: var(--surface) !important; color: var(--text) !important; border-color: rgba(108,99,255,0.3) !important; }
+.modal-content { background: var(--surface) !important; color: var(--text) !important; }
+.modal-header { border-color: rgba(108,99,255,0.2) !important; }
+.modal-footer { border-color: rgba(108,99,255,0.2) !important; }
+label { color: var(--text) !important; }
+p { color: var(--text); }
+small { color: var(--muted); }
+strong { color: var(--text); }
+
 .modal-header {
   border-bottom-color: rgba(108, 99, 255, 0.2);
 }

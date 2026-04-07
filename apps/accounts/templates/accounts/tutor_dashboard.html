@@ -41,6 +41,16 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
                     </li>
+                    <li class="nav-item d-flex align-items-center ms-3">
+                        {% if profile.avatar_url %}
+                            <img src="{{ profile.avatar_url|drive_url }}"
+                                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);">
+                        {% else %}
+                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">
+                                {{ user.name|slice:":1" }}
+                            </div>
+                        {% endif %}
+                    </li>
                 </ul>
             </div>
         </div>
@@ -105,7 +115,17 @@
                                 <tbody>
                                     {% for session in pending_sessions %}
                                         <tr>
-                                            <td>{{ session.client.name }}</td>
+                                            <td class="d-flex align-items-center gap-2">
+                                                {% if session.client.client_profile.avatar_url %}
+                                                    <img src="{{ session.client.client_profile.avatar_url|drive_url }}"
+                                                         style="width:28px;height:28px;border-radius:50%;object-fit:cover;">
+                                                {% else %}
+                                                    <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#1A1A2E;font-size:0.8rem;font-weight:700;">
+                                                        {{ session.client.name|slice:":1" }}
+                                                    </div>
+                                                {% endif %}
+                                                {{ session.client.name }}
+                                            </td>
                                             <td>{{ session.subject }}
                                                 {% if session.tutor.tutor_profile %}
                                                     <small class="text-muted">💰 ${{ session.tutor.tutor_profile.hourly_rate|default:"N/A" }}/hora</small>
@@ -152,7 +172,17 @@
                                 <tbody>
                                     {% for session in upcoming_sessions %}
                                         <tr>
-                                            <td>{{ session.client.name }}</td>
+                                            <td class="d-flex align-items-center gap-2">
+                                                {% if session.client.client_profile.avatar_url %}
+                                                    <img src="{{ session.client.client_profile.avatar_url|drive_url }}"
+                                                         style="width:28px;height:28px;border-radius:50%;object-fit:cover;">
+                                                {% else %}
+                                                    <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#1A1A2E;font-size:0.8rem;font-weight:700;">
+                                                        {{ session.client.name|slice:":1" }}
+                                                    </div>
+                                                {% endif %}
+                                                {{ session.client.name }}
+                                            </td>
                                             <td>{{ session.subject }}
                                                 {% if session.tutor.tutor_profile %}
                                                     <small class="text-muted">💰 ${{ session.tutor.tutor_profile.hourly_rate|default:"N/A" }}/hora</small>

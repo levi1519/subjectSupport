@@ -9,7 +9,7 @@ from django.urls import reverse
 from .models import ClassSession, NotificacionExpansion
 from .forms import SessionRequestForm, SessionConfirmationForm, NotificacionExpansionForm
 from . import services as academic_services
-from apps.accounts.models import User, TutorProfile, Notification
+from apps.accounts.models import User, TutorProfile, Notification, KnowledgeArea
 from .services.meeting_service import update_session_with_meeting
 from .utils import send_cancellation_email
 
@@ -134,6 +134,8 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             'search_query':   search_query,
             'country_filter': country_filter,
             'countries':      CountryConfig.objects.filter(active=True).order_by('country_name'),
+            'knowledge_areas': KnowledgeArea.objects.all().order_by('name'),
+            'knowledge_area_filter': knowledge_area_slug,
         })
 
         return context

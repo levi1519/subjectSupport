@@ -65,11 +65,11 @@
             <p class="lead mb-4">{% if client_city %}Mostrando tutores priorizados para tu país: {{ client_city }}{% else %}Explora nuestra red de tutores{% endif %}</p>
 
             <form method="get" class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <input type="text" name="search" class="form-control form-control-lg"
                            placeholder="Buscar por nombre o materia..." value="{{ search_query }}">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <select name="country_code" class="form-control form-control-lg">
                         <option value="">Todos los países</option>
                         {% for country in countries %}
@@ -80,8 +80,19 @@
                         {% endfor %}
                     </select>
                 </div>
+                <div class="col-md-3">
+                    <select name="knowledge_area" class="form-control form-control-lg">
+                        <option value="">Todas las áreas</option>
+                        {% for area in knowledge_areas %}
+                            <option value="{{ area.slug }}"
+                                {% if knowledge_area_filter == area.slug %}selected{% endif %}>
+                                {{ area.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-light btn-lg w-100">Buscar</button>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">Buscar</button>
                 </div>
             </form>
         </div>
