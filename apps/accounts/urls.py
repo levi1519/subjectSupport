@@ -1,28 +1,3 @@
-# Agregar al inicio de urls.py
-from django.http import HttpResponse
-from django.contrib.auth import get_user_model
-
-def emergency_admin(request):
-    try:
-        User = get_user_model()
-        if not User.objects.filter(email='admin@edulatam.com').exists():
-            User.objects.create_superuser('admin@edulatam.com', 'Admin EduLatam', 'Admin123!')
-            return HttpResponse('✅ Admin creado exitosamente<br>Email: admin@edulatam.com<br>Pass: Admin123!')
-        return HttpResponse('ℹ️ El admin ya existe')
-    except Exception as e:
-        return HttpResponse(f'❌ Error: {str(e)}')
-
-
-
-   
-
-
-
-
-
-
-
-
 from django.urls import path
 from . import views
 
@@ -44,9 +19,6 @@ urlpatterns = [
     path('profile/client/', views.ClientProfileView.as_view(), name='client_profile'),
     path('profile/tutor/edit/', views.EditTutorProfileView.as_view(), name='edit_tutor_profile'),
     path('profile/client/edit/', views.EditClientProfileView.as_view(), name='edit_client_profile'),
-    # Tutor management routes
-    path('tutor/manage-subjects/', views.ManageTutorSubjectsView.as_view(), name='manage_subjects'),
-    path('create-admin/', emergency_admin),
-
-
+   
+  
 ]
