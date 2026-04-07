@@ -20,13 +20,6 @@
     </style>
 </head>
 <body>
-    <!-- DEBUG AVATAR -->
-    <div style="background:#ff0;padding:10px;font-size:12px;color:#000;position:fixed;top:0;left:0;z-index:9999;max-width:500px;max-height:100px;overflow:auto;">
-        Avatar URL raw: {{ request.user.avatar_url|default:"NO URL" }}<br>
-        After drive_url filter: {{ request.user.avatar_url|drive_url|default:"FILTER FAIL" }}<br>
-        User: {{ request.user.name }}<br>
-        Profile avatar: {{ profile.avatar_url|default:"NO PROFILE" }}
-    </div>
     <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{% url 'tutor_dashboard' %}">EduLatam</a>
