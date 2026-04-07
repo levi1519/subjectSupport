@@ -398,6 +398,96 @@ strong { color: var(--text); }
   color: var(--primary) !important;
 }
 
+/* ============================================
+   VISIBILIDAD ENHANCED - BOTONES CTA
+   ============================================ */
+
+/* Botones primarios más prominentes */
+.btn-primary {
+    box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4), 
+                0 0 30px rgba(108, 99, 255, 0.1);
+    transform: translateY(0);
+    transition: all 0.3s ease;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 0.75rem 1.5rem;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(108, 99, 255, 0.6),
+                0 0 40px rgba(108, 99, 255, 0.2);
+    background: #5a52d5;
+}
+
+/* Botones outline mejorados */
+.btn-outline-secondary {
+    border-width: 2px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(136, 146, 164, 0.3);
+}
+
+/* Botones grandes (CTA hero) */
+.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    box-shadow: 0 6px 20px rgba(108, 99, 255, 0.5);
+}
+
+.btn-lg:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(108, 99, 255, 0.7);
+}
+
+/* Botones de acción en cards */
+.btn-action, .btn-success {
+    box-shadow: 0 4px 15px rgba(67, 217, 173, 0.4);
+    font-weight: 600;
+}
+
+.btn-action:hover, .btn-success:hover {
+    box-shadow: 0 8px 25px rgba(67, 217, 173, 0.6);
+    transform: translateY(-2px);
+}
+
+/* Navbar buttons más visibles */
+.navbar .btn {
+    box-shadow: 0 2px 8px rgba(108, 99, 255, 0.3);
+    margin-left: 8px;
+}
+
+.navbar .btn:hover {
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+/* Animación sutil de pulse para CTAs importantes */
+@keyframes pulse-glow {
+    0% { box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4); }
+    50% { box-shadow: 0 4px 25px rgba(108, 99, 255, 0.6), 0 0 20px rgba(108, 99, 255, 0.3); }
+    100% { box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4); }
+}
+
+.btn-pulse {
+    animation: pulse-glow 2s infinite;
+}
+
+/* Mejorar contraste en hover de botones outline */
+.btn-outline-danger {
+    border-width: 2px;
+    font-weight: 600;
+}
+
+.btn-outline-danger:hover {
+    box-shadow: 0 4px 15px rgba(255, 101, 132, 0.4);
+    transform: translateY(-2px);
+}
+
 .text-success {
   color: var(--accent) !important;
 }
