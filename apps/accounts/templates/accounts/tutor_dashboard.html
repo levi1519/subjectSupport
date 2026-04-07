@@ -47,8 +47,13 @@
                     </li>
                     <li class="nav-item d-flex align-items-center ms-3">
                         {% if profile.avatar_url %}
-                            <img src="{{ profile.avatar_url|drive_url }}"
-                                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);">
+                            <img src="{{ profile.avatar_url|drive_url }}" 
+                                 alt="Avatar"
+                                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);background:var(--surface);"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:none;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">
+                                {{ user.name|slice:":1" }}
+                            </div>
                         {% else %}
                             <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">
                                 {{ user.name|slice:":1" }}

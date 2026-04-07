@@ -160,21 +160,31 @@
                         </div>
 
                         <div class="mb-4">
-                            <label for="{{ form.avatar_url.id_for_label }}" class="form-label fw-bold">{{ form.avatar_url.label }}</label>
+                            <label for="{{ form.avatar_url.id_for_label }}" class="form-label fw-bold">Foto de Perfil (URL)</label>
                             {{ form.avatar_url }}
-                            {% if form.avatar_url.help_text %}
-                                <div class="form-text">{{ form.avatar_url.help_text }}</div>
-                            {% endif %}
+                            <div class="form-text">Pega aquí el link de tu foto (Google Drive, Dropbox, etc.)</div>
                             {% if form.avatar_url.errors %}
                                 <div class="text-danger small mt-1">{{ form.avatar_url.errors }}</div>
                             {% endif %}
-                            {% if profile.avatar_url %}
-                                <div class="mt-3">
-                                    <p class="text-muted small">Foto actual:</p>
-                                    <img src="{{ profile.avatar_url|drive_url }}" alt="Foto de perfil" 
-                                         style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);">
-                                </div>
-                            {% endif %}
+                            
+                            <!-- Preview de foto actual o placeholder -->
+                            <div class="mt-3 p-3" style="background:rgba(108,99,255,0.1);border-radius:10px;">
+                                <p class="text-muted small mb-2">Vista previa:</p>
+                                {% if profile.avatar_url %}
+                                    <img src="{{ profile.avatar_url|drive_url }}" alt="Foto actual" 
+                                         style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--primary);box-shadow:0 4px 15px rgba(108,99,255,0.3);"
+                                         onerror="this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div style="width:100px;height:100px;border-radius:50%;background:var(--primary);display:none;align-items:center;justify-content:center;color:white;font-size:2rem;font-weight:bold;">
+                                        {{ user.name|slice:":1" }}
+                                    </div>
+                                {% else %}
+                                    <div style="width:100px;height:100px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-size:2rem;font-weight:bold;">
+                                        {{ user.name|slice:":1" }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <small class="text-muted">Para cambiar: borra el link actual, pega el nuevo, y guarda.</small>
                         </div>
 
                         <hr class="my-4">

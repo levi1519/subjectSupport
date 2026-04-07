@@ -84,8 +84,9 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="{{ form.country_code.id_for_label }}" class="form-label">{{ form.country_code.label }}</label>
+                                <label for="{{ form.country_code.id_for_label }}" class="form-label">Nacionalidad</label>
                                 {{ form.country_code }}
+                                <small class="text-muted">Selecciona tu país de origen (esto no afecta tu ubicación actual)</small>
                                 {% if form.country_code.errors %}
                                     <div class="text-danger small">{{ form.country_code.errors }}</div>
                                 {% endif %}
