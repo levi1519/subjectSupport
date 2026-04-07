@@ -153,15 +153,15 @@
                     {% endif %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'user_profile' %}">Mi Perfil</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a></li>
-                    <!-- Avatar + Bandera -->
+                    <!-- User Avatar & Country -->
                     <li class="nav-item d-flex align-items-center gap-2 ms-3">
                         {% if request.user.avatar_url %}
-                            <img src="{{ request.user.avatar_url|drive_url }}" alt="Avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);background:var(--surface);" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:none;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">{{ request.user.name|slice:\":1\" }}</div>
+                            <img src="{{ request.user.avatar_url|drive_url }}" alt="Avatar" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="rounded-circle d-none align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);font-size:1rem;display:none!important;">{{ request.user.name|slice:":1"|upper }}</div>
                         {% else %}
-                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">{{ request.user.name|slice:\":1\" }}</div>
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);font-size:1rem;">{{ request.user.name|slice:":1"|upper }}</div>
                         {% endif %}
-                        {% if request.user.country_code %}<span style="font-size: 1.2rem; margin-left: 4px;" title="{{ request.user.country_code|upper }}">{% with country_code=request.user.country_code|upper %}{% if country_code == "EC" %}🇪🇨{% elif country_code == "MX" %}🇲🇽{% elif country_code == "CO" %}🇨🇴{% elif country_code == "AR" %}🇦🇷{% elif country_code == "PE" %}🇵🇪{% elif country_code == "CL" %}🇨🇱{% elif country_code == "VE" %}🇻🇪{% elif country_code == "BR" %}🇧🇷{% elif country_code == "UY" %}🇺🇾{% elif country_code == "PY" %}🇵🇾{% elif country_code == "BO" %}🇧🇴{% elif country_code == "PA" %}🇵🇦{% elif country_code == "CR" %}🇨🇷{% elif country_code == "GT" %}🇬🇹{% elif country_code == "HN" %}🇭🇳{% elif country_code == "SV" %}🇸🇻{% elif country_code == "NI" %}🇳🇮{% elif country_code == "DO" %}🇩🇴{% elif country_code == "CU" %}🇨🇺{% elif country_code == "PR" %}🇵🇷{% elif country_code == "JM" %}🇯🇲{% elif country_code == "HT" %}🇭🇹{% elif country_code == "BZ" %}🇧🇿{% elif country_code == "SR" %}🇸🇷{% elif country_code == "GY" %}🇬🇾{% elif country_code == "GF" %}🇬🇫{% else %}🌎{% endif %}{% endwith %}</span>{% endif %}
+                        {% if request.user.country_code %}<span style="font-size:1.2rem;margin-left:4px;" title="{{ request.user.country_code|upper }}">{% with cc=request.user.country_code|upper %}{% if cc == "EC" %}🇪🇨{% elif cc == "MX" %}🇲🇽{% elif cc == "CO" %}🇨🇴{% elif cc == "AR" %}🇦🇷{% elif cc == "PE" %}🇵🇪{% elif cc == "CL" %}🇨🇱{% elif cc == "VE" %}🇻🇪{% elif cc == "BR" %}🇧🇷{% elif cc == "UY" %}🇺🇾{% elif cc == "PY" %}🇵🇾{% elif cc == "BO" %}🇧🇴{% elif cc == "PA" %}🇵🇦{% elif cc == "CR" %}🇨🇷{% elif cc == "GT" %}🇬🇹{% elif cc == "HN" %}🇭🇳{% elif cc == "SV" %}🇸🇻{% elif cc == "NI" %}🇳🇮{% elif cc == "DO" %}🇩🇴{% elif cc == "CU" %}🇨🇺{% elif cc == "PR" %}🇵🇷{% else %}🌎{% endif %}{% endwith %}</span>{% endif %}
                     </li>
                 </ul>
             </div>
