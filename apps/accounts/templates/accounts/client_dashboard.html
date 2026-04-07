@@ -38,8 +38,38 @@
                         <a class="nav-link" href="{% url 'tutor_selection' %}">Buscar Tutores</a>
                     </li>
                     {% if user.country_code %}
-                        <li class="nav-item">
-                            <span class="nav-link text-muted">{{ user.country_code|upper }}</span>
+                        <li class="nav-item d-flex align-items-center">
+                            <span class="nav-link" style="font-size: 1.2rem;" title="{{ user.country_code|upper }}">
+                                {% with country_code=user.country_code|upper %}
+                                    {% if country_code == "EC" %}🇪🇨
+                                    {% elif country_code == "MX" %}🇲🇽
+                                    {% elif country_code == "CO" %}🇨🇴
+                                    {% elif country_code == "AR" %}🇦🇷
+                                    {% elif country_code == "PE" %}🇵🇪
+                                    {% elif country_code == "CL" %}🇨🇱
+                                    {% elif country_code == "VE" %}🇻🇪
+                                    {% elif country_code == "BR" %}🇧🇷
+                                    {% elif country_code == "UY" %}🇺🇾
+                                    {% elif country_code == "PY" %}🇵🇾
+                                    {% elif country_code == "BO" %}🇧🇴
+                                    {% elif country_code == "PA" %}🇵🇦
+                                    {% elif country_code == "CR" %}🇨🇷
+                                    {% elif country_code == "GT" %}🇬🇹
+                                    {% elif country_code == "HN" %}🇭🇳
+                                    {% elif country_code == "SV" %}🇸🇻
+                                    {% elif country_code == "NI" %}🇳🇮
+                                    {% elif country_code == "DO" %}🇩🇴
+                                    {% elif country_code == "CU" %}🇨🇺
+                                    {% elif country_code == "PR" %}🇵🇷
+                                    {% elif country_code == "JM" %}🇯🇲
+                                    {% elif country_code == "HT" %}🇭🇹
+                                    {% elif country_code == "BZ" %}🇧🇿
+                                    {% elif country_code == "SR" %}🇸🇷
+                                    {% elif country_code == "GY" %}🇬🇾
+                                    {% elif country_code == "GF" %}🇬🇫
+                                    {% else %}🌎{% endif %}
+                                {% endwith %}
+                            </span>
                         </li>
                     {% endif %}
                     <li class="nav-item">
