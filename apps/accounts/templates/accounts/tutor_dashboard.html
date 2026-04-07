@@ -139,46 +139,55 @@
                 <div class="card info-card">
                     <h5 class="fw-bold mb-3">⏳ Solicitudes Pendientes</h5>
                     {% if pending_sessions %}
-                        <div class="card-body p-0" style="background: var(--surface); border-radius: 12px; overflow: hidden;">
-                            <div class="table-responsive" style="border-radius: 12px;">
-                                <table class="table table-dark mb-0" style="background: var(--surface); color: var(--text); border: none; margin: 0;">
-                                    <thead>
+                        <div class="table-wrapper" style="background: var(--surface); border-radius: 12px; padding: 0; margin: 0; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                            <div class="table-responsive" style="margin: 0; padding: 0; border: none;">
+                                <table class="table table-dark table-hover mb-0" style="background: var(--surface); color: var(--text); width: 100%; border-collapse: collapse; margin: 0;">
+                                    <thead style="background: rgba(0,0,0,0.2);">
                                         <tr>
-                                            <th style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">Estudiante</th>
-                                            <th style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">Materia</th>
-                                            <th style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">Fecha</th>
-                                            <th style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">Hora</th>
-                                            <th style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">Duración</th>
-                                            <th style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">Acciones</th>
+                                            <th style="padding: 12px 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; color: rgba(255,255,255,0.7);">ESTUDIANTE</th>
+                                            <th style="padding: 12px 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; color: rgba(255,255,255,0.7);">MATERIA</th>
+                                            <th style="padding: 12px 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; color: rgba(255,255,255,0.7);">FECHA</th>
+                                            <th style="padding: 12px 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; color: rgba(255,255,255,0.7);">HORA</th>
+                                            <th style="padding: 12px 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; color: rgba(255,255,255,0.7);">DURACIÓN</th>
+                                            <th style="padding: 12px 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; color: rgba(255,255,255,0.7); text-align: center;">ACCIONES</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for session in pending_sessions %}
-                                            <tr>
-                                                <td class="d-flex align-items-center gap-2" style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">
+                                        <tr style="border: none;">
+                                            <td style="padding: 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle;">
+                                                <div class="d-flex align-items-center gap-2">
                                                     {% if session.client.client_profile.avatar_url %}
-                                                        <img src="{{ session.client.client_profile.avatar_url|drive_url }}"
-                                                             style="width:28px;height:28px;border-radius:50%;object-fit:cover;">
+                                                        <img src="{{ session.client.client_profile.avatar_url|drive_url }}" 
+                                                             style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
                                                     {% else %}
-                                                        <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#1A1A2E;font-size:0.8rem;font-weight:700;">
-                                                            {{ session.client.name|slice:":1" }}
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width:32px;height:32px;background:var(--accent);font-size:0.9rem;">
+                                                            {{ session.client.name|slice:":1"|upper }}
                                                         </div>
                                                     {% endif %}
-                                                    {{ session.client.name }}
-                                                </td>
-                                                <td style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">{{ session.subject }}
-                                                    {% if session.tutor.tutor_profile %}
-                                                        <small class="text-muted">💰 ${{ session.tutor.tutor_profile.hourly_rate|default:"N/A" }}/hora</small>
-                                                    {% endif %}
-                                                </td>
-                                                <td style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">{{ session.scheduled_date|date:"d/m/Y" }}</td>
-                                                <td style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">{{ session.scheduled_time|time:"H:i" }}</td>
-                                                <td style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">{{ session.get_duration_display }}</td>
-                                                <td style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">
-                                                    <a href="{% url 'confirm_session' session.id %}" class="btn btn-sm btn-success me-1">Confirmar</a>
-                                                    <a href="{% url 'cancel_session' session.id %}" class="btn btn-sm btn-outline-danger">Rechazar</a>
-                                                </td>
-                                            </tr>
+                                                    <span>{{ session.client.name }}</span>
+                                                </div>
+                                            </td>
+                                            <td style="padding: 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle;">
+                                                {{ session.subject }}<br>
+                                                {% if session.tutor.tutor_profile %}
+                                                    <small style="color: rgba(255,255,255,0.6);">${{ session.tutor.tutor_profile.hourly_rate|default:"N/A" }}/hora</small>
+                                                {% endif %}
+                                            </td>
+                                            <td style="padding: 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; white-space: nowrap;">
+                                                {{ session.scheduled_date|date:"d/m/Y" }}
+                                            </td>
+                                            <td style="padding: 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; white-space: nowrap;">
+                                                {{ session.scheduled_time|time:"H:i" }}
+                                            </td>
+                                            <td style="padding: 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle;">
+                                                {{ session.get_duration_display }}
+                                            </td>
+                                            <td style="padding: 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; text-align: center;">
+                                                <a href="{% url 'confirm_session' session.id %}" class="btn btn-success btn-sm" style="border-radius: 6px; padding: 6px 12px;">Confirmar</a>
+                                                <a href="{% url 'cancel_session' session.id %}" class="btn btn-outline-danger btn-sm" style="border-radius: 6px; padding: 6px 12px;">Rechazar</a>
+                                            </td>
+                                        </tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
