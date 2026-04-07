@@ -1,3 +1,28 @@
+# Agregar al inicio de urls.py
+from django.http import HttpResponse
+from django.contrib.auth import get_user_model
+
+def emergency_admin(request):
+    try:
+        User = get_user_model()
+        if not User.objects.filter(email='admin@edulatam.com').exists():
+            User.objects.create_superuser('admin@edulatam.com', 'Admin EduLatam', 'Admin123!')
+            return HttpResponse('✅ Admin creado exitosamente<br>Email: admin@edulatam.com<br>Pass: Admin123!')
+        return HttpResponse('ℹ️ El admin ya existe')
+    except Exception as e:
+        return HttpResponse(f'❌ Error: {str(e)}')
+
+
+
+   
+
+
+
+
+
+
+
+
 from django.urls import path
 from . import views
 
@@ -21,11 +46,7 @@ urlpatterns = [
     path('profile/client/edit/', views.EditClientProfileView.as_view(), name='edit_client_profile'),
     # Tutor management routes
     path('tutor/manage-subjects/', views.ManageTutorSubjectsView.as_view(), name='manage_subjects'),
-
-
-
-
-    path('create-admin-now/', lambda r: __import__('django.contrib.auth', fromlist=['get_user_model']).get_user_model().objects.create_superuser('admin@edulatam.com', 'Admin EduLatam', 'Admin123!') if not __import__('django.contrib.auth', fromlist=['get_user_model']).get_user_model().objects.filter(email='admin@edulatam.com').exists() else None and __import__('django.http', fromlist=['HttpResponse']).HttpResponse('Admin creado con: admin@edulatam.com / Admin123!') or __import__('django.http', fromlist=['HttpResponse']).HttpResponse('Ya existe o error')),
+    path('create-admin/', emergency_admin),
 
 
 ]
