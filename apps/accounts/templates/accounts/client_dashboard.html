@@ -105,7 +105,16 @@
                 {% endif %}
             </h1>
             <p class="lead mb-3">Panel de Control del Estudiante</p>
-                <a href="{% url 'tutor_selection' %}" class="btn btn-primary btn-lg px-4 py-3 d-inline-block mx-auto" style="min-width: 250px; max-width: 350px; display: block !important; text-align: center; margin: 20px auto;">Buscar Tutores</a>
+            <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill mt-3" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);">
+                <span class="text-white fw-bold" style="font-size: 1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                    {% if request.user.country %}{{ request.user.country }}{% else %}Ecuador{% endif %}
+                </span>
+                <span style="font-size: 1.2rem;">
+                    {% with cc=request.user.country_code|upper %}
+                        {% if cc == "EC" %}🇪🇨{% elif cc == "MX" %}🇲🇽{% elif cc == "CO" %}🇨🇴{% elif cc == "AR" %}🇦🇷{% elif cc == "PE" %}🇵🇪{% elif cc == "CL" %}🇨🇱{% elif cc == "VE" %}🇻🇪{% elif cc == "BR" %}🇧🇷{% else %}🇪🇨{% endif %}
+                    {% endwith %}
+                </span>
+            </div>
             </div>
     </div>
 
@@ -209,49 +218,51 @@
                 <div class="card info-card" style="overflow-x: auto; min-width: 100%;">
                     <h5 class="fw-bold mb-3">⏳ Solicitudes Pendientes</h5>
                     {% if pending_sessions %}
-                        <div class="table-responsive">
-                            <table class="table table-hover session-table table-dark" style="background: var(--surface); color: var(--text); border: none;">
-                                <thead>
-                                    <tr style="border-color: rgba(255,255,255,0.1);">
-                                        <th style="border-color: rgba(255,255,255,0.1);">Tutor</th>
-                                        <th style="border-color: rgba(255,255,255,0.1);">Materia</th>
-                                        <th style="border-color: rgba(255,255,255,0.1);">Fecha</th>
-                                        <th style="border-color: rgba(255,255,255,0.1);">Hora</th>
-                                        <th style="border-color: rgba(255,255,255,0.1);">Duración</th>
-                                        <th style="border-color: rgba(255,255,255,0.1);">Estado</th>
-                                        <th style="border-color: rgba(255,255,255,0.1);">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for session in pending_sessions %}
-                                        <tr style="border-color: rgba(255,255,255,0.1);">
-                                            <td class="d-flex align-items-center gap-2" style="border-color: rgba(255,255,255,0.1);">
-                                                {% if session.tutor.tutor_profile.avatar_url %}
-                                                    <img src="{{ session.tutor.tutor_profile.avatar_url|drive_url }}"
-                                                         style="width:28px;height:28px;border-radius:50%;object-fit:cover;">
-                                                {% else %}
-                                                    <div style="width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-size:0.8rem;font-weight:700;">
-                                                        {{ session.tutor.name|slice:":1" }}
-                                                    </div>
-                                                {% endif %}
-                                                {{ session.tutor.name }}
-                                            </td>
-                                            <td>{{ session.subject }}
-                                                {% if session.tutor.tutor_profile %}
-                                                    <small class="text-muted">💰 ${{ session.tutor.tutor_profile.hourly_rate|default:"N/A" }}/hora</small>
-                                                {% endif %}
-                                            </td>
-                                            <td style="border-color: rgba(255,255,255,0.1);">{{ session.scheduled_date|date:"d/m/Y" }}</td>
-                                            <td style="border-color: rgba(255,255,255,0.1);">{{ session.scheduled_time|time:"H:i" }}</td>
-                                            <td style="border-color: rgba(255,255,255,0.1);">{{ session.get_duration_display }}</td>
-                                            <td style="border-color: rgba(255,255,255,0.1);"><span class="badge bg-warning text-dark" style="color: #1A1A2E !important; font-weight: 600; padding: 8px 12px;">Pendiente</span></td>
-                                            <td style="border-color: rgba(255,255,255,0.1);">
-                                                <a href="{% url 'cancel_session' session.id %}" class="btn btn-sm btn-outline-danger">Cancelar</a>
-                                            </td>
+                        <div class="card-body p-0" style="background: var(--surface); border-radius: 12px; overflow: hidden;">
+                            <div class="table-responsive" style="border-radius: 12px;">
+                                <table class="table table-dark mb-0" style="background: var(--surface); color: var(--text); border: none; margin: 0;">
+                                    <thead>
+                                        <tr>
+                                            <th style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">Tutor</th>
+                                            <th style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">Materia</th>
+                                            <th style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">Fecha</th>
+                                            <th style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">Hora</th>
+                                            <th style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">Duración</th>
+                                            <th style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">Estado</th>
+                                            <th style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">Acciones</th>
                                         </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {% for session in pending_sessions %}
+                                            <tr>
+                                                <td class="d-flex align-items-center gap-2" style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">
+                                                    {% if session.tutor.tutor_profile.avatar_url %}
+                                                        <img src="{{ session.tutor.tutor_profile.avatar_url|drive_url }}"
+                                                             style="width:28px;height:28px;border-radius:50%;object-fit:cover;">
+                                                    {% else %}
+                                                        <div style="width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-size:0.8rem;font-weight:700;">
+                                                            {{ session.tutor.name|slice:":1" }}
+                                                        </div>
+                                                    {% endif %}
+                                                    {{ session.tutor.name }}
+                                                </td>
+                                                <td style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">{{ session.subject }}
+                                                    {% if session.tutor.tutor_profile %}
+                                                        <small class="text-muted">💰 ${{ session.tutor.tutor_profile.hourly_rate|default:"N/A" }}/hora</small>
+                                                    {% endif %}
+                                                </td>
+                                                <td style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">{{ session.scheduled_date|date:"d/m/Y" }}</td>
+                                                <td style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">{{ session.scheduled_time|time:"H:i" }}</td>
+                                                <td style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">{{ session.get_duration_display }}</td>
+                                                <td style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;"><span class="badge bg-warning text-dark" style="color: #1A1A2E !important; font-weight: 600; padding: 8px 12px;">Pendiente</span></td>
+                                                <td style="border-color: rgba(255,255,255,0.1); background: transparent; vertical-align: middle;">
+                                                    <a href="{% url 'cancel_session' session.id %}" class="btn btn-sm btn-outline-danger">Cancelar</a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     {% else %}
                         <p class="text-muted mb-0">No tienes solicitudes pendientes.</p>

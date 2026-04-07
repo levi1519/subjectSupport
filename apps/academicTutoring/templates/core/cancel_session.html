@@ -41,6 +41,15 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Mi Panel</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'user_profile' %}">Mi Perfil</a></li>
+                    {% if request.user.is_tutor or request.user.role == 'tutor' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'manage_subjects' %}">Mis Materias</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'tutor_selection' %}">Buscar Tutores</a>
+                        </li>
+                    {% endif %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a></li>
                     <!-- User Avatar & Country -->
                     <li class="nav-item d-flex align-items-center gap-2 ms-3">
