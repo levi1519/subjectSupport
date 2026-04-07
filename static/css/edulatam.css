@@ -447,3 +447,25 @@ strong { color: var(--text); }
     font-size: 2rem;
   }
 }
+
+/* Fix para texto que se sale de cards */
+.card, .profile-card, .info-card, .edit-card, .request-card {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.info-value, .card-text, .form-label, .text-muted {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+/* Mejorar espaciado en items de info */
+.info-item {
+    overflow: hidden;
+}
+
+/* Asegurar que las imágenes no rompan layout */
+img {
+    max-width: 100%;
+    height: auto;
+}

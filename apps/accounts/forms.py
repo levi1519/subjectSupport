@@ -47,6 +47,20 @@ class TutorRegistrationForm(UserCreationForm):
         label='Fecha de nacimiento',
         help_text='Debes ser mayor de 18 años para registrarte como tutor.',
     )
+    country_code = forms.ChoiceField(
+        choices=[('', 'Selecciona tu país')] + [
+            ('AR', 'Argentina'), ('BO', 'Bolivia'), ('CL', 'Chile'),
+            ('CO', 'Colombia'), ('CR', 'Costa Rica'), ('CU', 'Cuba'),
+            ('DO', 'República Dominicana'), ('EC', 'Ecuador'),
+            ('SV', 'El Salvador'), ('GT', 'Guatemala'), ('HN', 'Honduras'),
+            ('MX', 'México'), ('NI', 'Nicaragua'), ('PA', 'Panamá'),
+            ('PY', 'Paraguay'), ('PE', 'Perú'), ('PR', 'Puerto Rico'),
+            ('UY', 'Uruguay'), ('VE', 'Venezuela'),
+        ],
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='País de residencia',
+    )
 
     class Meta:
         model = User
@@ -182,6 +196,20 @@ class ClientRegistrationForm(UserCreationForm):
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         label='Fecha de nacimiento',
         help_text='Requerida para verificar si eres menor de edad.',
+    )
+    country_code = forms.ChoiceField(
+        choices=[('', 'Selecciona tu país')] + [
+            ('AR', 'Argentina'), ('BO', 'Bolivia'), ('CL', 'Chile'),
+            ('CO', 'Colombia'), ('CR', 'Costa Rica'), ('CU', 'Cuba'),
+            ('DO', 'República Dominicana'), ('EC', 'Ecuador'),
+            ('SV', 'El Salvador'), ('GT', 'Guatemala'), ('HN', 'Honduras'),
+            ('MX', 'México'), ('NI', 'Nicaragua'), ('PA', 'Panamá'),
+            ('PY', 'Paraguay'), ('PE', 'Perú'), ('PR', 'Puerto Rico'),
+            ('UY', 'Uruguay'), ('VE', 'Venezuela'),
+        ],
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='País de residencia',
     )
 
     class Meta:

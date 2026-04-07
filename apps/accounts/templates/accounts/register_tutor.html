@@ -115,6 +115,22 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="{{ form.birth_date.id_for_label }}" class="form-label">{{ form.birth_date.label }}</label>
+                                {{ form.birth_date }}
+                                {% if form.birth_date.errors %}
+                                    <div class="text-danger small">{{ form.birth_date.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.country_code.id_for_label }}" class="form-label">{{ form.country_code.label }}</label>
+                                {{ form.country_code }}
+                                {% if form.country_code.errors %}
+                                    <div class="text-danger small">{{ form.country_code.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
                                 <label class="form-label fw-bold">Materias que enseñas</label>
                                 <p class="text-muted small mb-2">Selecciona hasta 5 materias</p>
                                 {% regroup form.subjects.field.queryset by knowledge_area as area_list %}
@@ -155,6 +171,15 @@
                                 {% if form.experience.errors %}
                                     <div class="text-danger small">{{ form.experience.errors }}</div>
                                 {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.avatar_url.id_for_label }}" class="form-label">{{ form.avatar_url.label }}</label>
+                                {{ form.avatar_url }}
+                                {% if form.avatar_url.errors %}
+                                    <div class="text-danger small">{{ form.avatar_url.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">Opcional: URL de tu foto de perfil (Google Drive, Dropbox, etc.)</small>
                             </div>
 
                             <div class="mb-3">
