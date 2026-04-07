@@ -73,7 +73,7 @@
                         </li>
                     {% endif %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
+                        <a class="nav-link" href="{% url 'logout' %}?next={% url 'student_landing' %}">Cerrar Sesión</a>
                     </li>
                     <li class="nav-item d-flex align-items-center ms-3">
                         {% if profile.avatar_url %}
@@ -105,7 +105,7 @@
                 {% endif %}
             </h1>
             <p class="lead mb-3">Panel de Control del Estudiante</p>
-                <a href="{% url 'tutor_selection' %}" class="btn btn-primary btn-lg">
+                <a href="{% url 'tutor_selection' %}" class="btn btn-primary btn-lg" style="min-width: 200px; max-width: 300px;">
                 <i class="bi bi-plus-circle"></i> Buscar Tutores
             </a>
         </div>
@@ -208,7 +208,7 @@
 
             <!-- Solicitudes Pendientes -->
             <div class="col-12 mb-4">
-                <div class="card info-card">
+                <div class="card info-card" style="overflow-x: auto; min-width: 100%;">
                     <h5 class="fw-bold mb-3">⏳ Solicitudes Pendientes</h5>
                     {% if pending_sessions %}
                         <div class="table-responsive">
@@ -246,7 +246,7 @@
                                             <td>{{ session.scheduled_date|date:"d/m/Y" }}</td>
                                             <td>{{ session.scheduled_time|time:"H:i" }}</td>
                                             <td>{{ session.get_duration_display }}</td>
-                                            <td><span class="badge badge-pending">Pendiente</span></td>
+                                            <td><span class="badge bg-warning text-dark" style="color: #1A1A2E !important; font-weight: 600; padding: 8px 12px;">Pendiente</span></td>
                                             <td>
                                                 <a href="{% url 'cancel_session' session.id %}" class="btn btn-sm btn-outline-danger">Cancelar</a>
                                             </td>
