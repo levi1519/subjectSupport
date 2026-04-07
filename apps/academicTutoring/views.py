@@ -74,11 +74,19 @@ def landing_page(request):
 
 def student_landing_view(request):
     """Landing page for students"""
+    if request.user.is_authenticated:
+        if request.user.user_type == 'tutor':
+            return redirect('tutor_dashboard')
+        return redirect('client_dashboard')
     return render(request, 'landing/student_landing.html', {'user_type': 'Estudiante'})
 
 
 def tutor_landing_view(request):
     """Landing page for tutors"""
+    if request.user.is_authenticated:
+        if request.user.user_type == 'tutor':
+            return redirect('tutor_dashboard')
+        return redirect('client_dashboard')
     return render(request, 'landing/tutor_landing.html', {'user_type': 'Tutor'})
 
 

@@ -35,15 +35,17 @@ class TutorRegistrationForm(UserCreationForm):
         label='Experiencia'
     )
     cedula = forms.CharField(
-        required=False,
+        required=True,
         max_length=20,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
-        label='Cédula / Identificación',
+        label='Cédula / ID Nacional',
+        help_text='Documento de identidad de tu país.',
     )
     birth_date = forms.DateField(
-        required=False,
+        required=True,
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         label='Fecha de nacimiento',
+        help_text='Debes ser mayor de 18 años para registrarte como tutor.',
     )
 
     class Meta:
@@ -117,6 +119,18 @@ class TutorRegistrationForm(UserCreationForm):
             raise ValidationError('Las contraseñas no coinciden.')
         return password2
 
+    def clean_birth_date(self):
+        from datetime import date
+        birth_date = self.cleaned_data.get('birth_date')
+        if birth_date:
+            today = date.today()
+            age = today.year - birth_date.year - (
+                (today.month, today.day) < (birth_date.month, birth_date.day)
+            )
+            if age < 18:
+                raise forms.ValidationError('Debes ser mayor de 18 años para registrarte como tutor.')
+        return birth_date
+
     def save(self, commit=True, country_code=''):
         user = super().save(commit=False)
         user.user_type = 'tutor'
@@ -164,9 +178,10 @@ class ClientRegistrationForm(UserCreationForm):
         label='Cédula / Identificación',
     )
     birth_date = forms.DateField(
-        required=False,
+        required=True,
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         label='Fecha de nacimiento',
+        help_text='Requerida para verificar si eres menor de edad.',
     )
 
     class Meta:
@@ -231,6 +246,18 @@ class ClientRegistrationForm(UserCreationForm):
         if password1 and password2 and password1 != password2:
             raise ValidationError('Las contraseñas no coinciden.')
         return password2
+
+    def clean_birth_date(self):
+        from datetime import date
+        birth_date = self.cleaned_data.get('birth_date')
+        if birth_date:
+            today = date.today()
+            age = today.year - birth_date.year - (
+                (today.month, today.day) < (birth_date.month, birth_date.day)
+            )
+            is_minor = age < 18
+            self.calculated_is_minor = is_minor
+        return birth_date
 
     def clean(self):
         """Validate parent name if minor"""
