@@ -1,0 +1,205 @@
+{
+  "schema_version": "2.0",
+  "project_id": "subjectsupport-latam-mvp",
+  "branch": "latam-mvp",
+  "layer": "geo",
+  "app": "geoconfig",
+  "parent_requirements": "globalRequirements.json",
+  "iso_standard": "ISO/IEC 25010:2011",
+  "version": "1.0",
+  "traceability": {
+    "functional": ["RF-001", "RF-001-A", "RF-001-B", "RF-001-C", "RF-001-D", "RF-007", "RF-007-C", "RF-013"],
+    "non_functional": ["RNF-003", "RNF-004", "RNF-007", "RNF-009", "RNF-010", "RNF-011"]
+  },
+  "requirements": [
+    {
+      "id": "REQ-GEO-001",
+      "module": "check_geo_restriction(request)",
+      "iso_coverage": {
+        "Security": ["Integrity", "Confidentiality"],
+        "Reliability": ["Fault Tolerance", "Maturity"],
+        "Maintainability": ["Modularity"]
+      },
+      "parent_trace": ["RF-001", "RF-001-C", "RNF-003", "RNF-004", "RNF-009", "RNF-010"],
+      "contracts": {
+        "MUST": [
+          "check_geo_restriction() MUST residir en geoconfig/geo.py — MUST NOT estar en apps/ (RNF-004)",
+          "check_geo_restriction() MUST verificar SKIP_GEO_CHECK primero — si True MUST retornar dict con allowed=True sin llamada a API externa (RNF-010)",
+          "check_geo_restriction() MUST verificar session cache antes de llamar API — si geo_data existe en sesión MUST retornarlo sin nueva llamada (RNF-009)",
+          "check_geo_restriction() MUST retornar dict con keys: allowed, city, region, country, country_code, latitude, longitude, service_area, skip_check (RNF-004)",
+          "check_geo_restriction() MUST almacenar resultado en request.session['geo_data'] después de cada llamada exitosa a API (RNF-009)",
+          "check_geo_restriction() MUST llamar get_location_from_ip() para obtener coordenadas (RNF-004)",
+          "check_geo_restriction() MUST llamar is_point_in_service_area() para verificar polígono (RF-007-C)",
+          "check_geo_restriction() MUST llamar get_country_config() para resolver CountryConfig (RF-001-C)",
+          "check_geo_restriction() MUST retornar allowed=False con detection_failed=True cuando API falla — MUST NOT permitir acceso por fallo (RNF-003)",
+          "check_geo_restriction() MUST retornar allowed=False con no_coordinates=True cuando API retorna sin coordenadas (RNF-003)"
+        ],
+        "MUST_NOT": [
+          "check_geo_restriction() MUST NOT importar desde apps.academicTutoring directamente (RNF-004)",
+          "check_geo_restriction() MUST NOT crashear ante cualquier excepción — MUST manejar con try/except (RNF-003)",
+          "check_geo_restriction() MUST NOT hardcodear country_code o nombres de país en lógica de routing (RNF-011)"
+        ]
+      },
+      "out_of_scope": [
+        "Middleware routing decisions (COVERED_BY_MIDDLEWARE)",
+        "CountryConfig admin UI (COVERED_BY_ADMIN)"
+      ]
+    },
+    {
+      "id": "REQ-GEO-002",
+      "module": "get_location_from_ip(ip_address)",
+      "iso_coverage": {
+        "Reliability": ["Fault Tolerance"],
+        "Compatibility": ["Interoperability"],
+        "Performance Efficiency": ["Time Behaviour"]
+      },
+      "parent_trace": ["RNF-003", "RNF-009"],
+      "contracts": {
+        "MUST": [
+          "get_location_from_ip() MUST verificar cache de Django antes de llamar API externa — cache key MUST ser f'geo_ip_{ip_address}' (RNF-009)",
+          "get_location_from_ip() MUST usar IPGEOLOCATION_API_KEY desde variables de entorno — MUST NOT hardcodear (RNF-012)",
+          "get_location_from_ip() MUST usar timeout de máximo 3 segundos en requests.get() (RNF-003)",
+          "get_location_from_ip() MUST almacenar resultado en cache con TTL de 3600 segundos (RNF-009)",
+          "get_location_from_ip() MUST retornar dict con keys: city, region, country, country_code, latitude, longitude (RNF-004)",
+          "get_location_from_ip() MUST retornar None cuando API falla o retorna error (RNF-003)",
+          "get_location_from_ip() MUST logear IP, status de API y resultado en INFO level (RNF-007)"
+        ],
+        "MUST_NOT": [
+          "get_location_from_ip() MUST NOT crashear ante RequestException — MUST capturar y retornar None (RNF-003)",
+          "get_location_from_ip() MUST NOT crashear ante Exception genérica — MUST capturar y retornar None (RNF-003)",
+          "get_location_from_ip() MUST NOT exponer API key en logs (RNF-007)"
+        ]
+      },
+      "out_of_scope": [
+        "IP validation logic — delegated to API provider",
+        "Geolocation accuracy — depends on API provider database"
+      ]
+    },
+    {
+      "id": "REQ-GEO-003",
+      "module": "is_point_in_service_area(latitude, longitude)",
+      "iso_coverage": {
+        "Functional Suitability": ["Functional Correctness"],
+        "Reliability": ["Fault Tolerance"],
+        "Security": ["Integrity"]
+      },
+      "parent_trace": ["RF-007", "RF-007-C", "RNF-003", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "is_point_in_service_area() MUST usar SQL raw con ST_Contains y ST_SetSRID y ST_MakePoint — MUST NOT usar ORM GIS (RF-007-C)",
+          "is_point_in_service_area() MUST usar django.db.connection.cursor() para SQL raw (RNF-004)",
+          "is_point_in_service_area() MUST convertir latitude y longitude a float antes de query (RNF-003)",
+          "is_point_in_service_area() MUST retornar tuple (bool, ServiceArea_like_object_or_None) (RNF-004)",
+          "is_point_in_service_area() MUST logear MATCH y NO MATCH en INFO y WARNING respectivamente (RNF-007)",
+          "is_point_in_service_area() MUST query ONLY ServiceAreas con activo=True (RF-007)"
+        ],
+        "MUST_NOT": [
+          "is_point_in_service_area() MUST NOT depender de GIS_AVAILABLE flag (RF-007-C)",
+          "is_point_in_service_area() MUST NOT usar Django GIS ORM (GeoDjango) para la query (RF-007-C)",
+          "is_point_in_service_area() MUST NOT crashear ante coordenadas inválidas — MUST retornar False, None (RNF-003)",
+          "is_point_in_service_area() MUST NOT crashear ante fallo de DB — MUST capturar Exception y retornar False, None (RNF-003)"
+        ]
+      },
+      "out_of_scope": [
+        "ServiceArea model definition (COVERED_BY_MODELS)",
+        "CountryConfig routing (COVERED_BY_MIDDLEWARE)"
+      ]
+    },
+    {
+      "id": "REQ-GEO-004",
+      "module": "get_country_config(country_code)",
+      "iso_coverage": {
+        "Functional Suitability": ["Functional Correctness"],
+        "Performance Efficiency": ["Time Behaviour"],
+        "Reliability": ["Fault Tolerance"]
+      },
+      "parent_trace": ["RF-001-C", "RF-013-C", "RNF-009", "RNF-003"],
+      "contracts": {
+        "MUST": [
+          "get_country_config() MUST verificar cache de Django antes de query DB — cache key MUST ser f'country_config_{country_code}' (RNF-009)",
+          "get_country_config() MUST almacenar resultado en cache con TTL de 60 segundos (RF-013-C)",
+          "get_country_config() MUST retornar dict con keys: country_code, country_name, active, geo_restricted — MUST NOT retornar model instance directamente (RNF-004)",
+          "get_country_config() MUST retornar None cuando country_code no existe en CountryConfig (RNF-003)",
+          "get_country_config() MUST retornar None cuando CountryConfig.active=False (RF-001-D)"
+        ],
+        "MUST_NOT": [
+          "get_country_config() MUST NOT crashear ante DB exception — MUST retornar None (RNF-003)",
+          "get_country_config() MUST NOT retornar CountryConfig con active=False como válido (RF-001-D)",
+          "get_country_config() MUST NOT importar CountryConfig desde apps fuera de geoconfig — MUST usar from apps.academicTutoring.models import CountryConfig solo dentro de función para evitar circular imports (RNF-004)"
+        ]
+      },
+      "out_of_scope": [
+        "CountryConfig model definition (COVERED_BY_MODELS)",
+        "CountryConfig admin management (COVERED_BY_ADMIN)"
+      ]
+    },
+    {
+      "id": "REQ-GEO-005",
+      "module": "get_client_ip(request)",
+      "iso_coverage": {
+        "Security": ["Accountability"],
+        "Reliability": ["Maturity"]
+      },
+      "parent_trace": ["RNF-007", "RF-008-B"],
+      "contracts": {
+        "MUST": [
+          "get_client_ip() MUST extraer IP desde HTTP_X_FORWARDED_FOR si existe — tomar solo el primer IP (RNF-007)",
+          "get_client_ip() MUST usar REMOTE_ADDR como fallback cuando X_FORWARDED_FOR no existe (RNF-007)",
+          "get_client_ip() MUST soportar test_ip desde request.session para entornos de desarrollo (RNF-010)"
+        ],
+        "MUST_NOT": [
+          "get_client_ip() MUST NOT retornar IP de loopback como IP real en producción (RNF-007)"
+        ]
+      },
+      "out_of_scope": [
+        "IP validation or sanitization beyond extraction",
+        "Geolocation lookup (COVERED_BY_REQ-GEO-002)"
+      ]
+    },
+    {
+      "id": "REQ-GEO-006",
+      "module": "get_available_service_areas()",
+      "iso_coverage": {
+        "Functional Suitability": ["Functional Completeness"],
+        "Reliability": ["Maturity"]
+      },
+      "parent_trace": ["RF-007", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "get_available_service_areas() MUST usar SQL raw para query — MUST NOT depender de GIS ORM (RF-007-C)",
+          "get_available_service_areas() MUST retornar solo ServiceAreas con activo=True (RF-007)",
+          "get_available_service_areas() MUST retornar lista de objetos con atributos: id, city_name, descripcion, activo (RNF-004)",
+          "get_available_service_areas() MUST retornar lista vacía ante fallo de DB — MUST NOT crashear (RNF-003)"
+        ],
+        "MUST_NOT": [
+          "get_available_service_areas() MUST NOT exponer datos internos más allá de los campos definidos (RNF-008)"
+        ]
+      },
+      "out_of_scope": [
+        "ServiceArea creation or modification (COVERED_BY_ADMIN)",
+        "Geo-restriction enforcement (COVERED_BY_MIDDLEWARE)"
+      ]
+    },
+    {
+      "id": "REQ-GEO-007",
+      "module": "set_test_ip(request, ip_address)",
+      "iso_coverage": {
+        "Maintainability": ["Testability"]
+      },
+      "parent_trace": ["RNF-010"],
+      "contracts": {
+        "MUST": [
+          "set_test_ip() MUST funcionar SOLO cuando settings.DEBUG=True (RNF-010)",
+          "set_test_ip() MUST limpiar geo_data de sesión al cambiar test IP para forzar re-evaluación (RNF-010)",
+          "set_test_ip() MUST retornar True en éxito y False cuando DEBUG=False (RNF-010)"
+        ],
+        "MUST_NOT": [
+          "set_test_ip() MUST NOT funcionar en producción con DEBUG=False (RNF-010)"
+        ]
+      },
+      "out_of_scope": [
+        "Production IP detection (COVERED_BY_REQ-GEO-005)"
+      ]
+    }
+  ]
+}

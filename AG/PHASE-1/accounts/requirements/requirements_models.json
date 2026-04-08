@@ -1,0 +1,192 @@
+{
+  "schema_version": "2.0",
+  "project_id": "subjectsupport-latam-mvp",
+  "branch": "latam-mvp",
+  "layer": "models",
+  "app": "accounts",
+  "parent_requirements": "globalRequirements.json",
+  "iso_standard": "ISO/IEC 25010:2011",
+  "version": "3.0",
+  "traceability": {
+    "functional": ["RF-002", "RF-003", "RF-004", "RF-014"],
+    "non_functional": ["RNF-002", "RNF-004", "RNF-008", "RNF-009", "RNF-013"]
+  },
+  "requirements": [
+    {
+      "id": "REQ-MOD-ACC-001",
+      "module": "User",
+      "iso_coverage": {
+        "Security": ["Confidentiality", "Integrity"],
+        "Functional Suitability": ["Functional Correctness"],
+        "Maintainability": ["Modularity"]
+      },
+      "parent_trace": ["RF-002", "RNF-002", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "User MUST extender AbstractUser con campo user_type (RF-002)",
+          "Email MUST ser único y validado con EmailValidator (RF-002-A)",
+          "User MUST usar email como USERNAME_FIELD (RF-002-A)",
+          "user_type MUST tener exactamente dos choices: 'tutor' y 'client' (RF-002)",
+          "User MUST tener campo country_code CharField(max_length=2, blank=True) para capturar país de registro (RF-002-B)",
+          "country_code MUST poblarse desde geo_data.country_code en el momento del registro (RF-002-B)",
+          "Todos los modelos MUST incluir verbose_name y verbose_name_plural en Meta (RNF-004)"
+        ],
+        "SHOULD": [
+          "User SHOULD mantener compatibilidad con Django AbstractUser (RF-002)"
+        ],
+        "MUST_NOT": [
+          "User email MUST NOT aceptar valores duplicados (RF-002)",
+          "user_type MUST NOT aceptar valores fuera de choices definidos (RF-002)",
+          "user_type MUST NOT ser modificable post-registro (RF-002)",
+          "Campos requeridos MUST NOT tener null=True o blank=True (RNF-004)"
+        ]
+      },
+      "out_of_scope": [
+        "View-level authentication flow (COVERED_BY_VIEWS)",
+        "Form validation (COVERED_BY_FORMS)",
+        "Token generation (COVERED_BY_AUTH_BACKEND)"
+      ]
+    },
+    {
+      "id": "REQ-MOD-ACC-002",
+      "module": "ClientProfile",
+      "iso_coverage": {
+        "Security": ["Confidentiality"],
+        "Functional Suitability": ["Functional Appropriateness"],
+        "Reliability": ["Integrity"]
+      },
+      "parent_trace": ["RF-002", "RF-003", "RNF-002", "RNF-008"],
+      "contracts": {
+        "MUST": [
+          "ClientProfile MUST tener relación OneToOne con User (RF-002)",
+          "ClientProfile is_minor MUST defaultear a False (RF-003)",
+          "ClientProfile MUST tener parent_email validado con EmailValidator (RF-003, RNF-008)",
+          "ClientProfile MUST implementar get_profile_for_user(user) en ClientProfileManager (RNF-004)",
+          "ClientProfile MUST implementar get_or_create_for_user(user) en ClientProfileManager (RNF-004)",
+          "ClientProfile MUST incluir verbose_name y verbose_name_plural en Meta (RNF-004)"
+        ],
+        "SHOULD": [
+          "ClientProfile bio, phone_number, avatar_url, parent_name SHOULD permitir null y blank (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "parent_email MUST NOT ser vacío cuando is_minor=True (RF-003, RNF-008)",
+          "Relaciones de modelo MUST NOT violar integridad referencial (RNF-013)"
+        ]
+      },
+      "out_of_scope": [
+        "Parental verification flow (COVERED_BY_VIEWS)",
+        "Form validation for is_minor (COVERED_BY_FORMS)"
+      ]
+    },
+    {
+      "id": "REQ-MOD-ACC-003",
+      "module": "TutorProfile",
+      "iso_coverage": {
+        "Functional Suitability": ["Functional Completeness"],
+        "Security": ["Confidentiality"],
+        "Maintainability": ["Modularity"]
+      },
+      "parent_trace": ["RF-004", "RNF-002", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "TutorProfile MUST tener relación OneToOne con User (RF-004)",
+          "TutorProfile hourly_rate MUST soportar decimal max_digits=6, decimal_places=2 (RF-004-D)",
+          "TutorProfile MUST tener campo documents_required BooleanField default=True (RF-011-D)",
+          "TutorProfile MUST implementar get_profile_for_user(user) en TutorProfileManager (RNF-004)",
+          "TutorProfile MUST implementar get_or_create_for_user(user) en TutorProfileManager (RNF-004)",
+          "TutorProfile MUST incluir verbose_name y verbose_name_plural en Meta (RNF-004)"
+        ],
+        "SHOULD": [
+          "TutorProfile SHOULD mantener campo subjects legacy para backward compatibility (RNF-004)",
+          "TutorProfile hourly_rate, phone_number, bio, experience SHOULD permitir null y blank (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "TutorProfile campos públicos MUST NOT incluir datos personales sensibles (RNF-002)",
+          "Relaciones de modelo MUST NOT violar integridad referencial (RNF-013)"
+        ]
+      },
+      "out_of_scope": [
+        "Document validation logic (COVERED_BY_ADMIN)",
+        "View-level access control (COVERED_BY_VIEWS)"
+      ]
+    },
+    {
+      "id": "REQ-MOD-ACC-004",
+      "module": "KnowledgeArea",
+      "iso_coverage": {
+        "Functional Suitability": ["Functional Completeness"],
+        "Maintainability": ["Modularity", "Reusability"]
+      },
+      "parent_trace": ["RF-014", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "KnowledgeArea MUST tener campo name CharField único (RF-014-A)",
+          "KnowledgeArea MUST tener campo slug SlugField único auto-generado desde name (RF-014-A)",
+          "KnowledgeArea MUST tener campos created_at auto_now_add (RNF-004)",
+          "KnowledgeArea MUST incluir verbose_name='Área de Conocimiento' y verbose_name_plural='Áreas de Conocimiento' (RNF-004)",
+          "KnowledgeArea MUST ser gestionable solo desde Django admin (RF-004-C)"
+        ],
+        "MUST_NOT": [
+          "KnowledgeArea name MUST NOT aceptar valores duplicados (RF-014-A)"
+        ]
+      },
+      "out_of_scope": [
+        "Subject assignment to KnowledgeArea via API (COVERED_BY_ADMIN)"
+      ]
+    },
+    {
+      "id": "REQ-MOD-ACC-005",
+      "module": "Subject",
+      "iso_coverage": {
+        "Functional Suitability": ["Functional Completeness"],
+        "Maintainability": ["Reusability"]
+      },
+      "parent_trace": ["RF-004", "RF-014", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "Subject name MUST ser único con verbose_name 'Nombre de la Materia' (RF-004)",
+          "Subject slug MUST ser auto-generado desde name si no se provee (RF-004)",
+          "Subject MUST tener FK nullable a KnowledgeArea con on_delete=SET_NULL (RF-014-B)",
+          "Subject MUST incluir verbose_name y verbose_name_plural en Meta (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "Subject name MUST NOT aceptar valores duplicados (RNF-004)",
+          "Subject.knowledge_area MUST NOT ser campo requerido — MUST permitir null y blank (RF-014-B)"
+        ]
+      },
+      "out_of_scope": [
+        "Category UI in frontend (COVERED_BY_TEMPLATES)",
+        "Subject creation by users (COVERED_BY_ADMIN)"
+      ]
+    },
+    {
+      "id": "REQ-MOD-ACC-006",
+      "module": "TutorProfileManager",
+      "iso_coverage": {
+        "Performance Efficiency": ["Time Behaviour"],
+        "Maintainability": ["Modularity", "Reusability"]
+      },
+      "parent_trace": ["RF-001", "RF-014", "RNF-001", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "TutorProfileManager MUST implementar get_tutors_by_country_priority(country_code) retornando todos los tutores activos ordenados: mismo país primero, luego otros países activos (RF-015-C)",
+          "TutorProfileManager MUST implementar get_tutors_filtered_by_country(country_code) retornando solo tutores del país especificado (RF-015-C)",
+          "TutorProfileManager MUST implementar get_tutors_fallback() retornando todos los tutores activos sin filtro (RF-015-A)",
+          "TutorProfileManager MUST implementar filter_by_search(queryset, search_query) para búsqueda por nombre o materia (RF-015-C)",
+          "TutorProfileManager MUST implementar filter_by_city(queryset, city_filter) — SHOULD ser opcional en latam-mvp (RF-015-D)",
+          "Todos los querysets MUST usar select_related('user') y prefetch_related('subjects') (RNF-001)",
+          "TutorProfileManager MUST implementar get_profile_for_user(user) (RNF-004)",
+          "TutorProfileManager MUST implementar get_or_create_for_user(user) (RNF-004)",
+          "TutorProfileManager MUST implementar get_tutors_by_knowledge_area(knowledge_area_slug) (RF-014-C)"
+        ],
+        "MUST_NOT": [
+          "Lógica de filtrado MUST NOT implementarse en views (RNF-004)",
+          "Queries MUST NOT causar N+1 en iteraciones de tutores (RNF-001)"
+        ]
+      },
+      "out_of_scope": [
+        "PostGIS spatial queries en desarrollo local — usar city name fallback (RF-001 out_of_scope)"
+      ]
+    }
+  ]
+}
