@@ -1,0 +1,149 @@
+{
+  "schema_version": "2.0",
+  "project_id": "subjectsupport-latam-mvp",
+  "branch": "latam-mvp",
+  "layer": "services_init",
+  "app": "academicTutoring",
+  "parent_requirements": "globalRequirements.json",
+  "iso_standard": "ISO/IEC 25010:2011",
+  "version": "1.0",
+  "traceability": {
+    "functional": ["RF-005", "RF-005-A", "RF-005-B", "RF-005-C", "RF-005-D", "RF-008", "RF-008-A", "RF-008-B"],
+    "non_functional": ["RNF-003", "RNF-004", "RNF-013"]
+  },
+  "requirements": [
+    {
+      "id": "REQ-SRV-AT-001",
+      "module": "create_session(tutor, client, form)",
+      "iso_coverage": {
+        "Functional Suitability": ["Functional Correctness"],
+        "Reliability": ["Fault Tolerance"],
+        "Security": ["Integrity"]
+      },
+      "parent_trace": ["RF-005", "RF-005-A", "RF-005-D", "RNF-013"],
+      "contracts": {
+        "MUST": [
+          "create_session() MUST use @transaction.atomic (RNF-013)",
+          "create_session() MUST accept form object — MUST NOT accept form.cleaned_data dict (RF-005-D)",
+          "create_session() MUST set ClassSession.status='pending' on creation (RF-005-A)",
+          "create_session() MUST validate form.is_valid() before saving (RNF-003)",
+          "create_session() MUST return tuple (bool, ClassSession|None, str|None) (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "create_session() MUST NOT raise exceptions toward views (RNF-003)",
+          "create_session() MUST NOT create session with status other than pending (RF-005-A)"
+        ]
+      },
+      "out_of_scope": [
+        "Date validation (COVERED_BY_FORMS)",
+        "Tutor availability check (COVERED_BY_MODELS)"
+      ]
+    },
+    {
+      "id": "REQ-SRV-AT-002",
+      "module": "confirm_session(session, user, form)",
+      "iso_coverage": {
+        "Functional Suitability": ["Functional Correctness"],
+        "Reliability": ["Fault Tolerance"]
+      },
+      "parent_trace": ["RF-005", "RF-005-D", "RNF-004", "RNF-013"],
+      "contracts": {
+        "MUST": [
+          "confirm_session() MUST use @transaction.atomic (RNF-013)",
+          "confirm_session() MUST verify session.tutor == user before confirming (RNF-002)",
+          "confirm_session() MUST set ClassSession.status='confirmed' (RF-005-A)",
+          "confirm_session() MUST accept form object and read meeting_platform from form.cleaned_data (RF-005-D)",
+          "confirm_session() MUST return tuple (bool, ClassSession|None, str|None) (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "confirm_session() MUST NOT allow non-tutor users to confirm (RNF-002)",
+          "confirm_session() MUST NOT raise PermissionDenied — MUST return (False, None, str) (RNF-003)"
+        ]
+      },
+      "out_of_scope": ["Meeting URL generation (COVERED_BY_MEETING_SERVICE)"]
+    },
+    {
+      "id": "REQ-SRV-AT-003",
+      "module": "cancel_session(session, user)",
+      "iso_coverage": {
+        "Functional Suitability": ["Functional Correctness"],
+        "Reliability": ["Fault Tolerance"]
+      },
+      "parent_trace": ["RF-005", "RF-005-D", "RNF-004", "RNF-013"],
+      "contracts": {
+        "MUST": [
+          "cancel_session() MUST use @transaction.atomic (RNF-013)",
+          "cancel_session() MUST verify session.tutor == user OR session.client == user (RNF-002)",
+          "cancel_session() MUST only cancel sessions with status in ['pending', 'confirmed'] (RF-005-A)",
+          "cancel_session() MUST set ClassSession.status='cancelled' (RF-005-A)",
+          "cancel_session() MUST return tuple (bool, ClassSession|None, str|None) (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "cancel_session() MUST NOT allow cancellation of completed sessions (RF-005-A)",
+          "cancel_session() MUST NOT raise exceptions toward views (RNF-003)"
+        ]
+      },
+      "out_of_scope": ["Notification sending (future feature)"]
+    },
+    {
+      "id": "REQ-SRV-AT-004",
+      "module": "start_meeting(session, user)",
+      "iso_coverage": {
+        "Functional Suitability": ["Functional Correctness"],
+        "Reliability": ["Fault Tolerance"]
+      },
+      "parent_trace": ["RF-005", "RF-006", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "start_meeting() MUST verify session.tutor == user before starting (RNF-002)",
+          "start_meeting() MUST return tuple (bool, ClassSession|None, str|None) (RNF-004)",
+          "start_meeting() MUST set session.meeting_started=True (RF-006)"
+        ],
+        "MUST_NOT": [
+          "start_meeting() MUST NOT raise PermissionDenied — MUST return (False, None, str) (RNF-003)",
+          "start_meeting() MUST NOT allow non-tutor users to start meeting (RNF-002)"
+        ]
+      },
+      "out_of_scope": ["Meeting URL generation (COVERED_BY_MEETING_SERVICE)"]
+    },
+    {
+      "id": "REQ-SRV-AT-005",
+      "module": "save_expansion_notification(form, request)",
+      "iso_coverage": {
+        "Functional Suitability": ["Functional Completeness"],
+        "Reliability": ["Fault Tolerance"]
+      },
+      "parent_trace": ["RF-008", "RF-008-A", "RF-008-B", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "save_expansion_notification() MUST capture IP via geoconfig.geo.get_client_ip() inline import (RF-008-B)",
+          "save_expansion_notification() MUST capture ciudad_detectada from request.session (RF-008-A)",
+          "save_expansion_notification() MUST return tuple (bool, NotificacionExpansion|None, str|None) (RNF-004)"
+        ],
+        "MUST_NOT": [
+          "save_expansion_notification() MUST NOT import geoconfig at module level — MUST import inline to prevent circular imports (RNF-004)",
+          "save_expansion_notification() MUST NOT raise exceptions toward views (RNF-003)"
+        ]
+      },
+      "out_of_scope": ["Geo detection (COVERED_BY_GEOCONFIG)"]
+    },
+    {
+      "id": "REQ-SRV-AT-006",
+      "module": "get_service_areas_for_display()",
+      "iso_coverage": {
+        "Functional Suitability": ["Functional Completeness"]
+      },
+      "parent_trace": ["RF-007", "RNF-004"],
+      "contracts": {
+        "MUST": [
+          "get_service_areas_for_display() MUST delegate to geoconfig.geo.get_available_service_areas() via inline import (RNF-004)",
+          "get_service_areas_for_display() MUST return list of service area objects"
+        ],
+        "MUST_NOT": [
+          "get_service_areas_for_display() MUST NOT import geoconfig at module level (RNF-004)"
+        ]
+      },
+      "out_of_scope": ["ServiceArea model definition (COVERED_BY_MODELS)"]
+    }
+  ]
+}

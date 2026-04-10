@@ -1,0 +1,191 @@
+schema_version: '2.0'
+project_id: subjectsupport-latam-mvp
+branch: latam-mvp
+layer: views
+app: accounts
+parent_requirements: globalRequirements.json
+iso_standard: ISO/IEC 25010:2011
+version: '5.0'
+traceability:
+  functional:
+  - RF-002
+  - RF-003
+  - RF-004
+  - RF-011
+  - RF-020
+  non_functional:
+  - RNF-002
+  - RNF-004
+  - RNF-006
+  - RNF-014
+  - RNF-015
+requirements:
+- id: REQ-VIEW-ACC-001
+  module: RegisterTutorView + RegisterClientView
+  iso_coverage:
+    Functional Suitability:
+    - Functional Correctness
+    Security:
+    - Integrity
+    Maintainability:
+    - Modularity
+  parent_trace:
+  - RF-002
+  - RF-002-B
+  - RF-003
+  - RNF-002
+  - RNF-004
+  contracts:
+    MUST:
+    - RegisterTutorView MUST usar LoginRequiredMixin redirect si usuario ya autenticado
+      (RNF-002)
+    - RegisterTutorView.form_valid() MUST extraer country_code desde request.geo_data
+      como contexto HTTP — no como business logic (RF-002-B)
+    - RegisterTutorView.form_valid() MUST delegar registro a accounts.services.register_tutor()
+      (RNF-004)
+    - RegisterClientView.form_valid() MUST delegar registro a accounts.services.register_client()
+      (RNF-004)
+    - Registration views MUST capturar country_code desde request.geo_data y pasarlo
+      al service (RF-002-B)
+    MUST_NOT:
+    - Registration views MUST NOT contener lógica de creación de User inline (RNF-004)
+    - Registration views MUST NOT contener transaction.atomic() directamente (RNF-004)
+  out_of_scope:
+  - Geo-restriction enforcement (COVERED_BY_MIDDLEWARE)
+  - User creation logic (COVERED_BY_SERVICES)
+- id: REQ-VIEW-ACC-002
+  module: DashboardView + TutorDashboardView + ClientDashboardView
+  iso_coverage:
+    Functional Suitability:
+    - Functional Completeness
+    Security:
+    - Access Control
+    Maintainability:
+    - Modularity
+  parent_trace:
+  - RF-002-C
+  - RNF-002
+  - RNF-004
+  contracts:
+    MUST:
+    - DashboardView MUST redirigir a tutor_dashboard o client_dashboard según user_type
+      (RF-002-C)
+    - 'TutorDashboardView MUST usar LoginRequiredMixin + UserPassesTestMixin: user_type==''tutor''
+      (RNF-002)'
+    - 'ClientDashboardView MUST usar LoginRequiredMixin + UserPassesTestMixin: user_type==''client''
+      (RNF-002)'
+    - TutorDashboardView MUST importar ClassSession dentro del método get_context_data()
+      — MUST NOT importar a nivel de módulo para evitar circular imports (INT-004-R3)
+    - ClientDashboardView MUST importar ClassSession dentro del método get_context_data()
+      — MUST NOT importar a nivel de módulo (INT-004-R3)
+    MUST_NOT:
+    - TutorDashboardView MUST NOT ser accesible a usuarios con user_type='client'
+      (RNF-002)
+    - ClientDashboardView MUST NOT ser accesible a usuarios con user_type='tutor'
+      (RNF-002)
+  out_of_scope:
+  - Session listing logic (COVERED_BY_MANAGERS)
+- id: REQ-VIEW-ACC-003
+  module: TutorProfileView + EditTutorProfileView + ManageTutorSubjectsView
+  iso_coverage:
+    Functional Suitability:
+    - Functional Completeness
+    Security:
+    - Access Control
+    Maintainability:
+    - Modularity
+  parent_trace:
+  - RF-004
+  - RF-016
+  - RF-020
+  - RNF-002
+  - RNF-004
+  contracts:
+    MUST:
+    - 'TutorProfileView MUST usar LoginRequiredMixin + UserPassesTestMixin: user_type==''tutor''
+      (RNF-002)'
+    - EditTutorProfileView.form_valid() MUST delegar a accounts.services.update_tutor_profile()
+      (RNF-004)
+    - 'EditTutorProfileView.form_valid() MUST unpack 3-tuple: success, result, error
+      (RNF-004)'
+    - ManageTutorSubjectsView.form_valid() MUST delegar a accounts.services.manage_tutor_subjects()
+      (RF-016)
+    - 'ManageTutorSubjectsView.form_valid() MUST unpack 3-tuple: success, result,
+      error (RNF-004)'
+    - 'ManageTutorSubjectsView MUST inject ''subjects_by_area'' context: dict of {KnowledgeArea.name:
+      [Subject]} for template grouping (RF-020)'
+    - ManageTutorSubjectsView.get_context_data() MUST build subjects_by_area from
+      Subject.objects.select_related('knowledge_area').order_by('knowledge_area__name',
+      'name') (RF-020)
+    MUST_NOT:
+    - Profile views MUST NOT ser accesibles a usuarios con user_type='client' (RNF-002)
+    - Profile views MUST NOT contener lógica ORM inline de actualización (RNF-004)
+    - ManageTutorSubjectsView MUST NOT inject flat subject list when grouped context
+      is required (RF-020)
+  out_of_scope:
+  - Subject selection rendering (COVERED_BY_FORMS)
+  - Profile update logic (COVERED_BY_SERVICES)
+- id: REQ-VIEW-ACC-004
+  module: ClientProfileView + EditClientProfileView
+  iso_coverage:
+    Functional Suitability:
+    - Functional Completeness
+    Security:
+    - Access Control
+    Maintainability:
+    - Modularity
+  parent_trace:
+  - RF-003
+  - RNF-002
+  - RNF-004
+  contracts:
+    MUST:
+    - 'ClientProfileView MUST usar LoginRequiredMixin + UserPassesTestMixin: user_type==''client''
+      (RNF-002)'
+    - EditClientProfileView.form_valid() MUST delegar a accounts.services.update_client_profile()
+      (RNF-004)
+    - 'EditClientProfileView.form_valid() MUST unpack 3-tuple: success, result, error
+      (RNF-004)'
+    MUST_NOT:
+    - Client profile views MUST NOT ser accesibles a usuarios con user_type='tutor'
+      (RNF-002)
+    - Client profile views MUST NOT contener lógica ORM inline (RNF-004)
+  out_of_scope:
+  - Profile update logic (COVERED_BY_SERVICES)
+- id: REQ-VIEW-ACC-LOGIN-001
+  module: StudentLoginView + TutorLoginView
+  iso_coverage:
+    Security:
+    - Confidentiality
+    Functional Suitability:
+    - Functional Correctness
+  parent_trace:
+  - RF-002-D
+  - RNF-002
+  - RNF-014
+  - RNF-015
+  contracts:
+    MUST:
+    - StudentLoginView MUST return generic error when credentials belong to user_type='tutor'
+      — MUST NOT redirect to TutorLoginView (RNF-014)
+    - TutorLoginView MUST return generic error when credentials belong to user_type='client'
+      — MUST NOT redirect to StudentLoginView (RNF-014)
+    - 'Error message MUST be generic: ''Credenciales incorrectas'' — MUST NOT reveal
+      user_type mismatch (RF-002-D)'
+    - Login views MUST redirect to appropriate dashboard after successful auth per
+      user_type (RF-002-C)
+    - Superuser login MUST redirect to /gestion-ss-2026/ (RF-002-C)
+    - Base template navbar logo MUST redirect authenticated users to their dashboard
+      — MUST NOT redirect to registration page (BUG-015, RNF-015)
+    MUST_NOT:
+    - Login views MUST NOT redirect to alternate login URL on user_type mismatch —
+      reveals email existence in system (RNF-014)
+    - Login views MUST NOT expose whether email or password was the failing credential
+      (RF-002-D)
+    - Login views MUST NOT reveal that an email exists in the system through any response
+      mechanism (RNF-014)
+    - Base template MUST NOT link logo to registration URL when user is authenticated
+      (BUG-015)
+  out_of_scope:
+  - Password reset flow (separate feature)
+  - Session management (COVERED_BY_DJANGO_AUTH)

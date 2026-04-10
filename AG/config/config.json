@@ -1,0 +1,120 @@
+{
+  "project_name": "subjectsSuport",
+  "base_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG",
+  "source_path": "/home/node/.n8n-files/proyectos/subjectsSuport",
+
+  "apps": ["accounts", "academicTutoring"],
+
+  "phase1": {
+    "verdict_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-1/UNIT_REPORT/phase1_verdict.json",
+    "report_path":  "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-1/UNIT_REPORT/PHASE1_REPORT.txt",
+    "requirements_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-1",
+    "audit_plan": [
+      { "app": "accounts",         "layer": "models",      "test_file": "accounts_models_unit_report.json" },
+      { "app": "accounts",         "layer": "forms",       "test_file": "accounts_forms_unit_report.json" },
+      { "app": "accounts",         "layer": "serializers", "test_file": "accounts_serializers_unit_report.json" },
+      { "app": "accounts",         "layer": "views",       "test_file": "accounts_views_unit_report.json" },
+      { "app": "academicTutoring", "layer": "models",      "test_file": "academicTutoring_models_unit_report.json" },
+      { "app": "academicTutoring", "layer": "forms",       "test_file": "academicTutoring_forms_unit_report.json" },
+      { "app": "academicTutoring", "layer": "views",       "test_file": "academicTutoring_views_unit_report.json" },
+      { "app": "academicTutoring", "layer": "middleware",  "test_file": "academicTutoring_middleware_unit_report.json" },
+      { "app": "geoconfig",        "layer": "geo",                       "test_file": "geoconfig_geo_unit_report.json" },
+      { "app": "accounts",         "layer": "services",                 "test_file": "accounts_services_unit_report.json" },
+      { "app": "academicTutoring", "layer": "services_init",            "test_file": "academicTutoring_services_init_unit_report.json" },
+      { "app": "academicTutoring", "layer": "services_meeting_service", "test_file": "academicTutoring_services_meeting_service_unit_report.json" }
+      
+    ]
+  },
+
+  "phase2": {
+  "requirements_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-2/requirements_integration.json",
+  "accumulated_context_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/phase2_accumulated_context.json",
+  "report_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-2/INTEGRATION_REPORT/PHASE2_REPORT.txt",
+  "verdict_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-2/INTEGRATION_REPORT/phase2_verdict.json",
+  "integration_plan": [
+    {
+      "contract_id": "INT-001",
+      "name": "models_to_views",
+      "files": [
+        "apps/accounts/views.py",
+        "apps/accounts/models.py",
+        "apps/accounts/services.py"
+      ]
+    },
+    {
+      "contract_id": "INT-002",
+      "name": "views_to_urls",
+      "files": [
+        "apps/accounts/urls.py",
+        "apps/accounts/urls_estudiantes.py",
+        "apps/accounts/urls_tutores.py",
+        "apps/academicTutoring/urls.py",
+        "apps/accounts/views.py",
+        "apps/academicTutoring/views.py",
+        "subjectSupport/urls.py"
+      ]
+    },
+    {
+      "contract_id": "INT-003",
+      "name": "views_to_services",
+      "files": [
+        "apps/accounts/views.py",
+        "apps/accounts/services.py",
+        "apps/academicTutoring/views.py",
+        "apps/academicTutoring/services/__init__.py"
+      ]
+    },
+    {
+      "contract_id": "INT-004",
+      "name": "cross_app_contracts",
+      "files": [
+        "apps/accounts/models.py",
+        "apps/academicTutoring/models.py",
+        "apps/accounts/views.py",
+        "apps/academicTutoring/views.py"
+      ]
+    },
+    {
+      "contract_id": "INT-005",
+      "name": "geo_contracts",
+      "files": [
+        "geoconfig/geo.py",
+        "geoconfig/middleware.py",
+        "apps/academicTutoring/utils/geo.py",
+        "apps/academicTutoring/views.py",
+        "apps/academicTutoring/models.py"
+      ]
+    }
+  ]
+},
+
+  "phase3": {
+    "verdict_path":     "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-3/phase3_verdict.json",
+    "report_path":      "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-3/PHASE3_REPORT.txt",
+    "shell_tests_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-3/shell_tests/",
+    "base_url": "http://host.docker.internal:8000",
+    "_note_geo": "En desarrollo SKIP_GEO_CHECK=True — middleware activo pero sin GIS real.",
+    "http_tests": [
+      { "id": "HTTP-001", "method": "GET", "path": "/servicio-no-disponible/", "expected_status": 200, "description": "Geo-restriction page renders" },
+      { "id": "HTTP-002", "method": "GET", "path": "/estudiantes/", "expected_status": 200, "geo": "milagro", "description": "Estudiantes IP Milagro" },
+      { "id": "HTTP-003", "method": "GET", "path": "/estudiantes/", "expected_status": 200, "geo": "quito", "description": "Geo-restriction Quito" },
+      { "id": "HTTP-004", "method": "GET", "path": "/tutores/", "expected_status": 200, "geo": "ecuador", "description": "Tutores Ecuador" },
+      { "id": "HTTP-005", "method": "GET", "path": "/accounts/register/", "expected_status": 200, "description": "Register redirect" }
+    ]
+  },
+
+  "shared": {
+    "global_requirements_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/globalRequirements.json",
+    "architect_path":           "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/architect.json",
+    "debt_log_path":            "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/DEBT_LOG.json",
+    "accumulated_context_path": "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/accumulated_context.json",
+    "evolution_log_path":       "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/evolution_log.json",
+    "unit_report_path":         "/home/node/.n8n-files/proyectos/subjectsSuport/AG/PHASE-1/UNIT_REPORT/",
+    "shell_probe_secret":       "ag-subjectsupport-2026",
+    "shell_probe_base_url":     "http://host.docker.internal:8000",
+    "debt_log_phase1_path":     "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/debt_log_phase1.json",
+    "debt_log_phase2_path":     "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/debt_log_phase2.json",
+    "debt_log_phase3_path":     "/home/node/.n8n-files/proyectos/subjectsSuport/AG/config/debt_log_phase3.json"
+    
+  }
+}
