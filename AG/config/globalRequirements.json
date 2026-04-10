@@ -1,0 +1,770 @@
+{
+  "schema_version": "2.0",
+  "project_id": "subjectsupport-latam-mvp",
+  "branch": "latam-mvp",
+  "iso_standard": "ISO/IEC 25010:2011",
+  "description": "Requisitos globales del sistema SubjectSupport LATAM MVP. Cubre características de calidad ISO 25010: Functional Suitability, Performance Efficiency, Compatibility, Usability, Reliability, Security, Maintainability, Portability.",
+
+  "functional_requirements": [
+    {
+      "id": "RF-001",
+      "category": "Geo-Restriction & Country Management",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST soportar acceso de usuarios de cualquier país de América Latina via CountryConfig activo.",
+      "sub_requirements": [
+    {
+      "id": "RF-001-A",
+      "statement": "Todos los países LATAM MUST tener CountryConfig con active=True y geo_restricted=False en latam-mvp — sin restricción por ciudad o polígono."
+    },
+    {
+      "id": "RF-001-B",
+      "statement": "El middleware MUST permitir acceso completo a /estudiantes/ Y /tutores/ para cualquier país con CountryConfig.active=True — MUST NOT verificar polígono en latam-mvp."
+    },
+    {
+      "id": "RF-001-C",
+      "statement": "El middleware MUST resolver routing basado en CountryConfig — MUST NOT tener lógica de país hardcodeada."
+    },
+    {
+      "id": "RF-001-D",
+      "statement": "Países con CountryConfig.active=False MUST NOT tener acceso a ninguna ruta protegida."
+    }
+  ]
+},
+    {
+      "id": "RF-002",
+      "category": "Authentication & User Management",
+      "iso_25010": "Functional Suitability → Functional Correctness",
+      "statement": "El sistema MUST soportar registro, autenticación y gestión de perfiles para tutores y clientes.",
+      "sub_requirements": [
+        {
+          "id": "RF-002-A",
+          "statement": "El sistema MUST usar email como identificador único de usuario."
+        },
+        {
+          "id": "RF-002-B",
+          "statement": "El sistema MUST capturar country_code del usuario en el momento del registro desde geo_data."
+        },
+        {
+          "id": "RF-002-C",
+          "statement": "Login MUST redirigir a dashboard según user_type. Superusers MUST redirigir a /gestion-ss-2026/."
+        },
+        {
+          "id": "RF-002-D",
+          "statement": "Mensajes de error de login MUST NOT revelar si el email existe en el sistema."
+        }
+      ]
+    },
+    {
+      "id": "RF-003",
+      "category": "Minor User Protection",
+      "iso_25010": "Functional Suitability → Functional Appropriateness",
+      "statement": "El sistema MUST implementar protecciones especiales para usuarios menores de edad.",
+      "sub_requirements": [
+        {
+          "id": "RF-003-A",
+          "statement": "Registro de menor MUST requerir parent_name y parent_email obligatorios."
+        },
+        {
+          "id": "RF-003-B",
+          "statement": "Registro de menor MUST notificar al admin via Django admin después del submit."
+        }
+      ]
+    },
+    {
+      "id": "RF-004",
+      "category": "Tutor Profile & Subject Management",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST permitir gestión de perfiles de tutor con materias y categorías de conocimiento.",
+      "sub_requirements": [
+        {
+          "id": "RF-004-A",
+          "statement": "TutorProfile MUST soportar selección de hasta 5 materias vía ManyToMany con Subject."
+        },
+        {
+          "id": "RF-004-B",
+          "statement": "Subject MUST tener KnowledgeArea como FK opcional para categorización."
+        },
+        {
+          "id": "RF-004-C",
+          "statement": "KnowledgeArea MUST ser gestionable desde Django admin exclusivamente."
+        },
+        {
+          "id": "RF-004-D",
+          "statement": "TutorProfile hourly_rate MUST soportar decimal con max_digits=6, decimal_places=2."
+        }
+      ]
+    },
+    {
+      "id": "RF-005",
+      "category": "Session Lifecycle",
+      "iso_25010": "Functional Suitability → Functional Correctness",
+      "statement": "El sistema MUST gestionar el ciclo completo de sesiones de tutoría.",
+      "sub_requirements": [
+        {
+          "id": "RF-005-A",
+          "statement": "ClassSession MUST soportar estados: pending, confirmed, completed, cancelled."
+        },
+        {
+          "id": "RF-005-B",
+          "statement": "Duración MUST validarse entre 60 y 180 minutos."
+        },
+        {
+          "id": "RF-005-C",
+          "statement": "Fechas pasadas MUST NOT ser aceptadas en SessionRequestForm."
+        },
+        {
+          "id": "RF-005-D",
+          "statement": "Create, confirm, cancel MUST ser operaciones atómicas delegadas a services."
+        }
+      ]
+    },
+    {
+      "id": "RF-006",
+      "category": "Meeting & Scheduling",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST soportar coordinación de reuniones virtuales entre tutor y estudiante.",
+      "sub_requirements": [
+        {
+          "id": "RF-006-A",
+          "statement": "ClassSession MUST soportar plataformas: google_meet, zoom, custom."
+        },
+        {
+          "id": "RF-006-B",
+          "statement": "DateTime fields MUST usar timezone UTC-5 (Ecuador Time)."
+        },
+        {
+          "id": "RF-006-C",
+          "statement": "Double-booking para el mismo tutor MUST NOT ser permitido."
+        }
+      ]
+    },
+    {
+      "id": "RF-007",
+      "category": "Service Area Management",
+      "iso_25010": "Functional Suitability → Functional Appropriateness",
+      "statement": "El sistema MUST gestionar áreas de servicio geográfico via PostGIS.",
+      "sub_requirements": [
+        {
+          "id": "RF-007-A",
+          "statement": "ServiceArea MUST asociarse a CountryConfig via FK."
+        },
+        {
+          "id": "RF-007-B",
+          "statement": "ServiceArea MUST requerirse SOLO cuando CountryConfig.geo_restricted=True."
+        },
+        {
+          "id": "RF-007-C",
+          "statement": "Verificación espacial MUST usar SQL raw con ST_Contains — MUST NOT depender de GIS_AVAILABLE."
+        }
+      ]
+    },
+    {
+      "id": "RF-008",
+      "category": "Expansion Notification",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST permitir a usuarios fuera del área de servicio registrar interés en expansión.",
+      "sub_requirements": [
+        {
+          "id": "RF-008-A",
+          "statement": "NotificacionExpansion MUST capturar email, ciudad_deseada, provincia_deseada."
+        },
+        {
+          "id": "RF-008-B",
+          "statement": "IP del solicitante MUST registrarse para análisis de demanda."
+        }
+      ]
+    },
+    {
+      "id": "RF-009",
+      "category": "Tutor Lead Management",
+      "iso_25010": "Functional Suitability → Functional Correctness",
+      "statement": "El sistema MUST gestionar leads de tutores con expiración automática.",
+      "sub_requirements": [
+        {
+          "id": "RF-009-A",
+          "statement": "TutorLead MUST expirar exactamente a los 7 días de creación."
+        }
+      ]
+    },
+    {
+      "id": "RF-010",
+      "category": "Rating & Complaints",
+      "iso_25010": "Functional Suitability → Functional Appropriateness",
+      "statement": "El sistema MUST soportar valoraciones de sesiones completadas y gestión de quejas.",
+      "sub_requirements": [
+        {
+          "id": "RF-010-A",
+          "statement": "Rating MUST requerir sesión en estado completed."
+        },
+        {
+          "id": "RF-010-B",
+          "statement": "Quejas MUST pasar por revisión de admin antes de publicarse."
+        }
+      ]
+    },
+    {
+      "id": "RF-011",
+      "category": "Admin Panel",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST exponer panel de administración Django en /gestion-ss-2026/.",
+      "sub_requirements": [
+        {
+          "id": "RF-011-A",
+          "statement": "Admin MUST ser accesible sin geo-restriction."
+        },
+        {
+          "id": "RF-011-B",
+          "statement": "Admin MUST usar Django admin estándar — MUST NOT implementar admin custom."
+        },
+        {
+          "id": "RF-011-C",
+          "statement": "CountryConfig MUST ser gestionable desde admin con toggle active/geo_restricted."
+        },
+        {
+          "id": "RF-011-D",
+          "statement": "TutorProfile documents_required MUST ser configurable desde admin de forma individual y global."
+        }
+      ]
+    },
+    {
+      "id": "RF-012",
+      "category": "Static Assets & Frontend",
+      "iso_25010": "Functional Suitability → Functional Appropriateness",
+      "statement": "El sistema MUST servir archivos estáticos correctamente en producción.",
+      "sub_requirements": [
+        {
+          "id": "RF-012-A",
+          "statement": "Whitenoise MUST manejar static files en producción — MUST NOT depender de nginx."
+        }
+      ]
+    },
+    {
+      "id": "RF-013",
+      "category": "Country Toggle",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST permitir habilitar/deshabilitar países desde Django admin sin redeploy ni cambios de código.",
+      "sub_requirements": [
+        {
+          "id": "RF-013-A",
+          "statement": "Admin MUST exponer toggle active para CountryConfig en list_display con list_editable."
+        },
+        {
+          "id": "RF-013-B",
+          "statement": "Admin MUST exponer toggle geo_restricted por país en list_display con list_editable."
+        },
+        {
+          "id": "RF-013-C",
+          "statement": "Cambio de CountryConfig.active MUST reflejarse en middleware sin cache stale — TTL máximo 60 segundos."
+        }
+      ]
+    },
+    {
+      "id": "RF-014",
+      "category": "Knowledge Area Classification",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST soportar categorización de materias por área de conocimiento.",
+      "sub_requirements": [
+        {
+          "id": "RF-014-A",
+          "statement": "KnowledgeArea MUST tener name único y slug auto-generado."
+        },
+        {
+          "id": "RF-014-B",
+          "statement": "Subject.knowledge_area MUST ser FK nullable a KnowledgeArea — MUST NOT ser requerido."
+        },
+        {
+          "id": "RF-014-C",
+          "statement": "TutorSelectionView MUST poder filtrar tutores por KnowledgeArea cuando se provea en query params."
+        }
+      ]
+    },
+    {
+      "id": "RF-015",
+      "category": "Cross-Country Matching",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST permitir matching libre entre estudiantes y tutores de cualquier país LATAM activo.",
+      "sub_requirements": [
+        {
+          "id": "RF-015-A",
+          "statement": "TutorSelectionView MUST mostrar tutores de TODOS los países activos — MUST NOT filtrar por país de origen del estudiante."
+        },
+        {
+          "id": "RF-015-B",
+          "statement": "La geo-restriction MUST aplicar SOLO al acceso a la plataforma — MUST NOT restringir el matching entre usuarios de distintos países."
+        },
+        {
+          "id": "RF-015-C",
+          "statement": "TutorSelectionView MUST ordenar tutores por proximidad de país del estudiante primero — MUST soportar filtro opcional por country_code via query param."
+        },
+        {
+          "id": "RF-015-D",
+          "statement": "El filtro de país en TutorSelectionView MUST NOT filtrar por ciudad — ciudad es sobreingeniería para latam-mvp."
+        }
+      ]
+    },
+    {
+      "id": "RF-016",
+      "category": "Tutor Subject Assignment",
+      "iso_25010": "Functional Suitability → Functional Correctness",
+      "statement": "El sistema MUST escribir materias del tutor en subjects_taught — MUST NOT usar subjects legacy como destino de escritura.",
+      "sub_requirements": [
+        {
+          "id": "RF-016-A",
+          "statement": "manage_tutor_subjects() MUST save selected subjects to TutorProfile.subjects_taught M2M field exclusively — MUST NOT write to subjects legacy field."
+        },
+        {
+          "id": "RF-016-B",
+          "statement": "ManageTutorSubjectsForm MUST NOT render subjects legacy widget — MUST render subjects_taught widget only."
+        },
+        {
+          "id": "RF-016-C",
+          "statement": "filter_by_search() MUST search in subjects_taught__name using icontains — MUST NOT rely on subjects legacy for search results."
+        }
+      ]
+    },
+    {
+      "id": "RF-017",
+      "category": "LATAM Coverage",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST soportar exactamente 23 países hispanohablantes de América Latina y el Caribe en CountryConfig.",
+      "sub_requirements": [
+        {
+          "id": "RF-017-A",
+          "statement": "CountryConfig MUST incluir todos los países hispanohablantes de América Latina y el Caribe con active=True y geo_restricted=False."
+        },
+        {
+          "id": "RF-017-B",
+          "statement": "Los 20 países de migration 0007 son correctos. MUST agregar exactamente: DO (República Dominicana), CU (Cuba), PR (Puerto Rico). Total requerido: 23 países."
+        }
+      ]
+    },
+    {
+      "id": "RF-018",
+      "category": "Registration Geo Capture",
+      "iso_25010": "Functional Suitability → Functional Correctness",
+      "statement": "El sistema MUST capturar city y country desde geo_data en el momento del registro — MUST NOT usar valores default hardcodeados.",
+      "sub_requirements": [
+        {
+          "id": "RF-018-A",
+          "statement": "register_tutor() MUST populate TutorProfile.city and TutorProfile.country from geo_data at registration time — MUST NOT leave default 'Milagro'/'Ecuador' for non-Ecuadorian users."
+        },
+        {
+          "id": "RF-018-B",
+          "statement": "register_client() MUST populate ClientProfile.city and ClientProfile.country from geo_data at registration time — MUST NOT leave default 'Milagro'/'Ecuador' for non-Ecuadorian users."
+        }
+      ]
+    }
+  ],
+
+  "non_functional_requirements": [
+    {
+      "id": "RNF-001",
+      "category": "Performance Efficiency — Time Behaviour",
+      "iso_25010": "Performance Efficiency → Time Behaviour",
+      "statement": "El sistema MUST minimizar queries a base de datos usando select_related y prefetch_related.",
+      "contracts": {
+        "MUST": [
+          "Todas las querysets que acceden a relaciones FK o M2M MUST usar select_related o prefetch_related",
+          "Views que iteran sobre tutores MUST prefetch_related('subjects') para evitar N+1",
+          "Serializers MUST NOT ejecutar queries dentro de to_representation()"
+        ]
+      }
+    },
+    {
+      "id": "RNF-002",
+      "category": "Security — Access Control",
+      "iso_25010": "Security → Confidentiality + Integrity",
+      "statement": "El sistema MUST implementar control de acceso basado en roles en todas las capas.",
+      "contracts": {
+        "MUST": [
+          "Todas las CBVs que requieren autenticación MUST usar LoginRequiredMixin",
+          "Todas las CBVs que requieren rol específico MUST usar UserPassesTestMixin con test_func",
+          "Mensajes de error MUST NOT revelar información sensible del sistema",
+          "Campos sensibles MUST NOT exponerse en serializers públicos",
+          "CSRF protection MUST estar activo en todos los formularios POST"
+        ],
+        "MUST_NOT": [
+          "Vistas de tutor MUST NOT ser accesibles a usuarios con user_type='client'",
+          "Vistas de cliente MUST NOT ser accesibles a usuarios con user_type='tutor'",
+          "Emails de usuarios MUST NOT exponerse en respuestas públicas"
+        ]
+      }
+    },
+    {
+      "id": "RNF-003",
+      "category": "Reliability — Fault Tolerance",
+      "iso_25010": "Reliability → Fault Tolerance",
+      "statement": "El sistema MUST degradar gracefully ante fallos de servicios externos.",
+      "contracts": {
+        "MUST": [
+          "geo.py MUST manejar timeout de API de geolocalización sin crash — timeout máximo 3 segundos",
+          "Fallo de API geo MUST resultar en deny por defecto — MUST NOT permitir acceso por fallo",
+          "Fallo de conexión a PostGIS MUST ser capturado con try/except y loggeado",
+          "Servicios externos MUST tener manejo de RequestException explícito"
+        ],
+        "MUST_NOT": [
+          "Excepciones no capturadas MUST NOT llegar al usuario final como 500 genérico sin log",
+          "Sistema MUST NOT quedar en estado inconsistente por fallo parcial en operaciones multi-modelo"
+        ]
+      }
+    },
+    {
+      "id": "RNF-004",
+      "category": "Maintainability — Modularity",
+      "iso_25010": "Maintainability → Modularity + Analysability",
+      "statement": "El sistema MUST mantener separación estricta de responsabilidades entre capas.",
+      "contracts": {
+        "MUST": [
+          "Views MUST delegar lógica de negocio a services — MUST NOT contener lógica inline",
+          "Models MUST delegar queries complejas a managers — MUST NOT contener lógica de negocio",
+          "Services MUST retornar tupla (bool, object|None, str|None) — MUST NOT raise excepciones hacia views",
+          "Todos los modelos MUST incluir verbose_name y verbose_name_plural en Meta",
+          "Todos los formularios MUST usar Meta.fields explícito — MUST NOT usar '__all__'",
+          "geo.py MUST residir en geoconfig/ en raíz del proyecto — MUST NOT estar en apps/",
+          "Middleware MUST importar desde geoconfig.geo — MUST NOT reimplementar lógica geo"
+        ],
+        "MUST_NOT": [
+          "Views MUST NOT contener transaction.atomic() directamente",
+          "Views MUST NOT ejecutar queries ORM directamente — MUST usar managers o services",
+          "Middleware MUST NOT contener lógica de negocio — MUST delegar a geoconfig"
+        ]
+      }
+    },
+    {
+      "id": "RNF-005",
+      "category": "Reliability — Availability",
+      "iso_25010": "Reliability → Availability",
+      "statement": "El sistema MUST estar disponible en producción con Railway + Supabase.",
+      "contracts": {
+        "MUST": [
+          "GDAL MUST detectarse dinámicamente via find en /nix/store — MUST NOT hardcodearse",
+          "Migraciones MUST ejecutarse en Start Command — MUST NOT ejecutarse en build phase",
+          "DATABASE_URL MUST usar Session Pooler de Supabase (puerto 6543) para compatibilidad IPv4",
+          "ALLOWED_HOSTS MUST incluir .up.railway.app y .railway.app"
+        ]
+      }
+    },
+    {
+      "id": "RNF-006",
+      "category": "Usability — User Error Protection",
+      "iso_25010": "Usability → User Error Protection",
+      "statement": "El sistema MUST validar inputs en forms y proveer mensajes de error claros.",
+      "contracts": {
+        "MUST": [
+          "Formularios MUST mostrar errores de validación en español",
+          "Formularios MUST validar en cliente y servidor — MUST NOT depender solo de uno",
+          "Fechas inválidas MUST ser rechazadas con mensaje descriptivo"
+        ]
+      }
+    },
+    {
+      "id": "RNF-007",
+      "category": "Security — Accountability + Non-repudiation",
+      "iso_25010": "Security → Accountability",
+      "statement": "El sistema MUST registrar intentos de acceso y decisiones de geo-restriction.",
+      "contracts": {
+        "MUST": [
+          "Middleware MUST logear todos los intentos de acceso con path, country, resultado",
+          "geo.py MUST logear IP, ciudad detectada, resultado de restricción",
+          "Logs MUST incluir timestamp, nivel (INFO/WARNING/ERROR)",
+          "Accesos denegados por geo MUST loggearse en WARNING"
+        ],
+        "MUST_NOT": [
+          "Logs MUST NOT incluir datos personales más allá de IP y ciudad",
+          "Credenciales MUST NOT aparecer en logs bajo ninguna circunstancia"
+        ]
+      }
+    },
+    {
+      "id": "RNF-008",
+      "category": "Security — Privacy",
+      "iso_25010": "Security → Confidentiality",
+      "statement": "El sistema MUST proteger datos personales de menores y usuarios en general.",
+      "contracts": {
+        "MUST": [
+          "parent_email de menores MUST NOT exponerse en APIs públicas",
+          "Datos de geolocalización MUST almacenarse solo en sesión — MUST NOT persistirse en DB",
+          "Contraseñas MUST usar Django password hashing — MUST NOT almacenarse en texto plano"
+        ]
+      }
+    },
+    {
+      "id": "RNF-009",
+      "category": "Compatibility — Interoperability",
+      "iso_25010": "Compatibility → Interoperability",
+      "statement": "El sistema MUST interoperar correctamente con servicios externos.",
+      "contracts": {
+        "MUST": [
+          "API de geolocalización MUST usar ipgeolocation.io con timeout de 3 segundos",
+          "PostGIS MUST usarse via SQL raw — MUST NOT depender de GIS_AVAILABLE flag",
+          "Supabase MUST conectarse via Session Pooler — MUST NOT usar conexión directa en producción",
+          "CountryConfig MUST cachearse con TTL máximo 60 segundos para reducir queries"
+        ]
+      }
+    },
+    {
+      "id": "RNF-010",
+      "category": "Maintainability — Testability",
+      "iso_25010": "Maintainability → Testability",
+      "statement": "El sistema MUST ser testeable con cobertura en layers críticos.",
+      "contracts": {
+        "MUST": [
+          "Services MUST ser testeables de forma aislada sin contexto de request",
+          "Models MUST tener tests unitarios para validaciones críticas",
+          "Middleware MUST soportar SKIP_GEO_CHECK=True para entornos de desarrollo y CI",
+          "Shell tests (Phase 3) MUST cubrir todos los endpoints HTTP protegidos"
+        ]
+      }
+    },
+    {
+      "id": "RNF-011",
+      "category": "Maintainability — Modifiability",
+      "iso_25010": "Maintainability → Modifiability",
+      "statement": "El sistema MUST permitir agregar nuevos países sin modificar código fuente.",
+      "contracts": {
+        "MUST": [
+          "Agregar país MUST requerir solo INSERT en CountryConfig via admin — MUST NOT requerir cambios de código",
+          "Agregar ServiceArea para nuevo país MUST requerir solo INSERT SQL — MUST NOT requerir migraciones"
+        ],
+        "MUST_NOT": [
+          "Lógica de país MUST NOT estar hardcodeada en middleware, views, o services"
+        ]
+      }
+    },
+    {
+      "id": "RNF-012",
+      "category": "Portability — Adaptability",
+      "iso_25010": "Portability → Adaptability",
+      "statement": "El sistema MUST funcionar en entornos de desarrollo (Windows/Docker) y producción (Railway/Nixpacks).",
+      "contracts": {
+        "MUST": [
+          "GDAL MUST detectarse dinámicamente en producción — MUST NOT asumir path fijo",
+          "Variables de entorno MUST controlarse via .env en desarrollo y Railway vars en producción",
+          "SKIP_GEO_CHECK MUST deshabilitar geo-restriction completa en desarrollo"
+        ],
+        "MUST_NOT": [
+          "Paths absolutos de Windows MUST NOT aparecer en código fuente",
+          "Secrets MUST NOT commitearse al repositorio"
+        ]
+      }
+    },
+    {
+      "id": "RNF-013",
+      "category": "Security — Integrity",
+      "iso_25010": "Security → Integrity",
+      "statement": "El sistema MUST garantizar integridad de datos en operaciones críticas.",
+      "contracts": {
+        "MUST": [
+          "Operaciones multi-modelo MUST usar @transaction.atomic en services",
+          "FKs con on_delete MUST estar explícitamente definidos en todos los modelos",
+          "ClassSession MUST NOT permitir doble reserva para el mismo tutor en el mismo horario"
+        ]
+      }
+    },
+    {
+      "id": "RNF-014",
+      "category": "Security — Confidentiality",
+      "iso_25010": "Security → Confidentiality",
+      "statement": "El sistema MUST NOT revelar existencia de cuentas de usuario en mensajes de error de autenticación.",
+      "contracts": {
+        "MUST": [
+          "Login views MUST return generic error 'Credenciales incorrectas' when user_type does not match registered user_type (RNF-014)",
+          "Error response on user_type mismatch MUST be HTTP 200 con form inválido — MUST NOT redirect to alternate login URL"
+        ],
+        "MUST_NOT": [
+          "Login MUST NOT redirect to alternate login URL on user_type mismatch — this reveals that the email exists in the system",
+          "Error messages MUST NOT indicate whether email or password was incorrect"
+        ]
+      }
+    },
+    {
+      "id": "RNF-015",
+      "category": "Usability — Operability",
+      "iso_25010": "Usability → Operability + Appropriateness Recognizability",
+      "statement": "El sistema MUST usar terminología y controles coherentes con scope LATAM multi-país.",
+      "contracts": {
+        "MUST": [
+          "TutorSelectionView filter MUST use country_code query param — MUST NOT use city query param (RF-015-D)",
+          "servicio_no_disponible template MUST reference países LATAM — MUST NOT reference ciudades específicas (RF-017)",
+          "UI labels in TutorSelectionView MUST say 'Filtrar por país' — MUST NOT say 'Filtrar por ciudad'"
+        ],
+        "MUST_NOT": [
+          "Templates MUST NOT contain copy implying city-level geo-restriction in latam-mvp"
+        ]
+      }
+    },
+    {
+      "id": "RNF-016",
+      "category": "Usability — Operability",
+      "iso_25010": "Usability → Operability",
+      "statement": "El sistema MUST proveer controles de filtrado nativos compatibles con dispositivos móviles LATAM.",
+      "contracts": {
+        "MUST": [
+          "Country filter in TutorSelectionView MUST render as native <select> element — MUST NOT use free-text input",
+          "<select> MUST populate options from CountryConfig.objects.filter(active=True) — MUST NOT hardcode country list",
+          "Default option MUST be 'Todos los países' with empty value"
+        ],
+        "MUST_NOT": [
+          "Filter MUST NOT require typing country names — this breaks UX on mobile"
+        ]
+      }
+    },
+    {
+      "id": "RNF-017",
+      "category": "Usability — User Interface Aesthetics",
+      "iso_25010": "Usability → Appropriateness Recognizability",
+      "statement": "El panel de administración MUST exponer todos los campos relevantes de perfil de usuario.",
+      "contracts": {
+        "MUST": [
+          "ClientProfileInline MUST include fields: is_minor, parent_name, phone_number, bio",
+          "TutorProfileAdmin list_display MUST show correct subjects_taught via direct Subject.name access",
+          "Admin inlines MUST render correctly on user edit view"
+        ],
+        "MUST_NOT": [
+          "Admin MUST NOT treat subjects_taught as SubjectLevel objects — field is M2M direct to Subject"
+        ]
+      }
+    }
+  ],
+
+  "functional_requirements_extended": [
+    {
+      "id": "RF-019",
+      "category": "Tutor Discovery — Country Filter",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST proveer filtro de país en TutorSelectionView usando <select> nativo con los 23 países LATAM activos.",
+      "contracts": {
+        "MUST": [
+          "TutorSelectionView MUST inject 'countries' context from CountryConfig.objects.filter(active=True).order_by('country_name')",
+          "tutor_selection.html MUST render country filter as <select> with country_code as value",
+          "Default option MUST be 'Todos los países' — returns all tutors without country filter",
+          "Filter MUST use GET param 'country_code' — MUST NOT use 'city' param"
+        ],
+        "MUST_NOT": [
+          "Filter MUST NOT be a free-text input",
+          "Country list MUST NOT be hardcoded in template or view"
+        ]
+      },
+      "layers_affected": ["academicTutoring/views", "tutor_selection.html"]
+    },
+    {
+      "id": "RF-020",
+      "category": "Tutor Profile — Subject Management UX",
+      "iso_25010": "Functional Suitability → Functional Appropriateness",
+      "statement": "El sistema MUST agrupar materias por KnowledgeArea en el formulario de gestión de materias del tutor.",
+      "contracts": {
+        "MUST": [
+          "ManageTutorSubjectsView MUST inject 'subjects_by_area' context: dict of {KnowledgeArea: [Subject]}",
+          "TutorSubjectsForm widget MUST use CheckboxSelectMultiple — MUST NOT use SelectMultiple",
+          "manage_subjects.html MUST render subjects grouped by KnowledgeArea using <fieldset> or optgroup",
+          "TutorSubjectsForm MUST include clean_subjects_taught() validating max 5 subjects selected"
+        ],
+        "MUST_NOT": [
+          "Form MUST NOT allow selection of more than 5 subjects — MUST raise ValidationError",
+          "Widget MUST NOT require Ctrl+Click for multi-selection"
+        ]
+      },
+      "layers_affected": ["accounts/views", "accounts/forms", "manage_subjects.html"]
+    },
+    {
+      "id": "RF-021",
+      "category": "Tutor Document Verification — Admin-Controlled",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST soportar flag de control admin para requerir documentos en registro de nuevos tutores.",
+      "contracts": {
+        "MUST": [
+          "GlobalConfig model MUST include boolean field 'require_tutor_documents' default=False",
+          "register_tutor() service MUST check GlobalConfig.require_tutor_documents before completing registration",
+          "TutorProfile MUST include 'documents_verified' BooleanField default=False",
+          "Tutores registrados ANTES de activar el flag MUST NOT be affected — grandfathering implícito"
+        ],
+        "MUST_NOT": [
+          "Flag MUST NOT be hardcoded — MUST be configurable from Django admin exclusively",
+          "Existing tutor profiles MUST NOT have documents_verified set to False retroactively"
+        ]
+      },
+      "layers_affected": ["accounts/models", "accounts/services", "accounts/admin"],
+      "priority": "post-hackathon"
+    },
+    {
+      "id": "RF-022",
+      "category": "User Age Verification",
+      "iso_25010": "Functional Suitability → Functional Correctness",
+      "statement": "El sistema MUST capturar fecha de nacimiento de tutores y rechazar registro si edad < 18 años.",
+      "contracts": {
+        "MUST": [
+          "TutorProfile MUST include DateField 'birth_date' nullable=True for existing records",
+          "TutorProfile MUST include @property 'age' calculating years from birth_date to date.today()",
+          "TutorRegistrationForm MUST include birth_date field with DateInput widget",
+          "register_tutor() service MUST validate age >= 18 — MUST raise ValidationError if age < 18",
+          "ClientProfile MUST include DateField 'birth_date' nullable=True"
+        ],
+        "MUST_NOT": [
+          "age MUST NOT be stored as a DB field — MUST be calculated property only",
+          "birth_date MUST NOT be required for existing TutorProfile records — nullable migration required"
+        ]
+      },
+      "layers_affected": ["accounts/models", "accounts/forms", "accounts/services"]
+    },
+    {
+      "id": "RF-023",
+      "category": "User Identity — Cédula Capture",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST capturar número de cédula/identificación en registro de tutores y clientes.",
+      "contracts": {
+        "MUST": [
+          "TutorProfile MUST include CharField 'cedula' max_length=20, blank=True, null=True",
+          "ClientProfile MUST include CharField 'cedula' max_length=20, blank=True, null=True",
+          "Registration forms MUST include cedula field as optional (required=False)",
+          "Admin inlines MUST expose cedula field for manual entry"
+        ],
+        "MUST_NOT": [
+          "cedula MUST NOT have format validation in MVP — accept any alphanumeric string",
+          "cedula MUST NOT be required for existing records — nullable migration required"
+        ]
+      },
+      "layers_affected": ["accounts/models", "accounts/forms", "accounts/admin"]
+    },
+    {
+      "id": "RF-024",
+      "category": "Session Booking",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST permitir a estudiantes solicitar sesiones de tutoría con tutores disponibles.",
+      "contracts": {
+        "MUST": [
+          "SessionRequestForm MUST capture: tutor, subject, requested_datetime, duration_minutes, notes",
+          "request_session() service MUST create ClassSession with status='pending'",
+          "Tutor MUST be able to accept or reject pending session requests",
+          "On acceptance, ClassSession status MUST transition to 'confirmed'",
+          "Student and tutor MUST receive notification on status change"
+        ],
+        "MUST_NOT": [
+          "System MUST NOT auto-confirm sessions — tutor approval required",
+          "Double-booking for same tutor+datetime MUST NOT be allowed (RF-006-C)"
+        ]
+      },
+      "layers_affected": ["academicTutoring/views", "academicTutoring/services_init", "academicTutoring/services_meeting_service"],
+      "priority": "hackathon"
+    },
+    {
+      "id": "RF-025",
+      "category": "Meeting Link Management",
+      "iso_25010": "Functional Suitability → Functional Completeness",
+      "statement": "El sistema MUST permitir al tutor agregar link de reunión a sesiones confirmadas, visible para ambas partes a la hora acordada.",
+      "contracts": {
+        "MUST": [
+          "ClassSession MUST include URLField 'meet_link' nullable=True",
+          "Tutor MUST be able to add/update meet_link on confirmed sessions from dashboard",
+          "meet_link MUST be visible to student on their dashboard when session status='confirmed'",
+          "meet_link MUST display prominently when current_time >= session scheduled_datetime"
+        ],
+        "MUST_NOT": [
+          "meet_link MUST NOT be auto-generated — tutor provides manually",
+          "meet_link MUST NOT be visible to student before session is confirmed"
+        ]
+      },
+      "layers_affected": ["academicTutoring/models", "academicTutoring/views", "academicTutoring/services_meeting_service"],
+      "priority": "hackathon"
+    }
+  ]
+}

@@ -1,0 +1,482 @@
+[
+  {
+    "id": "DL-P2-001",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-005-R3",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "services/__init__.py"
+    },
+    "description": "save_expansion_notification importa get_client_ip desde geoconfig.geo inline dentro del método. Intencional para prevenir circular imports.",
+    "justification": "Inline import dentro de función es el patrón correcto para prevenir circular imports.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-002",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-005-R3",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "services/__init__.py"
+    },
+    "description": "get_service_areas_for_display importa get_available_service_areas inline. Mismo patrón que DL-P2-001.",
+    "justification": "Idéntico a DL-P2-001.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-003",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-003-R5",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "services/__init__.py"
+    },
+    "description": "confirm_session retorna (bool, object|None, str|None) correctamente. DeepSeek confunde con SessionService legacy.",
+    "justification": "El __init__.py tiene la firma correcta.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-004",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-005-R6",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "GeoRootRouterView.get() accede a geo_data.get('country_config') con manejo correcto de None.",
+    "justification": "FP-CHECK — el propio auditor confirma compliance en el fix.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-005",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-002-R1",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "urls.py"
+    },
+    "description": "DeepSeek rechaza INT-002 sin violaciones concretas. Kimi aprueba. 0 violaciones en reporte.",
+    "justification": "0 technical_violations + Kimi APPROVED = falso positivo dimensional.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-006",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RF-015-A",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "get_tutors_by_country_priority() retorna TODOS los tutores activos ordenados — no filtra por país. RF-015-A dice MUST show tutors from ALL active countries — el método cumple porque no excluye ningún país.",
+    "justification": "FP-CHECK — el challenger confunde ordering con filtering.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-007",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-004",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "views.py"
+    },
+    "description": "Extracción de country_code desde request.geo_data en views — acceso a contexto HTTP, no business logic. Cubierto por DL-P1-008.",
+    "justification": "DL-P1-008 ya cubre este caso.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-008",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-013",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "services.py"
+    },
+    "description": "register_tutor y register_client tienen @transaction.atomic. El challenger pide verificar scope pero ambas funciones son atómicas completas.",
+    "justification": "FP-CHECK — @transaction.atomic presente y correcto.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-009",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-013",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "services/__init__.py"
+    },
+    "description": "confirm_session tiene @transaction.atomic y solo actualiza ClassSession. El challenger especula sobre scope incompleto sin evidencia.",
+    "justification": "FP-CHECK — no hay operaciones multi-modelo fuera del bloque atómico.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-010",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-011",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "urls_estudiantes.py"
+    },
+    "description": "Docstring histórico menciona Milagro. Comentarios no son lógica ejecutable.",
+    "justification": "FP-CHECK — docstrings no son lógica de negocio. RNF-011 aplica a código ejecutable.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_TEMPORARY — actualizar docstrings post-hackathon"
+  },
+  {
+    "id": "DL-P2-011",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-011",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "urls_tutores.py"
+    },
+    "description": "Docstring histórico menciona Ecuador. Mismo caso que DL-P2-010.",
+    "justification": "FP-CHECK — docstrings no son lógica ejecutable.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_TEMPORARY — actualizar docstrings post-hackathon"
+  },
+  {
+    "id": "DL-P2-012",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RF-001-C",
+    "scope": {
+      "app": "geoconfig",
+      "file_pattern": "middleware.py"
+    },
+    "description": "Middleware RULE-3 verifica geo_restricted — en latam-mvp todos los países tienen geo_restricted=False por lo que este bloque nunca ejecuta.",
+    "justification": "FP-CHECK — en latam-mvp geo_restricted=False para todos los países elimina este path.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-013",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-011",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "geo_country = request.session.get('geo_country', 'Ecuador') — default en session.get() cubierto por DL-P1-020.",
+    "justification": "DL-P1-020 ya cubre este caso explícitamente.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-014",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-003-R5",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "services/__init__.py"
+    },
+    "description": "save_expansion_notification() retorna (True, notificacion, None) — 3-tuple correcto (bool, object, str|None). Cumple RNF-004.",
+    "justification": "FP — el código cumple el contrato.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-015",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-003-R6",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "NotificarmeExpansionView desempaca como (success, notificacion, error) — 3-tuple correcto.",
+    "justification": "FP — el código cumple RNF-004.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-016",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-003-R4",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "views.py"
+    },
+    "description": "RegisterTutorView y RegisterClientView tienen `from django.db import transaction` como import huérfano — no hay @transaction.atomic en las views. transaction.atomic está en services.py donde corresponde.",
+    "justification": "FP — import sin uso no es violación. El contrato prohíbe uso, no el import.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_TEMPORARY — eliminar import huérfano en próximo sprint"
+  },
+  {
+    "id": "DL-P2-017",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-003-R3",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "DeepSeek reporta que get_service_areas_for_display() no existe en services/__init__.py — la función SÍ existe y fue auditada y certificada en Phase 1 (accounts/services_init CLOSED).",
+    "justification": "FP-CONTEXT — DeepSeek no recibió el archivo completo en el payload de INT-003. La función existe y está certificada.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-018",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "DIM-08",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "services/__init__.py"
+    },
+    "description": "DIM-08 Error Propagation FAIL — evidencia genérica 'Service functions raise exceptions that could be caught and swallowed'. Sin código específico citado.",
+    "justification": "FP — evidencia sin snippet concreto. Todos los services retornan (bool, object|None, str|None) correctamente verificado en Phase 1.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-019",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-003-R6",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "DeepSeek reporta violación INT-003-R6 pero en su propio fix admite: 'The view correctly unpacks as 3-tuple'. Auto-refutación.",
+    "justification": "FP — el auditor contradice su propia violación en el campo fix.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-020",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-003-R7",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "DeepSeek reporta violación INT-003-R7 pero en su propio fix admite: 'The view correctly passes the form object'. Auto-refutación.",
+    "justification": "FP — el auditor contradice su propia violación en el campo fix.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-021",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-003-R3",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "DeepSeek reporta violaciones de INT-003-R3 en ConfirmSessionView, CancelSessionView y MeetingRoomView — pero en cada fix admite explícitamente que el código es correcto y compliant.",
+    "justification": "FP — auto-refutación en 3 casos consecutivos. Patrón sistemático de DeepSeek.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-022",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-003-R4",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "views.py"
+    },
+    "description": "DeepSeek reporta import huérfano de transaction como violación pero su propio fix dice 'which is compliant'. DL-P2-016 ya cubre este caso.",
+    "justification": "FP — DL-P2-016 + auto-refutación del auditor.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P2-023",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-002-R1",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "urls.py"
+    },
+    "description": "Grok rechaza INT-002 (views_to_urls) sin listar ninguna violación concreta — 0 technical_violations, 0 business_violations. DeepSeek APPROVED. Rechazo dimensional sin evidencia.",
+    "justification": "FP — 0 violaciones reportadas + DeepSeek APPROVED = falso positivo dimensional de Grok. Idéntico al patrón DL-P2-005.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P2-024",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-004-R2",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "models.py"
+    },
+    "description": "Violación real corregida: TutorProfileManager importaba CountryConfig desde academicTutoring dentro de los métodos — violación de dirección de dependencia. Fix aplicado: importación movida a TutorSelectionView en academicTutoring/views.py. active_codes se pasa como parámetro a los manager methods.",
+    "justification": "Violación real — corregida en esta sesión. accounts MUST NOT importar de academicTutoring.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "FIXED — CountryConfig import movido a view layer. Manager acepta active_codes como parámetro opcional."
+  },
+  {
+    "id": "DL-P2-025",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-004-R5",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "Grok reporta que TutorSelectionView MUST NOT importar get_active_country_codes() desde geoconfig.geo — contradicción directa con su propia corrida anterior donde exigió exactamente ese patrón (INT-005-R4). DeepSeek APPROVED en ambas corridas. Alucinación circular.",
+    "justification": "FP — contradicción circular entre corridas de Grok. DeepSeek APPROVED. get_active_country_codes() es función utilitaria de consulta, no función de geo-restriction. INT-004-R5 no aplica a imports de utilidades geo.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P2-026",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-005-R3",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "Grok reporta que TutorSelectionView MUST NOT llamar geoconfig.geo directamente — contradicción con INT-005-R4 que Grok mismo exigió en corrida anterior. INT-005-R3 aplica a funciones de geo-restriction (check_geo_restriction, get_location_from_ip) — NO a get_active_country_codes() que es utilidad de consulta de países activos.",
+    "justification": "FP — scope incorrecto. INT-005-R3 cubre geo-restriction functions, no utility query functions. Patrón implementado bajo instrucción explícita de Grok en corrida anterior.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P2-027",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "DIM-09",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "DIM-09 WARN — 'Direct geoconfig.geo call bypasses middleware abstraction; potential timeout'. get_active_country_codes() tiene try/except que retorna [] en caso de error — graceful degradation implementada. El warning es especulativo sin evidencia de timeout real.",
+    "justification": "FP — get_active_country_codes() tiene manejo de errores explícito que retorna lista vacía. No hay timeout risk adicional al de cualquier query ORM.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P2-028",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-002-R1",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "urls_estudiantes.py"
+    },
+    "description": "Grok reporta que urls_estudiantes.py importa views de academicTutoring — violación de contrato INT-002. Section 2.4 del system prompt dice explícitamente: 'Views imported from other apps via alias ARE valid: from apps.academicTutoring import views as core_views — MUST NOT flag if source file is provided'. Patrón idéntico al DL-P2-005.",
+    "justification": "FP — Section 2.4 cubre exactamente este patrón. urls_estudiantes y urls_tutores son geo-routing URLs que por diseño apuntan a views de academicTutoring. El contrato INT-002 no prohíbe cross-app view references en geo-routing context.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P2-029",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-002-R1",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "urls_tutores.py"
+    },
+    "description": "Grok reporta que urls_tutores.py importa views de academicTutoring. Mismo caso que DL-P2-028.",
+    "justification": "Idéntico a DL-P2-028.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P2-030",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "DIM-09",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "DIM-09 WARN especulativo — 'Services rely on Django ORM and PostGIS via geoconfig. No timeout handling for external APIs'. El único API externo es ipgeolocation.io que ya tiene timeout=3 en get_location_from_ip(). El WARN es sin evidencia de código específico faltante.",
+    "justification": "FP — timeout ya implementado en get_location_from_ip() con timeout=3. PostGIS y ORM no requieren timeout handling adicional. Evidence especulativa sin snippet concreto.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P2-031",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "INT-004-R5",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "Grok rechaza INT-004 con 0 business_violations y 0 technical_violations. BLOCKED sin evidencia — rechazo dimensional puro sin código ofensivo citado.",
+    "justification": "FP — 0 violaciones reportadas. Section 0.3 Step 1 exige snippet presente en source. Sin snippet = sin violación. Rechazo dimensional sin evidencia es PROHIBITED.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P2-032",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "DIM-02",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py"
+    },
+    "description": "DIM-02 WARN en corrida 1 — breakdown 4P/1W/0F — advisory no crítico. Sin violaciones concretas listadas. Score 0.9 no bloquea certificación.",
+    "justification": "FP advisory — DIM-02 no es critical failure. WARN sin evidencia concreta. No afecta certificación Phase 2.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  }
+]

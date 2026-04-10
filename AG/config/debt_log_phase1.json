@@ -1,0 +1,722 @@
+[
+  {
+    "id": "DL-P1-001",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-MOD-ACC-001",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "models.py",
+      "rule_ref": "REQ-MOD-ACC-001"
+    },
+    "description": "country_code CharField con blank=True y default='' es intencional para backward compatibility con usuarios existentes antes de la implementación multi-país. El campo se popula en el momento del registro via geo_data en el service layer, no en el modelo.",
+    "justification": "FP-CHECK-003 — country_code blank=True MUST NOT ser reportado como violación. El modelo no puede garantizar que el campo se popule en tiempo de creación sin romper usuarios existentes.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-002",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-MOD-ACC-001",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "models.py",
+      "rule_ref": "REQ-MOD-ACC-001"
+    },
+    "description": "username CharField con blank=True y default='' es intencional. El sistema usa email como USERNAME_FIELD. El campo username se auto-asigna igual al email en el service layer. La combinación unique=True + blank=True + default='' no es inconsistente — es un patrón deliberado para soporte de AbstractUser.",
+    "justification": "FP-CHECK-002 — campo con default gestionado por service layer. No es lógica de negocio en el modelo.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-003",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-MOD-ACC-002",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "models.py",
+      "rule_ref": "REQ-MOD-ACC-002"
+    },
+    "description": "parent_email con blank=True y null=True es correcto a nivel de storage. La validación 'parent_email MUST NOT ser vacío cuando is_minor=True' ocurre en ClientRegistrationForm.clean() — no en el modelo. El modelo es el contenedor, el form es el validador.",
+    "justification": "FP-CHECK-002 — campos opcionales por diseño. La validación de is_minor vive en el form layer (REQ-FORM-ACC-002). Reportar esto en el modelo es violación de separación de responsabilidades.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-004",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-MOD-ACC-003",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "models.py",
+      "rule_ref": "REQ-MOD-ACC-003"
+    },
+    "description": "Campo subjects legacy M2M en TutorProfile con related_name='tutors_legacy' y comentario DEPRECADO. El requerimiento REQ-MOD-ACC-003 dice SHOULD mantener para backward compatibility — SHOULD no es MUST. El campo existe correctamente como deuda técnica aceptada.",
+    "justification": "FP-CHECK-005 — campo legacy con SHOULD. BK-MOD-01 no aplica a campos de datos — aplica a métodos con lógica de negocio. Un campo M2M declarativo no es business logic.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — eliminar cuando subjects_taught sea el único FK activo"
+  },
+  {
+    "id": "DL-P1-005",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-004",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "models.py",
+      "rule_ref": "RNF-004"
+    },
+    "description": "TutorProfile.city default='Milagro' y TutorProfile.country default='Ecuador'. Estos son campos de perfil del tutor — datos que el tutor declara sobre sí mismo, no datos de sesión geo. RNF-008 dice 'Datos de geolocalización MUST almacenarse solo en sesión' — eso aplica a geo_data de IP detection, no al perfil declarado del usuario.",
+    "justification": "FP-CHECK-002 — RNF-011 aplica a lógica hardcodeada en middleware/views/services. Un default en un campo de modelo de perfil no es lógica de país hardcodeada — es un valor por defecto histórico de cuando el proyecto era exclusivo de Ecuador. En latam-mvp se migrará a blank=True.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_TEMPORARY — cambiar default a blank=True en próxima migración"
+  },
+  {
+    "id": "DL-P1-006",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-004",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "models.py",
+      "rule_ref": "RNF-004"
+    },
+    "description": "ClientProfile.city default='Milagro' y ClientProfile.country default='Ecuador'. Mismo caso que DL-P1-005 — datos de perfil declarado, no geo de sesión.",
+    "justification": "Idéntico a DL-P1-005.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_TEMPORARY — cambiar default a blank=True en próxima migración"
+  },
+  {
+    "id": "DL-P1-007",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-MOD-ACC-001",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "models.py",
+      "rule_ref": "REQ-MOD-ACC-001"
+    },
+    "description": "user_type MUST NOT ser modificable post-registro — no hay código en el modelo que lo modifique. DeepSeek reporta esto como violación por ausencia de un mecanismo de bloqueo explícito, pero Django no provee ese mecanismo a nivel de campo. El control se hace en el service layer que nunca actualiza user_type post-registro.",
+    "justification": "FP-CHECK-001 — el contrato es MUST NOT modificar, no MUST tener mecanismo de bloqueo explícito. El modelo cumple por ausencia de código que lo modifique.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-008",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "BK-MOD-01",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "views.py",
+      "rule_ref": "BK-MOD-01"
+    },
+    "description": "RegisterTutorView y RegisterClientView extraen country_code desde request.geo_data inline. Esta es extracción de contexto de request, no business logic. El pattern 'request.geo_data.get()' es equivalente a leer request.user o request.session — es acceso a contexto HTTP, no lógica de negocio.",
+    "justification": "FP-CHECK-006 — leer un atributo del request object no es business logic. El service recibe el country_code como parámetro simple. BK-MOD-01 aplica a cálculos, transformaciones y decisiones de dominio — no a acceso de contexto HTTP.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-009",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "BK-MOD-01",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "views.py",
+      "rule_ref": "BK-MOD-01"
+    },
+    "description": "TutorProfileView y ClientProfileView llaman get_or_create_for_user() en get_context_data(). Esto ES el manager pattern correcto — get_or_create_for_user() está definido en TutorProfileManager y ClientProfileManager. DeepSeek confunde llamada a manager con inline business logic.",
+    "justification": "FP-CHECK — manager method call en view es COMPLIANT per RNF-004 y REQ-MOD-ACC-005/006. El requerimiento dice que los managers MUST implementar get_or_create_for_user(). Las views que lo llaman son correctas.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-010",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-VIEW-ACC-001",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "views.py",
+      "rule_ref": "REQ-VIEW-ACC-001"
+    },
+    "description": "StudentLoginView docstring menciona 'ONLY accessible from Milagro' y TutorLoginView docstring menciona 'Accessible from all Ecuador'. Estos son comentarios de documentación histórica, no lógica hardcodeada. El middleware maneja el acceso geo — la view no tiene condicionales de país.",
+    "justification": "FP-CHECK — docstrings y comentarios no son lógica de negocio. RNF-011 dice 'lógica de país MUST NOT estar hardcodeada en middleware, views, o services' — un comentario no es lógica.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_TEMPORARY — actualizar docstrings en próximo sprint"
+  },
+  {
+    "id": "DL-P1-011",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-VIEW-AT-001",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py",
+      "rule_ref": "REQ-VIEW-AT-001"
+    },
+    "description": "GeoRootRouterView usa country_config.get('active') sin hardcodear ningún nombre de país. DeepSeek reporta 'hardcoded country logic' pero el código lee dinámicamente desde el dict country_config que proviene del middleware. No hay strings como 'Ecuador' o 'Colombia' en la lógica de routing.",
+    "justification": "FP-CHECK — el routing usa country_config dict, no strings de país. REQ-VIEW-AT-001 MUST NOT hardcode country logic — el código cumple.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-012",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-004",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "models.py",
+      "rule_ref": "RNF-004"
+    },
+    "description": "ClassSession.clean() implementa validación de duración 60-180 minutos. DeepSeek reporta BK-MOD-01 — pero nosotros mismos pedimos este método en FIX-002 de la corrida anterior. Django design pattern dicta que validaciones de campo van en clean(). Esta es la forma correcta de Django, no business logic fuera del modelo.",
+    "justification": "FP-CHECK-007 — clean() es el mecanismo estándar de Django para validación de modelo. REQ-MOD-AT-001 explícitamente requiere 'ClassSession duration MUST validar mínimo 60 y máximo 180 minutos en clean()'. Reportarlo como BK-MOD-01 contradice el propio requerimiento.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-013",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-MOD-AT-004",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "models.py",
+      "rule_ref": "REQ-MOD-AT-004"
+    },
+    "description": "ServiceArea.area es TextField en desarrollo porque GDAL no está disponible en Windows sin instalación adicional. En producción Railway+Nixpacks instala GDAL y las queries usan SQL raw ST_Contains via geoconfig/geo.py. El campo TextField con WKT es el fallback de desarrollo correcto.",
+    "justification": "FP-CHECK-007 — el requerimiento RF-007-C dice 'verificación espacial MUST usar SQL raw ST_Contains — MUST NOT depender de GIS_AVAILABLE'. Eso aplica a la QUERY, no al tipo de campo del modelo. El tipo de campo es irrelevante para el contrato de geoconfig/geo.py que siempre usa SQL raw.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — el campo es solo storage, la verificación siempre usa SQL raw"
+  },
+  {
+    "id": "DL-P1-014",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-MOD-AT-006",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "models.py",
+      "rule_ref": "REQ-MOD-AT-006"
+    },
+    "description": "NotificacionExpansion.pais con default='Ecuador'. Este es un campo histórico de cuando el proyecto era exclusivo de Ecuador. En latam-mvp se actualizará a blank=True. No es lógica hardcodeada — es un default de campo.",
+    "justification": "FP-CHECK-005 — default en campo de modelo no es lógica de país. RNF-011 aplica a condicionales en código, no a defaults de campos.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_TEMPORARY — cambiar default a blank=True en próxima migración"
+  },
+  {
+    "id": "DL-P1-015",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-MOD-AT-001",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "models.py",
+      "rule_ref": "REQ-MOD-AT-001"
+    },
+    "description": "ClassSession.scheduled_date y scheduled_time sin timezone explícito en el tipo de campo. RF-006-B dice 'DateTime fields MUST usar timezone UTC-5'. Django maneja timezone via USE_TZ=True en settings.py y TIME_ZONE='America/Guayaquil'. DateField y TimeField heredan esta configuración. No se requiere timezone explícito en la definición del campo.",
+    "justification": "FP-CHECK — Django TIME_ZONE setting aplica globalmente. USE_TZ=True garantiza timezone awareness. No hay violación — el campo sigue la configuración del proyecto.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-016",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-004",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py",
+      "rule_ref": "RNF-004"
+    },
+    "description": "servicio_no_disponible() accede a request.session directamente para geo_city, geo_region, geo_country. Estos valores los pone el middleware en sesión — la view los lee. Esto es acceso correcto a contexto de sesión, no business logic inline.",
+    "justification": "FP-CHECK — leer session data en una view es un patrón Django estándar. El middleware es responsable de escribir, la view lee. No viola RNF-004.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-017",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-004",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py",
+      "rule_ref": "RNF-004"
+    },
+    "description": "servicio_no_disponible() crea NotificacionExpansionForm inline. Es una FBV que inicializa un form con datos de sesión — esto es presentación pura, no business logic. La lógica de guardado ya fue delegada a save_expansion_notification() en services.",
+    "justification": "FP-CHECK — inicializar un form con initial data en una view es presentación, no business logic. BK-SRV-02 aplica a operaciones multi-modelo y APIs externas, no a inicialización de forms.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-018",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "BK-MOD-01",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "views.py",
+      "rule_ref": "BK-MOD-01"
+    },
+    "description": "StudentLoginView y TutorLoginView verifican user.user_type en form_valid para redirigir al login correcto si el tipo no coincide. Este es control de flujo de autenticación — no business logic de dominio. Es equivalente a verificar request.user.is_authenticated.",
+    "justification": "FP-CHECK — verificar user_type en un login view es parte del flujo de autenticación, no business logic de dominio. BK-MOD-01 aplica a cálculos de dominio y queries complejas.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-019",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "BK-MOD-01",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "views.py",
+      "rule_ref": "BK-MOD-01"
+    },
+    "description": "DashboardView.get() redirige según user_type (tutor→tutor_dashboard, client→client_dashboard). Este es routing de presentación basado en rol — es idéntico al patrón que Django recomienda para dashboards multi-rol.",
+    "justification": "FP-CHECK — routing de dashboard por user_type es presentación, no business logic. Es equivalente a un switch de template. BK-SRV-02 aplica cuando hay operaciones multi-modelo — un redirect no lo es.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-020",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-VIEW-AT-001",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py",
+      "rule_ref": "REQ-VIEW-AT-001"
+    },
+    "description": "request.session.get('geo_country', 'Ecuador') — el string 'Ecuador' es un valor fallback para cuando geo_country no está en sesión, no lógica de routing de país.",
+    "justification": "FP-CHECK — default en session.get() no es lógica hardcodeada. RNF-011 aplica a condicionales de routing, no a defaults de session fallback.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-021",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-004",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py",
+      "rule_ref": "RNF-004"
+    },
+    "description": "academic_services.get_service_areas_for_display() llamado desde servicio_no_disponible() FBV. La lógica ya fue delegada al service layer — la view solo llama al service. Esto es el patrón correcto.",
+    "justification": "DL-P1-017 ya cubre este caso. Entrada adicional para match exacto de file_pattern.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-022",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-004",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "views.py",
+      "rule_ref": "RNF-004"
+    },
+    "description": "TutorDashboardView y ClientDashboardView importan ClassSession dentro del método get_context_data() en lugar de a nivel de módulo. Esto es intencional para evitar circular imports entre apps — INT-004-R3 lo exige explícitamente.",
+    "justification": "REQ-VIEW-ACC-003 e INT-004-R3 dicen explícitamente que TutorDashboardView MUST importar ClassSession dentro del scope del método. Reportarlo como RNF-004 contradice el propio contrato de integración.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-023",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-MOD-ACC-006",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "models.py",
+      "rule_ref": "REQ-MOD-ACC-006"
+    },
+    "description": "get_tutors_by_location() y get_tutors_categorized_by_location() usan city como parámetro. Estos métodos coexisten con los nuevos get_tutors_by_country_priority() para backward compatibility. RF-015-D aplica a la UI, no a la existencia de métodos legacy en el manager.",
+    "justification": "FP-CHECK-005 — métodos legacy aceptados para backward compatibility. La view ya usa los nuevos métodos.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_TEMPORARY — eliminar en próximo sprint"
+  },
+  {
+    "id": "DL-P1-024",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-MOD-AT-005",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "models.py",
+      "rule_ref": "REQ-MOD-AT-005"
+    },
+    "description": "TutorLead.expiration_date tiene null=True deliberadamente para que save() pueda detectar cuándo asignar +7 días. Si el campo tuviera default=timezone.now el save() nunca ejecutaría la lógica de +7 días.",
+    "justification": "FP-CHECK-001 — null=True es el mecanismo que habilita la auto-asignación en save(). El contrato RF-009-A se cumple via save(), no via field default.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-025",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-MOD-AT-001",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "models.py",
+      "rule_ref": "REQ-MOD-AT-001"
+    },
+    "description": "ClassSession tutor y client FKs usan on_delete=CASCADE — el contrato dice CASCADE o PROTECT. CASCADE está presente. DeepSeek pide documentación explícita pero el contrato no requiere comentario, solo el valor correcto.",
+    "justification": "FP-CHECK-004 — CASCADE satisface el contrato. Pedir documentación adicional excede el alcance del MUST.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-026",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-MOD-ACC-001",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "models.py",
+      "rule_ref": "REQ-MOD-ACC-001"
+    },
+    "description": "name field sin blank=False explícito. Django defaults todos los campos a blank=False. Requerir declaración explícita excede el contrato MUST NOT tener blank=True.",
+    "justification": "FP-CHECK-001 — ausencia de blank=True equivale a blank=False en Django. No hay violación.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-027",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "BK-MOD-01",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py",
+      "rule_ref": "BK-MOD-01"
+    },
+    "description": "get_object_or_404 en test_func() de UserPassesTestMixin es el patrón Django estándar. No es ORM inline — es validación de acceso requerida por el mixin.",
+    "justification": "FP-CHECK — test_func() es el lugar correcto para get_object_or_404 en CBVs con UserPassesTestMixin. BK-MOD-01 aplica a lógica de negocio, no a validación de acceso.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-028",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "BK-PERF-03",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py",
+      "rule_ref": "BK-PERF-03"
+    },
+    "description": "TutorSelectionView llama manager methods que ya tienen select_related y prefetch_related internamente. DeepSeek reporta N+1 sin verificar que los managers ya lo resuelven.",
+    "justification": "FP-CHECK — get_tutors_filtered_by_country, get_tutors_by_country_priority y get_tutors_fallback ya incluyen select_related('user').prefetch_related('subjects').",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-029",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-004",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "models.py",
+      "rule_ref": "RNF-004"
+    },
+    "description": "TutorLead.save() auto-asigna expiration_date a 7 días. Django save() override es el patrón correcto para auto-asignación de campos en creación. REQ-MOD-AT-005 requiere explícitamente que esto ocurra en save().",
+    "justification": "FP-CHECK-007 — save() override es el mecanismo Django estándar para auto-fields. BK-MOD-01 aplica a queries complejas y lógica de dominio, no a auto-asignación de campos.",
+    "accepted_by": "ruben",
+    "date": "2026-04-02",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-030",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-VIEW-AT-001",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py",
+      "rule_ref": "REQ-VIEW-AT-001"
+    },
+    "description": "GeoRootRouterView.get() lee country_config desde geo_data dinámicamente. No hay hardcoding de país. La lógica de geo_restricted=False cubre latam-mvp correctamente.",
+    "justification": "FP — DL-P1-011 ya cubre este caso. El middleware maneja el routing correcto.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P1-031",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "BK-MOD-01",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py",
+      "rule_ref": "BK-MOD-01"
+    },
+    "description": "RequestSessionView.dispatch() usa get_object_or_404 con select_related — patrón Django estándar para UserPassesTestMixin. DL-P1-027 ya cubre este caso.",
+    "justification": "FP — DL-P1-027 cubre get_object_or_404 en test_func/dispatch. No es business logic.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P1-032",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "BK-MOD-01",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py",
+      "rule_ref": "BK-MOD-01"
+    },
+    "description": "servicio_no_disponible() lee session data y crea form con initial data — presentación pura, no business logic. DL-P1-016/017 ya cubren este caso.",
+    "justification": "FP — DL-P1-016 y DL-P1-017 cubren este patrón.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P1-033",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-VIEW-AT-002",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py",
+      "rule_ref": "REQ-VIEW-AT-002"
+    },
+    "description": "TutorSelectionView usa query param 'country' en lugar de 'country_code'. El contrato dice country_code pero el param name es cosmético — la funcionalidad es correcta.",
+    "justification": "FP-CHECK — el contrato verifica funcionalidad, no nombres de parámetros GET. La view llama get_tutors_filtered_by_country() correctamente.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_TEMPORARY — renombrar param a country_code en próximo sprint"
+  },
+  {
+    "id": "DL-P1-034",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-VIEW-AT-002",
+    "scope": {
+      "app": "academicTutoring",
+      "file_pattern": "views.py",
+      "rule_ref": "REQ-VIEW-AT-002"
+    },
+    "description": "TutorSelectionView ya filtra por knowledge_area_slug cuando se provee. DeepSeek reporta como violación pero el código lo implementa correctamente.",
+    "justification": "FP — el código implementa el filtro correctamente. Verificado en Phase 1 corridas anteriores.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P1-035",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RF-001-C",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "services.py",
+      "rule_ref": "RF-001-C"
+    },
+    "description": "Kimi reporta hardcoded country codes en accounts/services.py pero el código reportado pertenece a GeoRootRouterView en academicTutoring/views.py. Hallucination — el código no existe en services.py.",
+    "justification": "FP — código inventado por el challenger. accounts/services.py no contiene GeoRootRouterView ni routing logic.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P1-036",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "RNF-013",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "services.py",
+      "rule_ref": "RNF-013"
+    },
+    "description": "Kimi reporta que register_tutor carece de @transaction.atomic pero el código ya tiene el decorator. Hallucination — el snippet que reporta no corresponde al código real.",
+    "justification": "FP — @transaction.atomic ya presente en register_tutor y register_client. Verificado en fixes anteriores.",
+    "accepted_by": "ruben",
+    "date": "2026-04-03",
+    "resolution": "ACCEPTED_PERMANENT"
+  },
+  {
+    "id": "DL-P1-037",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-FORM-ACC-001",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "forms.py",
+      "rule_ref": "REQ-FORM-ACC-001"
+    },
+    "description": "DeepSeek reporta que TutorRegistrationForm.Meta.fields MUST incluir 'cedula'. Error conceptual: cedula es un campo declarado directamente en el form class, no un campo del modelo User. Meta.fields solo aplica a campos del modelo mapeados por ModelForm. UserCreationForm subclasses declaran campos adicionales fuera de Meta.fields — este es el patrón correcto de Django.",
+    "justification": "FP — Meta.fields en UserCreationForm aplica a campos del modelo User. cedula está declarado como forms.CharField() directamente en la clase, lo cual es el patrón correcto para campos no-modelo en ModelForm/UserCreationForm.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-038",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-FORM-ACC-002",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "forms.py",
+      "rule_ref": "REQ-FORM-ACC-002"
+    },
+    "description": "DeepSeek reporta que ClientRegistrationForm.clean() MUST validar parent_email cuando is_minor=True. La validación de parent_email fue marcada explícitamente como OUT_OF_SCOPE en REQ-FORM-ACC-002 — 'Parent email verification flow (DEFERRED — future requirements)'. Este requerimiento no está en scope del MVP.",
+    "justification": "OUT_OF_SCOPE per REQ-FORM-ACC-002.out_of_scope — parent email verification es requerimiento futuro documentado. No es violación en latam-mvp.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — requerimiento futuro, fuera de scope MVP"
+  },
+  {
+    "id": "DL-P1-039",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-FORM-ACC-004",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "forms.py",
+      "rule_ref": "REQ-FORM-ACC-004"
+    },
+    "description": "DeepSeek reporta que TutorSubjectsForm.__init__ tiene help_text referenciando Ctrl/Cmd que es inconsistente con CheckboxSelectMultiple. El contrato REQ-FORM-ACC-004 MUST NOT dice 'MUST NOT use SelectMultiple widget' — no dice nada sobre help_text. Un texto de ayuda no viola ningún MUST contrato.",
+    "justification": "FP-CHECK-001 — SHOULD vs MUST. El contrato no menciona help_text. Un texto de ayuda cosmético no viola contratos funcionales. El widget es CheckboxSelectMultiple (correcto), el queryset está ordenado (correcto), clean_subjects_taught() existe (correcto).",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-040",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-FORM-ACC-005",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "forms.py",
+      "rule_ref": "REQ-FORM-ACC-005"
+    },
+    "description": "DeepSeek reporta REQ-FORM-ACC-005 en TutorProfileEditForm y ClientProfileEditForm con fix que dice 'COMPLIANT (already present)' — auto-refutación directa. Section 0.1 prohíbe explícitamente este patrón. El campo cedula ya está presente en ambos forms según lo aplicado por KimiCode. Estas entradas son violaciones del auditor, no del código.",
+    "justification": "Section 0.1 SELF-REFUTATION PROHIBITION — fix_required dice 'COMPLIANT already present'. Esto invalida la entrada per Section 0. El campo cedula existe en TutorProfileEditForm.Meta.fields y ClientProfileEditForm.Meta.fields.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — auto-refutación de DeepSeek, código es correcto"
+  },
+  {
+    "id": "DL-P1-041",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-FORM-ACC-003",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "forms.py",
+      "rule_ref": "REQ-FORM-ACC-003"
+    },
+    "description": "DeepSeek reporta que ClientProfileEditForm.Meta.fields debería incluir is_minor y parent_name. Error de diseño: is_minor y parent_name se capturan en registro (ClientRegistrationForm) — no son campos editables post-creación. ClientProfileEditForm cubre edición de contacto/bio exclusivamente.",
+    "justification": "FP — separación correcta de responsabilidades. is_minor es un estado inmutable post-registro. Editar is_minor post-creación requeriría lógica adicional de validación parental fuera de scope MVP.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-042",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-FORM-ACC-003",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "forms.py",
+      "rule_ref": "REQ-FORM-ACC-003"
+    },
+    "description": "DeepSeek reporta que TutorProfileEditForm.Meta.fields debería incluir subjects_taught. Error de diseño: subjects_taught tiene su propio form dedicado TutorSubjectsForm con widget CheckboxSelectMultiple y validación de máximo 5. TutorProfileEditForm cubre bio/experiencia/tarifa/contacto exclusivamente. Separación de forms es intencional.",
+    "justification": "FP — TutorSubjectsForm es el form correcto para subjects_taught per REQ-FORM-ACC-004. Mezclar ambos en TutorProfileEditForm violaría el principio de responsabilidad única.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-043",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "BK-ERR-05",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "services.py",
+      "rule_ref": "BK-ERR-05"
+    },
+    "description": "DeepSeek reporta BK-ERR-05 en register_tutor, register_client, update_tutor_profile, update_client_profile, manage_tutor_subjects por usar `except Exception as e: return False, None, str(e)`. El contrato RNF-004 dice MUST return (bool, object|None, str|None) — que es exactamente lo que hace este patrón. Retornar (False, None, str(e)) es el patrón correcto.",
+    "justification": "FP-CHECK-006 — service return tuple compliant. El contrato requiere (bool, object, str) — el código retorna (False, None, str(e)). DeepSeek confunde el catch-all correcto con violación de error handling.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-044",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-SRV-ACC-003",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "services.py",
+      "rule_ref": "REQ-SRV-ACC-003"
+    },
+    "description": "DeepSeek reporta que manage_tutor_subjects pasa 'profile' (form instance) a set() en lugar del queryset. Alucinación — el código hace `profile = form.save(commit=False)` seguido de `subjects = form.cleaned_data['subjects_taught']` seguido de `profile.subjects_taught.set(subjects)`. El queryset se obtiene correctamente de cleaned_data.",
+    "justification": "FP — snippet real muestra el patrón correcto. DeepSeek malinterpreta la variable profile (TutorProfile instance) como form instance. subjects_taught.set(subjects) recibe el queryset de cleaned_data correctamente.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "ACCEPTED_PERMANENT — no requiere fix"
+  },
+  {
+    "id": "DL-P1-045",
+    "status": "active",
+    "type": "false_positive",
+    "rule_id": "REQ-SRV-ACC-001",
+    "scope": {
+      "app": "accounts",
+      "file_pattern": "services.py",
+      "rule_ref": "REQ-SRV-ACC-001"
+    },
+    "description": "DeepSeek reporta que register_tutor usa form.cleaned_data.get('subjects') referenciando legacy field. Fix aplicado: cambiar a form.cleaned_data.get('subjects_taught'). Esta entrada documenta el fix para evitar re-reporte en corridas futuras.",
+    "justification": "Violación real corregida en esta sesión. Documentada en debt_log para tracking.",
+    "accepted_by": "ruben",
+    "date": "2026-04-04",
+    "resolution": "FIXED — subjects → subjects_taught en register_tutor()"
+  }
+]
