@@ -155,14 +155,11 @@ class TutorLoginView(LoginView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        """Redirect based on user role - Admin/Staff go to /admin/"""
-        user = self.request.user
-        
-        # P1.1 FIX: Superusers and staff go to admin panel
-        if user.is_superuser or user.is_staff:
-            return '/admin/'
-        
-        # Regular tutor users go to their dashboard
+        """
+        RFC-FLOW-TUTOR: TutorLoginView always redirects to tutor_dashboard.
+        This applies to ALL tutors, regardless of is_staff or is_superuser status.
+        Admin users who are also tutors should access /admin/ via separate admin login.
+        """
         return reverse('tutor_dashboard')
 
 
@@ -466,17 +463,46 @@ class EditTutorProfileView(LoginRequiredMixin, UserPassesTestMixin, FormView):
 
 
 class LogoutView(View):
-    """Logout view as CBV"""
+    """
+    RFC-FLOW-STUDENT-LOGOUT: Logout view that redirects based on user type.
+    Must capture user_type BEFORE calling logout() to clear the session.
+    """
     
     def get(self, request):
+        # Capture user_type before logout clears the session
+        user_type = None
+        if request.user.is_authenticated:
+            user_type = getattr(request.user, 'user_type', None)
+        
         logout(request)
         messages.info(request, 'Has cerrado sesión exitosamente.')
-        return redirect('landing')
+        
+        # Redirect based on user type captured before logout
+        if user_type == 'client':
+            return redirect('student_landing')
+        elif user_type == 'tutor':
+            return redirect('tutor_landing')
+        else:
+            # Admin, staff, or unauthenticated users go to home
+            return redirect('home')
     
     def post(self, request):
+        # Capture user_type before logout clears the session
+        user_type = None
+        if request.user.is_authenticated:
+            user_type = getattr(request.user, 'user_type', None)
+        
         logout(request)
         messages.info(request, 'Has cerrado sesión exitosamente.')
-        return redirect('landing')
+        
+        # Redirect based on user type captured before logout
+        if user_type == 'client':
+            return redirect('student_landing')
+        elif user_type == 'tutor':
+            return redirect('tutor_landing')
+        else:
+            # Admin, staff, or unauthenticated users go to home
+            return redirect('home')
 
 
 # Backwards compatibility aliases
