@@ -109,7 +109,7 @@ requirements:
     MUST:
     - Ambos forms MUST validar unicidad de email excluyendo usuario actual via clean_email()
       (RF-002)
-    - TutorProfileEditForm MUST validar hourly_rate no negativo y <= 9999 (RF-004-D)
+    - TutorProfileEditForm MUST validar hourly_rate no negativo y <= 50 (RF-004-D) — business decision: max tutor rate $50/hr
     - Ambos forms MUST usar Meta.fields explícito (RNF-002)
     - Ambos forms.save() MUST actualizar User.email cuando cambie (RF-002)
     - Ambos forms MUST mostrar errores de validación en español (RNF-006)
