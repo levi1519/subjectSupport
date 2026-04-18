@@ -112,3 +112,7 @@ verify_sync.py
 
 
 AG/
+.env.example
+build.sh
+git
+nixpacks.toml
