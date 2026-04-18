@@ -1,0 +1,171 @@
+schema_version: '2.0'
+project_id: subjectsupport-latam-mvp
+branch: latam-mvp
+layer: views
+app: academicTutoring
+parent_requirements: globalRequirements.json
+iso_standard: ISO/IEC 25010:2011
+version: '4.0'
+traceability:
+  functional:
+  - RF-001
+  - RF-001-A
+  - RF-001-B
+  - RF-005
+  - RF-006
+  - RF-010
+  - RF-019
+  non_functional:
+  - RNF-001
+  - RNF-002
+  - RNF-004
+  - RNF-006
+  - RNF-009
+  - RNF-016
+requirements:
+- id: REQ-VIEW-AT-001
+  module: GeoRootRouterView
+  iso_coverage:
+    Functional Suitability:
+    - Functional Appropriateness
+    Maintainability:
+    - Modularity
+  parent_trace:
+  - RF-001
+  - RF-001-A
+  - RF-001-B
+  - RNF-004
+  contracts:
+    MUST:
+    - GeoRootRouterView MUST redirigir usuarios basándose en CountryConfig y ServiceArea
+      membership (RF-001)
+    - GeoRootRouterView MUST leer geo_data desde request object poblado por middleware
+      (RF-001)
+    - GeoRootRouterView MUST redirigir a /estudiantes/ cuando usuario está en ServiceArea
+      activa (RF-001-A)
+    - GeoRootRouterView MUST redirigir a /tutores/ cuando usuario está en país activo
+      sin geo_restricted (RF-001-B)
+    - GeoRootRouterView MUST redirigir a /tutores/ cuando usuario en Ecuador pero
+      fuera de ServiceArea (RF-001-A)
+    - GeoRootRouterView MUST redirigir a /servicio-no-disponible/ cuando país no está
+      en CountryConfig activo (RF-001-D)
+    - GeoRootRouterView MUST ser implementada como CBV (RNF-004)
+    MUST_NOT:
+    - GeoRootRouterView MUST NOT implementar lógica de geolocalización inline (RNF-004)
+    - GeoRootRouterView MUST NOT hardcodear lógica por country_code (RNF-011)
+  out_of_scope:
+  - Geo API calls (COVERED_BY_MIDDLEWARE)
+  - CountryConfig queries (COVERED_BY_GEOCONFIG)
+- id: REQ-VIEW-AT-002
+  module: TutorSelectionView
+  iso_coverage:
+    Performance Efficiency:
+    - Time Behaviour
+    Security:
+    - Access Control
+    Functional Suitability:
+    - Functional Completeness
+    Usability:
+    - Operability
+    Maintainability:
+    - Modularity
+  parent_trace:
+  - RF-001
+  - RF-004
+  - RF-014
+  - RF-019
+  - RNF-001
+  - RNF-002
+  - RNF-004
+  - RNF-016
+  contracts:
+    MUST:
+    - 'TutorSelectionView MUST usar LoginRequiredMixin + UserPassesTestMixin con test_func:
+      user_type==''client'' (RNF-002)'
+    - TutorSelectionView MUST mostrar tutores de TODOS los países activos — MUST NOT
+      filtrar por país del estudiante (RF-015-A)
+    - TutorSelectionView MUST ordenar tutores del mismo país del estudiante primero
+      via get_tutors_by_country_priority(country_code) (RF-015-C)
+    - TutorSelectionView MUST soportar filtro opcional por country_code via query
+      param — llamar get_tutors_filtered_by_country() cuando se provea (RF-015-C)
+    - TutorSelectionView MUST soportar filtro opcional por knowledge_area_slug via
+      query param (RF-014-C)
+    - TutorSelectionView MUST usar filter_by_search() del manager para búsqueda por
+      nombre o materia (RF-015-C)
+    - TutorSelectionView MUST ser implementada como CBV con get_context_data() (RNF-004)
+    - TutorSelectionView MUST inject 'countries' context from CountryConfig.objects.filter(active=True).order_by('country_name')
+      (RF-019)
+    - TutorSelectionView filter query param MUST be country_code — MUST NOT use city
+      param (RNF-015, RF-019)
+    - TutorSelectionView MUST pass country_code to get_tutors_filtered_by_country()
+      when filter provided (RF-015-C)
+    MUST_NOT:
+    - TutorSelectionView MUST NOT filtrar por ciudad — ciudad es sobreingeniería en
+      latam-mvp (RF-015-D)
+    - TutorSelectionView MUST NOT contener lógica de filtrado inline — MUST usar manager
+      methods (RNF-004)
+    - TutorSelectionView MUST NOT acceder a tutor_profile dentro de loops sin select_related
+      (RNF-001)
+    - TutorSelectionView MUST NOT ser accesible a usuarios tutor (RF-001)
+    - TutorSelectionView MUST NOT use city as filter parameter (RF-015-D, RNF-015)
+    - TutorSelectionView MUST NOT hardcode country list in context — MUST query CountryConfig
+      (RF-019)
+  out_of_scope:
+  - Tutor prioritization logic (COVERED_BY_MANAGERS)
+- id: REQ-VIEW-AT-003
+  module: Session Management Views
+  iso_coverage:
+    Security:
+    - Access Control
+    - Integrity
+    Functional Suitability:
+    - Functional Correctness
+    Maintainability:
+    - Modularity
+  parent_trace:
+  - RF-005
+  - RF-006
+  - RNF-002
+  - RNF-004
+  contracts:
+    MUST:
+    - 'RequestSessionView MUST usar UserPassesTestMixin: user_type==''client'' (RNF-002)'
+    - 'ConfirmSessionView MUST usar UserPassesTestMixin: user_type==''tutor'' AND
+      owns session (RNF-002)'
+    - CancelSessionView MUST validar que usuario es tutor OR client asociado a la
+      sesión (RF-005)
+    - MeetingRoomView MUST validar que usuario es tutor OR client asociado a la sesión
+      (RF-005)
+    - Todas las session views MUST delegar lifecycle a academicTutoring.services (RNF-004)
+    - Todas las session views MUST ser implementadas como CBVs (RNF-004)
+    - RequestSessionView.form_valid() MUST pasar objeto form completo a academic_services.create_session()
+      — MUST NOT pasar form.cleaned_data (RNF-004)
+    MUST_NOT:
+    - Session views MUST NOT contener lógica de actualización de status inline (RNF-004)
+    - Session views MUST NOT contener lógica de generación de meeting URL (RNF-004)
+    - Session views MUST NOT ser accesibles a usuarios no autorizados (RNF-002)
+  out_of_scope:
+  - Session lifecycle logic (COVERED_BY_SERVICES)
+  - Meeting platform integration (COVERED_BY_SERVICES)
+- id: REQ-VIEW-AT-004
+  module: Rating and Complaint Views
+  iso_coverage:
+    Functional Suitability:
+    - Functional Appropriateness
+    Security:
+    - Integrity
+  parent_trace:
+  - RF-010
+  - RNF-002
+  - RNF-007
+  contracts:
+    MUST:
+    - Rating view MUST validar que sesión está en estado completed antes de permitir
+      valoración (RF-010-A)
+    - Complaint view MUST ser accesible a estudiantes, menores y tutores legales (RF-010)
+    - Complaint view MUST enviar queja a Django admin para revisión (RF-010-B)
+    MUST_NOT:
+    - Rating view MUST NOT permitir valoración sin sesión completed (RF-010-A)
+    - Complaint view MUST NOT publicar quejas sin revisión de admin (RF-010-B)
+  out_of_scope:
+  - Automatic content moderation (DEFERRED)

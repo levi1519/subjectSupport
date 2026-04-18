@@ -1,0 +1,175 @@
+schema_version: '2.0'
+project_id: subjectsupport-latam-mvp
+branch: latam-mvp
+layer: services
+app: accounts
+parent_requirements: globalRequirements.json
+iso_standard: ISO/IEC 25010:2011
+version: '2.0'
+traceability:
+  functional:
+  - RF-002
+  - RF-002-B
+  - RF-004
+  - RF-016
+  - RF-016-A
+  - RF-018
+  - RF-018-A
+  - RF-018-B
+  - RF-022
+  non_functional:
+  - RNF-003
+  - RNF-004
+  - RNF-013
+  - RNF-014
+requirements:
+- id: REQ-SRV-ACC-001
+  module: register_tutor(request, form, country_code)
+  iso_coverage:
+    Functional Suitability:
+    - Functional Correctness
+    Reliability:
+    - Fault Tolerance
+    Security:
+    - Integrity
+  parent_trace:
+  - RF-002
+  - RF-002-B
+  - RF-018
+  - RF-018-A
+  - RF-022
+  - RNF-013
+  contracts:
+    MUST:
+    - register_tutor() MUST use @transaction.atomic — MUST NOT allow partial user
+      creation without profile (RNF-013)
+    - register_tutor() MUST create User with user_type='tutor' (RF-002)
+    - register_tutor() MUST populate User.country_code from country_code parameter
+      (RF-002-B)
+    - register_tutor() MUST create TutorProfile linked to User (RF-004)
+    - register_tutor() MUST populate TutorProfile.city from geo_data when available
+      (RF-018-A)
+    - register_tutor() MUST populate TutorProfile.country from geo_data when available
+      (RF-018-A)
+    - register_tutor() MUST validate tutor age >= 18 when birth_date is provided —
+      MUST return (False, None, error_msg) if age < 18 (RF-022)
+    - register_tutor() MUST return tuple (bool, User|None, str|None) (RNF-004)
+    MUST_NOT:
+    - register_tutor() MUST NOT leave TutorProfile.city as default 'Milagro' when
+      geo_data provides real city (RF-018-A)
+    - register_tutor() MUST NOT leave TutorProfile.country as default 'Ecuador' when
+      geo_data provides real country (RF-018-A)
+    - register_tutor() MUST NOT allow tutor registration if age < 18 when birth_date
+      provided (RF-022)
+    - register_tutor() MUST NOT raise exceptions toward views — MUST return (False,
+      None, str(error)) (RNF-003)
+  out_of_scope:
+  - Form validation (COVERED_BY_FORMS)
+  - Authentication (COVERED_BY_VIEWS)
+- id: REQ-SRV-ACC-002
+  module: register_client(request, form, country_code)
+  iso_coverage:
+    Functional Suitability:
+    - Functional Correctness
+    Reliability:
+    - Fault Tolerance
+    Security:
+    - Integrity
+  parent_trace:
+  - RF-002
+  - RF-002-B
+  - RF-018
+  - RF-018-B
+  - RNF-013
+  contracts:
+    MUST:
+    - register_client() MUST use @transaction.atomic (RNF-013)
+    - register_client() MUST create User with user_type='client' (RF-002)
+    - register_client() MUST populate User.country_code from country_code parameter
+      (RF-002-B)
+    - register_client() MUST create ClientProfile linked to User (RF-003)
+    - register_client() MUST populate ClientProfile.city from geo_data when available
+      (RF-018-B)
+    - register_client() MUST populate ClientProfile.country from geo_data when available
+      (RF-018-B)
+    - register_client() MUST return tuple (bool, User|None, str|None) (RNF-004)
+    MUST_NOT:
+    - register_client() MUST NOT leave ClientProfile.city as default 'Milagro' when
+      geo_data provides real city (RF-018-B)
+    - register_client() MUST NOT leave ClientProfile.country as default 'Ecuador'
+      when geo_data provides real country (RF-018-B)
+    - register_client() MUST NOT raise exceptions toward views (RNF-003)
+  out_of_scope:
+  - Minor user validation (COVERED_BY_FORMS)
+  - Geo detection (COVERED_BY_GEOCONFIG)
+- id: REQ-SRV-ACC-003
+  module: manage_tutor_subjects(user, form)
+  iso_coverage:
+    Functional Suitability:
+    - Functional Correctness
+    Maintainability:
+    - Modularity
+  parent_trace:
+  - RF-004
+  - RF-004-A
+  - RF-016
+  - RF-016-A
+  - RNF-004
+  contracts:
+    MUST:
+    - manage_tutor_subjects() MUST write selected subjects to TutorProfile.subjects_taught
+      M2M field exclusively (RF-016-A)
+    - manage_tutor_subjects() MUST call subjects_taught.set() with Subject queryset
+      obtained from form.cleaned_data['subjects_taught'] — MUST NOT pass raw form
+      object to set() (RF-016-A, BUG-013)
+    - manage_tutor_subjects() MUST use @transaction.atomic (RNF-013)
+    - manage_tutor_subjects() MUST return tuple (bool, QuerySet|None, str|None) (RNF-004)
+    - manage_tutor_subjects() MUST accept maximum 5 subjects per RF-004-A
+    MUST_NOT:
+    - manage_tutor_subjects() MUST NOT pass Subject model instances where IDs are
+      expected — MUST use .set() with queryset directly (BUG-013)
+    - manage_tutor_subjects() MUST NOT write to subjects legacy M2M field (RF-016-A)
+    - manage_tutor_subjects() MUST NOT raise exceptions toward views (RNF-003)
+  out_of_scope:
+  - Subject creation (COVERED_BY_ADMIN)
+  - Form rendering (COVERED_BY_FORMS)
+- id: REQ-SRV-ACC-004
+  module: update_tutor_profile(user, form)
+  iso_coverage:
+    Functional Suitability:
+    - Functional Correctness
+    Reliability:
+    - Fault Tolerance
+  parent_trace:
+  - RF-004
+  - RNF-004
+  - RNF-013
+  contracts:
+    MUST:
+    - update_tutor_profile() MUST use @transaction.atomic (RNF-013)
+    - update_tutor_profile() MUST return tuple (bool, TutorProfile|None, str|None)
+      (RNF-004)
+    MUST_NOT:
+    - update_tutor_profile() MUST NOT raise exceptions toward views (RNF-003)
+  out_of_scope:
+  - Form validation (COVERED_BY_FORMS)
+- id: REQ-SRV-ACC-005
+  module: update_client_profile(user, form)
+  iso_coverage:
+    Functional Suitability:
+    - Functional Correctness
+    Reliability:
+    - Fault Tolerance
+  parent_trace:
+  - RF-003
+  - RNF-004
+  - RNF-013
+  contracts:
+    MUST:
+    - update_client_profile() MUST use @transaction.atomic (RNF-013)
+    - update_client_profile() MUST return tuple (bool, ClientProfile|None, str|None)
+      (RNF-004)
+    MUST_NOT:
+    - update_client_profile() MUST NOT raise exceptions toward views (RNF-003)
+  out_of_scope:
+  - Form validation (COVERED_BY_FORMS)
