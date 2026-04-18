@@ -50,7 +50,7 @@ class SessionRequestForm(forms.ModelForm):
 
     class Meta:
         model = ClassSession
-        fields = ['subject', 'scheduled_date', 'scheduled_time', 'duration', 'notes']
+        fields = ['subject', 'scheduled_date', 'scheduled_time', 'duration', 'notes', 'material_url']
         widgets = {
             'subject': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -73,13 +73,18 @@ class SessionRequestForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Temas específicos o detalles adicionales (opcional)'
             }),
+            'material_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://ejemplo.com/material-de-clase.pdf'
+            }),
         }
         labels = {
             'subject': 'Materia',
             'scheduled_date': 'Fecha',
             'scheduled_time': 'Hora',
             'duration': 'Duración',
-            'notes': 'Notas'
+            'notes': 'Notas',
+            'material_url': 'Material de clase (URL)'
         }
         error_messages = {
             'subject': {
@@ -98,6 +103,9 @@ class SessionRequestForm(forms.ModelForm):
                 'required': 'Por favor selecciona la duración de la sesión.',
                 'invalid_choice': 'Por favor selecciona una opción válida.',
             },
+            'material_url': {
+                'invalid': 'Por favor ingresa una URL válida.',
+            },
         }
 
     def clean_scheduled_date(self):
@@ -113,10 +121,14 @@ class SessionConfirmationForm(forms.ModelForm):
 
     class Meta:
         model = ClassSession
-        fields = ['meeting_platform', 'notes']
+        fields = ['meeting_platform', 'meeting_url', 'notes']
         widgets = {
             'meeting_platform': forms.Select(attrs={
                 'class': 'form-select'
+            }),
+            'meeting_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://meet.google.com/xxx-xxxx-xxx'
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -126,6 +138,7 @@ class SessionConfirmationForm(forms.ModelForm):
         }
         labels = {
             'meeting_platform': 'Plataforma de Reunión',
+            'meeting_url': 'Enlace de la reunión',
             'notes': 'Notas adicionales'
         }
         error_messages = {

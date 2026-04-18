@@ -1,35 +1,42 @@
+{% load static %}
+{% load accounts_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestionar Materias - SubjectSupport</title>
+    <title>Gestionar Materias - EduLatam</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- EduLatam Theme -->
+    <link rel="stylesheet" href="{% static 'css/edulatam.css' %}">
     <style>
         .page-header {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
+            background: var(--dark);
+            border-bottom: 1px solid rgba(108, 99, 255, 0.2);
+            color: var(--text);
             padding: 40px 0;
         }
         .content-card {
-            background: white;
+            background: var(--surface);
+            border: 1px solid rgba(108, 99, 255, 0.2);
             padding: 40px;
             border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-        }
-        .navbar-custom {
-            background: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
         }
         .subject-checkbox {
             margin-bottom: 15px;
             padding: 12px;
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
             transition: all 0.3s ease;
         }
         .subject-checkbox:hover {
-            background: #e9ecef;
+            background: rgba(108, 99, 255, 0.1);
         }
         .subject-checkbox input[type="checkbox"] {
             width: 20px;
@@ -44,43 +51,42 @@
             margin: 0;
             display: flex;
             align-items: center;
+            color: var(--text);
         }
         .info-box {
-            background: #e3f2fd;
-            border-left: 4px solid #2196F3;
+            background: rgba(108, 99, 255, 0.1);
+            border-left: 4px solid var(--primary);
             padding: 15px;
             margin-bottom: 25px;
             border-radius: 5px;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border: none;
-            padding: 12px 40px;
-            font-weight: 600;
-        }
-        .btn-primary:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
-        }
-        .btn-secondary {
-            padding: 12px 40px;
-            font-weight: 600;
+            color: var(--text);
         }
         .subjects-container {
             max-height: 250px;
             overflow-y: scroll;
-            border: 1px solid #dee2e6;
+            border: 1px solid rgba(108, 99, 255, 0.3);
             border-radius: 8px;
             padding: 15px;
-            background: #fafbfc;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        legend {
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .form-check-input:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        .form-check-label {
+            color: var(--text);
         }
     </style>
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-light navbar-custom">
+<body>
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="{% url 'landing' %}">SubjectSupport</a>
+            <a class="navbar-brand fw-bold" href="{% url 'tutor_dashboard' %}">EduLatam</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -90,13 +96,40 @@
                         <a class="nav-link" href="{% url 'tutor_dashboard' %}">Mi Panel</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'user_profile' %}">Mi Perfil</a>
+                        <a class="nav-link" href="{% url 'tutor_profile' %}">Mi Perfil</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'manage_subjects' %}">Mis Materias</a>
+                        <a class="nav-link active" href="{% url 'manage_subjects' %}" style="color: var(--primary) !important;">Mis Materias</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
+                    </li>
+                    <!-- User Avatar + Country Flag -->
+                    <li class="nav-item d-flex align-items-center gap-2 ms-3">
+                        {% if request.user.avatar_url %}
+                            <img src="{{ request.user.avatar_url|drive_url }}" 
+                                 alt="Avatar"
+                                 class="rounded-circle"
+                                 style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);background:var(--surface);"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="rounded-circle d-none align-items-center justify-content-center text-white fw-bold" 
+                                 style="width:36px;height:36px;background:var(--primary);display:none!important;font-size:1rem;">
+                                {{ request.user.name|slice:":1"|upper }}
+                            </div>
+                        {% else %}
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" 
+                                 style="width:36px;height:36px;background:var(--primary);font-size:1rem;">
+                                {{ request.user.name|slice:":1"|upper }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if request.user.country_code %}
+                            <span style="font-size:1.2rem;margin-left:4px;" title="{{ request.user.country_code|upper }}">
+                                {% with cc=request.user.country_code|upper %}
+                                    {% if cc == "EC" %}🇪🇨{% elif cc == "MX" %}🇲🇽{% elif cc == "CO" %}🇨🇴{% elif cc == "AR" %}🇦🇷{% elif cc == "PE" %}🇵🇪{% elif cc == "CL" %}🇨🇱{% elif cc == "VE" %}🇻🇪{% elif cc == "BR" %}🇧🇷{% elif cc == "UY" %}🇺🇾{% elif cc == "PY" %}🇵🇾{% elif cc == "BO" %}🇧🇴{% elif cc == "PA" %}🇵🇦{% elif cc == "CR" %}🇨🇷{% elif cc == "GT" %}🇬🇹{% elif cc == "HN" %}🇭🇳{% elif cc == "SV" %}🇸🇻{% elif cc == "NI" %}🇳🇮{% elif cc == "DO" %}🇩🇴{% elif cc == "CU" %}🇨🇺{% elif cc == "PR" %}🇵🇷{% else %}🌎{% endif %}
+                                {% endwith %}
+                            </span>
+                        {% endif %}
                     </li>
                 </ul>
             </div>
@@ -105,7 +138,7 @@
 
     <div class="page-header">
         <div class="container">
-            <h1 class="display-5 fw-bold">Gestionar Mis Materias</h1>
+            <h1 class="display-5 fw-bold text-white">Gestionar Mis Materias</h1>
             <p class="lead mb-0">Selecciona las materias que puedes enseñar</p>
         </div>
     </div>
@@ -131,74 +164,79 @@
                         </p>
                     </div>
 
-                    <form method="post" action="{% url 'manage_subjects' %}">
-                        {% csrf_token %}
-
-                        <div class="mb-4">
-                            <h5 class="mb-3">Selecciona tus materias:</h5>
-                            
-                            {% if form.subjects %}
-                                <div class="subjects-container">
-                                    {% for checkbox in form.subjects %}
-                                        <div class="subject-checkbox">
-                                            {{ checkbox.tag }}
-                                            <label for="{{ checkbox.id_for_label }}">
-                                                {{ checkbox.choice_label }}
-                                            </label>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-
-                                <small class="form-text text-muted d-block mt-2">
-                                    💡 <strong>Consejo:</strong> Usa <kbd>Ctrl + Clic</kbd> o <kbd>Cmd + Clic</kbd> para seleccionar múltiples asignaturas.
-                                </small>
-
-                                {% if form.subjects.help_text %}
-                                    <small class="form-text text-muted d-block mt-2">
-                                        {{ form.subjects.help_text }}
-                                    </small>
-                                {% endif %}
-
-                                {% if form.subjects.errors %}
-                                    <div class="alert alert-danger mt-2">
-                                        {{ form.subjects.errors }}
+                    {% if editing %}
+                        <form method="post" action="{% url 'manage_subjects' %}">
+                            {% csrf_token %}
+                            <div class="mb-4">
+                                <h5 class="mb-3">Selecciona tus materias:</h5>
+                                {% if form.subjects_taught.errors %}
+                                    <div class="alert alert-danger mt-3">
+                                        {{ form.subjects_taught.errors }}
                                     </div>
                                 {% endif %}
+                                {% if subjects_by_area %}
+                                    <div class="accordion" id="subjectsAccordion">
+                                        {% for area_name, area_subjects in subjects_by_area.items %}
+                                            <div class="accordion-item" style="background:var(--surface);border:1px solid rgba(108,99,255,0.2);">
+                                                <h2 class="accordion-header" id="heading_{{ forloop.counter }}">
+                                                    <button class="accordion-button collapsed"
+                                                            type="button"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#collapse_{{ forloop.counter }}"
+                                                            style="background:var(--surface);color:var(--primary);font-weight:600;">
+                                                        {{ area_name }}
+                                                        <span class="badge ms-2" style="background:var(--primary);">
+                                                            {{ area_subjects|length }}
+                                                        </span>
+                                                    </button>
+                                                </h2>
+                                                <div id="collapse_{{ forloop.counter }}"
+                                                     class="accordion-collapse collapse"
+                                                     data-bs-parent="#subjectsAccordion">
+                                                    <div class="accordion-body" style="max-height: 250px; overflow-y: auto;">
+                                                        {% for subject in area_subjects %}
+                                                            <div class="form-check mb-2">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                       name="subjects_taught"
+                                                                       value="{{ subject.id }}"
+                                                                       id="subject_{{ subject.id }}"
+                                                                       {% if subject.id in form.subjects_taught.value or subject.id|stringformat:"s" in form.subjects_taught.value %}checked{% endif %}>
+                                                                <label class="form-check-label" for="subject_{{ subject.id }}">
+                                                                    {{ subject.name }}
+                                                                </label>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning">
+                                        <strong>Atención:</strong> No hay materias disponibles.
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex gap-3 justify-content-end mt-4">
+                                <a href="{% url 'manage_subjects' %}" class="btn btn-secondary">Cancelar</a>
+                                <button type="submit" class="btn btn-primary">💾 Guardar Materias</button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="mb-4">
+                            <h5 class="mb-3">Tus materias actuales:</h5>
+                            {% if profile.subjects_taught.all %}
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    {% for subject in profile.subjects_taught.all %}
+                                        <span class="badge bg-primary fs-6 px-3 py-2">{{ subject.name }}</span>
+                                    {% endfor %}
+                                </div>
                             {% else %}
-                                <div class="alert alert-warning">
-                                    <strong>Atención:</strong> No hay materias disponibles en el sistema.
-                                    Por favor contacta al administrador para que agregue materias.
+                                <div class="alert alert-info">
+                                    <strong>ℹ️</strong> Aún no has seleccionado ninguna materia.
                                 </div>
                             {% endif %}
-                        </div>
-
-                        <div class="d-flex gap-3 justify-content-end mt-4">
-                            <a href="{% url 'tutor_dashboard' %}" class="btn btn-secondary">
-                                Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                💾 Guardar Materias
-                            </button>
-                        </div>
-                    </form>
-
-                    {% if profile.subjects.count > 0 %}
-                        <div class="mt-5 pt-4 border-top">
-                            <h6 class="text-muted mb-3">Materias seleccionadas actualmente:</h6>
-                            <div class="d-flex flex-wrap gap-2">
-                                {% for subject in profile.subjects.all %}
-                                    <span class="badge bg-primary fs-6 px-3 py-2">
-                                        {{ subject.name }}
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% else %}
-                        <div class="mt-5 pt-4 border-top">
-                            <div class="alert alert-info">
-                                <strong>ℹ️ Información:</strong> Aún no has seleccionado ninguna materia.
-                                Selecciona al menos una para que los estudiantes puedan encontrarte.
-                            </div>
+                            <a href="?edit=1" class="btn btn-outline-primary mt-2">✏️ Editar Materias</a>
                         </div>
                     {% endif %}
                 </div>

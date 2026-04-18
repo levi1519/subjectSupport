@@ -19,6 +19,39 @@ else:
     gis_models = models
 
 
+class CountryConfig(models.Model):
+    """
+    Configuration for country-specific settings and geo-restrictions.
+    """
+    country_code = models.CharField(
+        max_length=2,
+        unique=True,
+        verbose_name='Código de País'
+    )
+    country_name = models.CharField(
+        max_length=100,
+        verbose_name='Nombre del País'
+    )
+    active = models.BooleanField(
+        default=True,
+        verbose_name='Activo'
+    )
+    geo_restricted = models.BooleanField(
+        default=False,
+        verbose_name='Geo Restringido'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'País'
+        verbose_name_plural = 'Países'
+        ordering = ['country_name']
+
+    def __str__(self):
+        return f"{self.country_name} ({self.country_code})"
+
+
 class ServiceArea(gis_models.Model):
     """
     Modelo para definir zonas geográficas de cobertura del servicio usando polígonos.
@@ -26,27 +59,22 @@ class ServiceArea(gis_models.Model):
     Reemplaza la lógica de comparación de strings por consultas espaciales precisas.
     Utiliza PostGIS en producción y SpatiaLite en desarrollo.
     """
+    country_config = models.ForeignKey(
+        CountryConfig,
+        on_delete=models.CASCADE,
+        related_name='service_areas',
+        verbose_name='Configuración de País'
+    )
     city_name = models.CharField(
         max_length=100,
-        unique=True,
         verbose_name='Ciudad',
         help_text='Nombre de la ciudad que cubre esta área de servicio'
     )
-
-    # Usar PolygonField si GIS está disponible, sino TextField como fallback
-    if GIS_AVAILABLE:
-        area = gis_models.PolygonField(
-            verbose_name='Área de Cobertura',
-            help_text='Polígono que define el área geográfica donde el servicio está disponible',
-            srid=4326  # WGS84 - Sistema de coordenadas estándar GPS
-        )
-    else:
-        # Fallback para desarrollo sin GDAL: almacenar WKT como texto
-        area = models.TextField(
-            verbose_name='Área de Cobertura (WKT)',
-            help_text='Polígono en formato WKT. En producción se usará PolygonField de PostGIS.',
-            default='POLYGON EMPTY'
-        )
+    area = models.TextField(
+        verbose_name='Área de Cobertura (WKT)',
+        help_text='Polígono en formato WKT. En producción se usará PolygonField de PostGIS.',
+        default='POLYGON EMPTY'
+    )
     activo = models.BooleanField(
         default=True,
         verbose_name='Activo',
@@ -71,33 +99,11 @@ class ServiceArea(gis_models.Model):
         verbose_name = 'Área de Servicio'
         verbose_name_plural = 'Áreas de Servicio'
         ordering = ['city_name']
+        unique_together = [['city_name', 'country_config']]
 
     def __str__(self):
         status = "✓ Activo" if self.activo else "✗ Inactivo"
         return f"{self.city_name} ({status})"
-
-    def contains_point(self, latitude, longitude):
-        """
-        Verifica si un punto (lat, lon) está dentro del área de servicio.
-
-        Args:
-            latitude: Latitud del punto (float o string)
-            longitude: Longitud del punto (float o string)
-
-        Returns:
-            bool: True si el punto está dentro del polígono
-        """
-        from django.contrib.gis.geos import Point
-
-        # Convertir a float en caso de que sean strings
-        try:
-            lon_float = float(longitude)
-            lat_float = float(latitude)
-        except (ValueError, TypeError):
-            return False
-
-        point = Point(lon_float, lat_float, srid=4326)
-        return self.area.contains(point)
 
 
 class NotificacionExpansion(models.Model):
@@ -165,7 +171,8 @@ class TutorLead(models.Model):
     subject = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
     expiration_date = models.DateTimeField(
-        null=True, blank=True,
+        null=True,
+        blank=True,
         verbose_name='Fecha de Expiración'
     )
 
@@ -178,7 +185,8 @@ class TutorLead(models.Model):
         return f"{self.name} - {self.subject}"
 
     def save(self, *args, **kwargs):
-        if not self.pk and not self.expiration_date:
+        if not self.expiration_date:
+            from django.utils import timezone
             self.expiration_date = timezone.now() + timedelta(days=7)
         super().save(*args, **kwargs)
 
@@ -325,6 +333,12 @@ class ClassSession(models.Model):
         null=True,
         verbose_name='Notas'
     )
+    material_url = models.URLField(
+        null=True,
+        blank=True,
+        max_length=500,
+        verbose_name='Material de clase (URL)'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -339,17 +353,12 @@ class ClassSession(models.Model):
     def __str__(self):
         return f"{self.subject} - {self.tutor.name} con {self.client.name} ({self.get_status_display()})"
 
-    def is_upcoming(self):
-        """Check if session is in the future"""
-        from datetime import datetime
-        session_datetime = datetime.combine(self.scheduled_date, self.scheduled_time)
-        return session_datetime > datetime.now() and self.status in ['pending', 'confirmed']
-
-    def is_past(self):
-        """Check if session is in the past"""
-        from datetime import datetime
-        session_datetime = datetime.combine(self.scheduled_date, self.scheduled_time)
-        return session_datetime < datetime.now()
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.duration and (self.duration < 60 or self.duration > 180):
+            raise ValidationError({
+                'duration': 'La duración debe estar entre 60 y 180 minutos.'
+            })
 
 
 class Level(models.Model):

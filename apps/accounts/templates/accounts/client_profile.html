@@ -1,32 +1,39 @@
+{% load static %}
+{% load accounts_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Perfil - SubjectSupport</title>
+    <title>Mi Perfil - EduLatam</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- EduLatam Theme -->
+    <link rel="stylesheet" href="{% static 'css/edulatam.css' %}">
     <style>
         .profile-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--dark);
+            border-bottom: 1px solid rgba(108, 99, 255, 0.2);
+            color: var(--text);
             padding: 60px 0 40px;
         }
-        .navbar-custom {
-            background: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
         .profile-card {
-            background: white;
+            background: var(--surface);
+            border: 1px solid rgba(108, 99, 255, 0.2);
             padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
             margin-bottom: 25px;
         }
         .avatar-circle {
             width: 120px;
             height: 120px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: var(--primary);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -38,30 +45,30 @@
         .info-item {
             margin-bottom: 15px;
             padding: 15px;
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
         }
         .info-label {
             font-weight: 600;
-            color: #666;
+            color: var(--muted);
             font-size: 0.9em;
             text-transform: uppercase;
             margin-bottom: 5px;
         }
         .info-value {
-            color: #333;
+            color: var(--text);
             font-size: 1.1em;
         }
         .section-title {
             font-size: 1.5em;
             font-weight: 600;
             margin-bottom: 20px;
-            color: #333;
-            border-bottom: 2px solid #667eea;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
             padding-bottom: 10px;
         }
         .btn-action {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
             border: none;
             color: white;
             padding: 12px 30px;
@@ -70,14 +77,15 @@
             transition: all 0.3s ease;
         }
         .btn-action:hover {
+            background: #5a52d5;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(108, 99, 255, 0.4);
             color: white;
         }
         .stat-box {
             text-align: center;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
             color: white;
             border-radius: 10px;
             margin-bottom: 15px;
@@ -91,11 +99,20 @@
             opacity: 0.9;
         }
     </style>
+    <style>
+        body { background-color: var(--dark, #1A1A2E) !important; }
+        .profile-card { background: var(--surface, #16213E) !important; border: 1px solid rgba(108,99,255,0.2); }
+        .info-item { background: rgba(255,255,255,0.05) !important; }
+        .info-label { color: var(--muted, #8892A4) !important; }
+        .info-value { color: var(--text, #E0E0E0) !important; }
+        .section-title { color: var(--primary, #6C63FF) !important; }
+        .stat-box { background: linear-gradient(135deg, #6C63FF, #FF6584) !important; }
+    </style>
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-light navbar-custom">
+<body>
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="{% url 'landing' %}">SubjectSupport</a>
+            <a class="navbar-brand fw-bold" href="{% url 'client_dashboard' %}">EduLatam</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -105,13 +122,23 @@
                         <a class="nav-link" href="{% url 'client_dashboard' %}">Mi Panel</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'client_profile' %}">Mi Perfil</a>
+                        <a class="nav-link active" href="{% url 'client_profile' %}" style="color: var(--primary) !important;">Mi Perfil</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'tutor_selection' %}">Buscar Tutores</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
+                    </li>
+                    <!-- User Context: Avatar + Country -->
+                    <li class="nav-item d-flex align-items-center gap-2 ms-3">
+                        {% if request.user.avatar_url %}
+                            <img src="{{ request.user.avatar_url|drive_url }}" alt="Profile" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);background:var(--surface);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="rounded-circle d-none align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);display:none!important;font-size:1rem;">{{ request.user.name|slice:":1"|upper }}</div>
+                        {% else %}
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);font-size:1rem;">{{ request.user.name|slice:":1"|upper }}</div>
+                        {% endif %}
+                        {% if request.user.country_code %}<span style="font-size:1.2rem;margin-left:4px;" title="{{ request.user.country_code|upper }}">{% with cc=request.user.country_code|upper %}{% if cc == "EC" %}🇪🇨{% elif cc == "MX" %}🇲🇽{% elif cc == "CO" %}🇨🇴{% elif cc == "AR" %}🇦🇷{% elif cc == "PE" %}🇵🇪{% elif cc == "CL" %}🇨🇱{% elif cc == "VE" %}🇻🇪{% elif cc == "BR" %}🇧🇷{% elif cc == "UY" %}🇺🇾{% elif cc == "PY" %}🇵🇾{% elif cc == "BO" %}🇧🇴{% elif cc == "PA" %}🇵🇦{% elif cc == "CR" %}🇨🇷{% elif cc == "GT" %}🇬🇹{% elif cc == "HN" %}🇭🇳{% elif cc == "SV" %}🇸🇻{% elif cc == "NI" %}🇳🇮{% elif cc == "DO" %}🇩🇴{% elif cc == "CU" %}🇨🇺{% elif cc == "PR" %}🇵🇷{% else %}🌎{% endif %}{% endwith %}</span>{% endif %}
                     </li>
                 </ul>
             </div>
@@ -120,10 +147,19 @@
 
     <div class="profile-header">
         <div class="container text-center">
-            <div class="avatar-circle">
-                {{ user.name.0|upper }}
-            </div>
-            <h1 class="display-5 fw-bold mb-2">{{ user.name }}</h1>
+            {% if profile.avatar_url %}
+                <img src="{{ profile.avatar_url|drive_url }}" alt="Foto de perfil"
+                     style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin-bottom:12px;border:4px solid var(--primary);box-shadow:0 4px 20px rgba(108,99,255,0.3);background:var(--surface);"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div style="width:120px;height:120px;border-radius:50%;background:var(--primary);display:none;align-items:center;justify-content:center;color:white;font-size:3rem;margin-bottom:12px;font-weight:bold;">
+                    {{ user.name|slice:":1" }}
+                </div>
+            {% else %}
+                <div style="width:120px;height:120px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-size:3rem;margin-bottom:12px;font-weight:bold;border:4px solid var(--primary);">
+                    {{ user.name|slice:":1" }}
+                </div>
+            {% endif %}
+            <h1 class="display-5 fw-bold mb-2 text-white">{{ user.name }}</h1>
             <p class="lead mb-0">🎓 Estudiante</p>
         </div>
     </div>
@@ -166,20 +202,22 @@
                     </div>
                     {% endif %}
 
+                    {% if profile.city or profile.country %}
                     <div class="row">
                         <div class="col-md-6">
                             <div class="info-item">
                                 <div class="info-label">Ciudad</div>
-                                <div class="info-value">Milagro</div>
+                                <div class="info-value">{{ profile.city|default:"No especificada" }}</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="info-item">
                                 <div class="info-label">País</div>
-                                <div class="info-value">Ecuador</div>
+                                <div class="info-value">{{ profile.country|default:"No especificado" }}</div>
                             </div>
                         </div>
                     </div>
+                    {% endif %}
 
                     {% if profile.is_minor %}
                     <div class="alert alert-info mt-3">

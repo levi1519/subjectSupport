@@ -7,6 +7,8 @@ from django.urls import reverse
 from django.views.generic import TemplateView, FormView, UpdateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
+from django.utils import timezone
+from datetime import timedelta
 
 from .forms import (
     TutorRegistrationForm, 
@@ -16,7 +18,7 @@ from .forms import (
     ClientProfileEditForm, 
     TutorProfileEditForm
 )
-from .models import TutorProfile, ClientProfile
+from .models import TutorProfile, ClientProfile, Notification
 from . import services
 
 
@@ -31,41 +33,47 @@ class RegisterTutorView(FormView):
     form_class = TutorRegistrationForm
 
     def form_valid(self, form):
-        success, user, error = services.register_tutor(self.request, form)
+        # DEBUG: print(f"DEBUG TUTOR: Form validado OK. Datos: {form.cleaned_data.get('email')}")
+        country_code = self.request.geo_data.get('country_code', '') if hasattr(self.request, 'geo_data') else ''
+        success, user, error = services.register_tutor(self.request, form, country_code)
         if success:
+            # DEBUG: print(f"DEBUG TUTOR: Usuario creado exitosamente, redirigiendo a tutor_dashboard...")
             messages.success(self.request, '¡Bienvenido! Tu cuenta de tutor ha sido creada exitosamente.')
             return redirect('tutor_dashboard')
+        # DEBUG: print(f"DEBUG TUTOR: Error en services.register_tutor: {error}")
         messages.error(self.request, error)
         return self.form_invalid(form)
+    
+    def form_invalid(self, form):
+        # DEBUG: print(f"DEBUG TUTOR: Form INVÁLIDO. Errores: {form.errors.as_json()}")
+        return super().form_invalid(form)
 
 
 class RegisterClientView(FormView):
-    """Registration view for clients/students - ONLY accessible from Milagro"""
+    """Registration view for clients/students"""
     template_name = 'accounts/register_client.html'
     form_class = ClientRegistrationForm
 
     def dispatch(self, request, *args, **kwargs):
-        """Check geo-restriction before allowing access to registration"""
-        # PROTECCIÓN CRÍTICA: Solo usuarios de Milagro pueden registrarse como estudiantes
-        if not request.user.is_authenticated:
-            allowed, redirect_url = services.validate_student_registration_access(request)
-            if not allowed:
-                messages.error(
-                    request,
-                    'El registro de estudiantes solo está disponible en Milagro. '
-                    'Como estás en otra ciudad de Ecuador, puedes registrarte como tutor.'
-                )
-                return redirect(redirect_url)
-        
+        if request.user.is_authenticated:
+            return redirect('client_dashboard')
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        success, user, error = services.register_client(self.request, form)
+        # DEBUG: print(f"DEBUG CLIENT: Form validado OK. Datos: {form.cleaned_data.get('email')}")
+        country_code = self.request.geo_data.get('country_code', '') if hasattr(self.request, 'geo_data') else ''
+        success, user, error = services.register_client(self.request, form, country_code)
         if success:
+            # DEBUG: print(f"DEBUG CLIENT: Usuario creado exitosamente, redirigiendo a client_dashboard...")
             messages.success(self.request, '¡Bienvenido! Tu cuenta ha sido creada exitosamente.')
             return redirect('client_dashboard')
+        # DEBUG: print(f"DEBUG CLIENT: Error en services.register_client: {error}")
         messages.error(self.request, error)
         return self.form_invalid(form)
+    
+    def form_invalid(self, form):
+        # DEBUG: print(f"DEBUG CLIENT: Form INVÁLIDO. Errores: {form.errors.as_json()}")
+        return super().form_invalid(form)
 
 
 class CustomLoginView(LoginView):
@@ -93,16 +101,23 @@ class CustomLoginView(LoginView):
 
 
 class StudentLoginView(LoginView):
-    """Login view for students - ONLY accessible from Milagro"""
+    """Login view for students"""
     form_class = LoginForm
     template_name = 'accounts/login_student.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            if request.user.user_type == 'tutor':
+                return redirect('tutor_dashboard')
+            return redirect('client_dashboard')
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         user = form.get_user()
         # Verify user is actually a student
         if user.user_type != 'client':
-            messages.error(self.request, 'Esta es la página de inicio de sesión para estudiantes. Por favor usa el login de tutores.')
-            return redirect('tutor_login')
+            form.add_error(None, 'Credenciales incorrectas.')
+            return self.form_invalid(form)
         messages.success(self.request, f'¡Bienvenido de nuevo, {user.name}!')
         return super().form_valid(form)
 
@@ -119,28 +134,32 @@ class StudentLoginView(LoginView):
 
 
 class TutorLoginView(LoginView):
-    """Login view for tutors - Accessible from all Ecuador"""
+    """Login view for tutors"""
     form_class = LoginForm
     template_name = 'accounts/login_tutor.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            if request.user.user_type == 'tutor':
+                return redirect('tutor_dashboard')
+            return redirect('client_dashboard')
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         user = form.get_user()
         # Verify user is actually a tutor
         if user.user_type != 'tutor':
-            messages.error(self.request, 'Esta es la página de inicio de sesión para tutores. Por favor usa el login de estudiantes.')
-            return redirect('student_login')
+            form.add_error(None, 'Credenciales incorrectas.')
+            return self.form_invalid(form)
         messages.success(self.request, f'¡Bienvenido de nuevo, {user.name}!')
         return super().form_valid(form)
 
     def get_success_url(self):
-        """Redirect based on user role - Admin/Staff go to /admin/"""
-        user = self.request.user
-        
-        # P1.1 FIX: Superusers and staff go to admin panel
-        if user.is_superuser or user.is_staff:
-            return '/admin/'
-        
-        # Regular tutor users go to their dashboard
+        """
+        RFC-FLOW-TUTOR: TutorLoginView always redirects to tutor_dashboard.
+        This applies to ALL tutors, regardless of is_staff or is_superuser status.
+        Admin users who are also tutors should access /admin/ via separate admin login.
+        """
         return reverse('tutor_dashboard')
 
 
@@ -178,15 +197,21 @@ class TutorDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context['upcoming_sessions'] = ClassSession.objects.get_tutor_sessions(
             self.request.user, status='confirmed'
         )
+        cutoff = timezone.now() - timedelta(hours=24)
         context['past_sessions'] = ClassSession.objects.get_tutor_sessions(
             self.request.user, status='completed'
-        )
+        ).filter(updated_at__gte=cutoff) if hasattr(ClassSession, 'updated_at') else ClassSession.objects.get_tutor_sessions(
+            self.request.user, status='completed'
+        ).filter(created_at__gte=cutoff)
         try:
             context['profile'] = TutorProfile.objects.get_profile_for_user(
                 self.request.user
             )
         except TutorProfile.DoesNotExist:
             context['profile'] = None
+        context['notifications'] = Notification.objects.filter(
+            recipient=self.request.user, is_read=False
+        )
         return context
 
 
@@ -210,15 +235,21 @@ class ClientDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         context['pending_sessions'] = ClassSession.objects.get_client_sessions(
             self.request.user, status='pending'
         )
+        cutoff = timezone.now() - timedelta(hours=24)
         context['past_sessions'] = ClassSession.objects.get_client_sessions(
             self.request.user, status='completed'
-        )
+        ).filter(updated_at__gte=cutoff) if hasattr(ClassSession, 'updated_at') else ClassSession.objects.get_client_sessions(
+            self.request.user, status='completed'
+        ).filter(created_at__gte=cutoff)
         try:
             context['profile'] = ClientProfile.objects.get_profile_for_user(
                 self.request.user
             )
         except ClientProfile.DoesNotExist:
             context['profile'] = None
+        context['notifications'] = Notification.objects.filter(
+            recipient=self.request.user, is_read=False
+        )
         return context
 
 
@@ -243,10 +274,24 @@ class ManageTutorSubjectsView(LoginRequiredMixin, UserPassesTestMixin, FormView)
             messages.info(self.request, 'Tu perfil ha sido creado. Por favor completa tu información.')
         kwargs['instance'] = profile
         return kwargs
-    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from .models import Subject
+        subjects = Subject.objects.get_subjects_for_grouping()
+        subjects_by_area = {}
+        for subject in subjects:
+            area_name = subject.knowledge_area.name if subject.knowledge_area else 'Sin área'
+            subjects_by_area.setdefault(area_name, []).append(subject)
+        context['subjects_by_area'] = subjects_by_area
+        profile, _ = TutorProfile.objects.get_or_create_for_user(self.request.user)
+        context['profile'] = profile
+        context['editing'] = self.request.GET.get('edit') == '1' or self.request.method == 'POST'
+        return context
+
     def form_valid(self, form):
         """Use services to manage tutor subjects"""
-        success, error = services.manage_tutor_subjects(
+        success, _, error = services.manage_tutor_subjects(
             self.request.user,
             form
         )
@@ -257,7 +302,7 @@ class ManageTutorSubjectsView(LoginRequiredMixin, UserPassesTestMixin, FormView)
                 '¡Materias actualizadas exitosamente! Ahora los estudiantes podrán '
                 'encontrarte cuando busquen tutores para estas materias.'
             )
-            return redirect('tutor_dashboard')
+            return redirect('manage_subjects')
         else:
             messages.error(
                 self.request,
@@ -352,9 +397,16 @@ class EditClientProfileView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         kwargs['user'] = self.request.user
         return kwargs
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from apps.accounts.models import ClientProfile
+        profile, _ = ClientProfile.objects.get_or_create_for_user(self.request.user)
+        context['profile'] = profile
+        return context
+
     def form_valid(self, form):
         """Use services to update client profile"""
-        success, error = services.update_client_profile(
+        success, _, error = services.update_client_profile(
             self.request.user,
             form
         )
@@ -389,9 +441,15 @@ class EditTutorProfileView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         kwargs['user'] = self.request.user
         return kwargs
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        profile, _ = TutorProfile.objects.get_or_create_for_user(self.request.user)
+        context['profile'] = profile
+        return context
+
     def form_valid(self, form):
         """Use services to update tutor profile"""
-        success, error = services.update_tutor_profile(
+        success, _, error = services.update_tutor_profile(
             self.request.user,
             form
         )
@@ -405,17 +463,46 @@ class EditTutorProfileView(LoginRequiredMixin, UserPassesTestMixin, FormView):
 
 
 class LogoutView(View):
-    """Logout view as CBV"""
+    """
+    RFC-FLOW-STUDENT-LOGOUT: Logout view that redirects based on user type.
+    Must capture user_type BEFORE calling logout() to clear the session.
+    """
     
     def get(self, request):
+        # Capture user_type before logout clears the session
+        user_type = None
+        if request.user.is_authenticated:
+            user_type = getattr(request.user, 'user_type', None)
+        
         logout(request)
         messages.info(request, 'Has cerrado sesión exitosamente.')
-        return redirect('landing')
+        
+        # Redirect based on user type captured before logout
+        if user_type == 'client':
+            return redirect('student_landing')
+        elif user_type == 'tutor':
+            return redirect('tutor_landing')
+        else:
+            # Admin, staff, or unauthenticated users go to home
+            return redirect('home')
     
     def post(self, request):
+        # Capture user_type before logout clears the session
+        user_type = None
+        if request.user.is_authenticated:
+            user_type = getattr(request.user, 'user_type', None)
+        
         logout(request)
         messages.info(request, 'Has cerrado sesión exitosamente.')
-        return redirect('landing')
+        
+        # Redirect based on user type captured before logout
+        if user_type == 'client':
+            return redirect('student_landing')
+        elif user_type == 'tutor':
+            return redirect('tutor_landing')
+        else:
+            # Admin, staff, or unauthenticated users go to home
+            return redirect('home')
 
 
 # Backwards compatibility aliases

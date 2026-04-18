@@ -1,3 +1,9 @@
+import os
+GDAL_LIBRARY_PATH = os.environ.get('GDAL_LIBRARY_PATH')
+GEOS_LIBRARY_PATH = os.environ.get('GEOS_LIBRARY_PATH')
+
+
+
 """
 Django settings for subjectSupport project.
 
@@ -17,6 +23,8 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
+CACHE_VERSION = os.getenv('RAILWAY_GIT_COMMIT_SHA', 'dev')[:8]
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -138,7 +146,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Middleware de restricción geográfica (debe ir después de SessionMiddleware)
-    'apps.academicTutoring.middleware.GeoRestrictionMiddleware',
+    'geoconfig.middleware.GeoRestrictionMiddleware',
 ]
 
 ROOT_URLCONF = 'subjectSupport.urls'
@@ -159,6 +167,15 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'subjectSupport.wsgi.application'
+
+
+
+
+import os
+GDAL_LIBRARY_PATH = os.getenv('GDAL_LIBRARY_PATH')
+
+
+
 
 
 # Database
@@ -267,7 +284,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Additional static files directories (if needed)
 STATICFILES_DIRS = [
-    # BASE_DIR / 'static',  # Uncomment if you have a global static folder
+    BASE_DIR / 'static',  # Global static folder for EduLatam CSS
 ]
 
 # Default primary key field type
@@ -282,6 +299,11 @@ AUTH_USER_MODEL = 'accounts.User'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'landing'
+
+# Session settings
+SESSION_COOKIE_AGE = 3600
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
 
 # Email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

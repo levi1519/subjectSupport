@@ -1,30 +1,36 @@
+{% load static %}
+{% load accounts_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Perfil - Estudiante | SubjectSupport</title>
+    <title>Editar Perfil - Estudiante | EduLatam</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- EduLatam Theme -->
+    <link rel="stylesheet" href="{% static 'css/edulatam.css' %}">
     <style>
         .edit-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--dark);
+            border-bottom: 1px solid rgba(108, 99, 255, 0.2);
+            color: var(--text);
             padding: 40px 0;
         }
-        .navbar-custom {
-            background: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
         .edit-card {
-            background: white;
+            background: var(--surface);
+            border: 1px solid rgba(108, 99, 255, 0.2);
             padding: 40px;
             border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
             margin-top: -30px;
         }
         .btn-save {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
             border: none;
             color: white;
             padding: 12px 40px;
@@ -32,16 +38,20 @@
             font-weight: 600;
         }
         .btn-save:hover {
+            background: #5a52d5;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(108, 99, 255, 0.4);
             color: white;
+        }
+        .form-text {
+            color: var(--muted);
         }
     </style>
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-light navbar-custom">
+<body>
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="{% url 'landing' %}">SubjectSupport</a>
+            <a class="navbar-brand fw-bold" href="{% url 'client_dashboard' %}">EduLatam</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -51,13 +61,40 @@
                         <a class="nav-link" href="{% url 'client_dashboard' %}">Mi Panel</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'user_profile' %}">Mi Perfil</a>
+                        <a class="nav-link active" href="{% url 'client_profile' %}" style="color: var(--primary) !important;">Mi Perfil</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'tutor_selection' %}">Buscar Tutores</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a>
+                    </li>
+                    <!-- User Avatar + Country Flag -->
+                    <li class="nav-item d-flex align-items-center gap-2 ms-3">
+                        {% if request.user.avatar_url %}
+                            <img src="{{ request.user.avatar_url|drive_url }}" 
+                                 alt="Avatar"
+                                 class="rounded-circle"
+                                 style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);background:var(--surface);"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="rounded-circle d-none align-items-center justify-content-center text-white fw-bold" 
+                                 style="width:36px;height:36px;background:var(--primary);display:none!important;font-size:1rem;">
+                                {{ request.user.name|slice:":1"|upper }}
+                            </div>
+                        {% else %}
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" 
+                                 style="width:36px;height:36px;background:var(--primary);font-size:1rem;">
+                                {{ request.user.name|slice:":1"|upper }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if request.user.country_code %}
+                            <span style="font-size:1.2rem;margin-left:4px;" title="{{ request.user.country_code|upper }}">
+                                {% with cc=request.user.country_code|upper %}
+                                    {% if cc == "EC" %}🇪🇨{% elif cc == "MX" %}🇲🇽{% elif cc == "CO" %}🇨🇴{% elif cc == "AR" %}🇦🇷{% elif cc == "PE" %}🇵🇪{% elif cc == "CL" %}🇨🇱{% elif cc == "VE" %}🇻🇪{% elif cc == "BR" %}🇧🇷{% elif cc == "UY" %}🇺🇾{% elif cc == "PY" %}🇵🇾{% elif cc == "BO" %}🇧🇴{% elif cc == "PA" %}🇵🇦{% elif cc == "CR" %}🇨🇷{% elif cc == "GT" %}🇬🇹{% elif cc == "HN" %}🇭🇳{% elif cc == "SV" %}🇸🇻{% elif cc == "NI" %}🇳🇮{% elif cc == "DO" %}🇩🇴{% elif cc == "CU" %}🇨🇺{% elif cc == "PR" %}🇵🇷{% else %}🌎{% endif %}
+                                {% endwith %}
+                            </span>
+                        {% endif %}
                     </li>
                 </ul>
             </div>
@@ -66,7 +103,7 @@
 
     <div class="edit-header">
         <div class="container text-center">
-            <h1 class="display-5 fw-bold mb-2">✏️ Editar Mi Perfil</h1>
+            <h1 class="display-5 fw-bold mb-2 text-white">✏️ Editar Mi Perfil</h1>
             <p class="lead mb-0">Actualiza tu información de estudiante</p>
         </div>
     </div>
@@ -120,8 +157,38 @@
                             {% endif %}
                         </div>
 
-                        <div class="alert alert-info">
-                            <strong>📍 Ubicación:</strong> Tu ciudad es <strong>Milagro, Ecuador</strong> (detectada automáticamente).
+                        {% if profile.city and profile.city != 'América Latina' %}
+                            <p class="text-muted mb-3">📍 {{ profile.city }}{% if profile.country and profile.country != 'América Latina' %}, {{ profile.country }}{% endif %}</p>
+                        {% else %}
+                            <p class="text-muted mb-3">📍 Ubicación no detectada</p>
+                        {% endif %}
+
+                        <div class="mb-4">
+                            <label for="{{ form.avatar_url.id_for_label }}" class="form-label fw-bold">Foto de Perfil (URL)</label>
+                            {{ form.avatar_url }}
+                            <div class="form-text">Pega aquí el link de tu foto (Google Drive, Dropbox, etc.)</div>
+                            {% if form.avatar_url.errors %}
+                                <div class="text-danger small mt-1">{{ form.avatar_url.errors }}</div>
+                            {% endif %}
+                            
+                            <!-- Preview de foto actual o placeholder -->
+                            <div class="mt-3 p-3" style="background:rgba(108,99,255,0.1);border-radius:10px;">
+                                <p class="text-muted small mb-2">Vista previa:</p>
+                                {% if profile.avatar_url %}
+                                    <img src="{{ profile.avatar_url|drive_url }}" alt="Foto actual" 
+                                         style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--primary);box-shadow:0 4px 15px rgba(108,99,255,0.3);"
+                                         onerror="this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div style="width:100px;height:100px;border-radius:50%;background:var(--primary);display:none;align-items:center;justify-content:center;color:white;font-size:2rem;font-weight:bold;">
+                                        {{ user.name|slice:":1" }}
+                                    </div>
+                                {% else %}
+                                    <div style="width:100px;height:100px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-size:2rem;font-weight:bold;">
+                                        {{ user.name|slice:":1" }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <small class="text-muted">Para cambiar: borra el link actual, pega el nuevo, y guarda.</small>
                         </div>
 
                         <hr class="my-4">

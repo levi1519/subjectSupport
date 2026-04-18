@@ -1,30 +1,40 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Tutor - SubjectSupport</title>
+    <title>Registro de Tutor - EduLatam</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- EduLatam Theme -->
+    <link rel="stylesheet" href="{% static 'css/edulatam.css' %}">
     <style>
         .register-section {
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--dark);
             display: flex;
             align-items: center;
             padding: 40px 0;
         }
         .register-card {
-            background: white;
+            background: var(--surface);
+            border: 1px solid rgba(108, 99, 255, 0.2);
             padding: 40px;
             border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
         .subject-selector {
             max-height: 250px;
             overflow-y: scroll;
-            border: 1px solid #dee2e6;
+            border: 1px solid rgba(108, 99, 255, 0.3);
             border-radius: 8px;
             padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
         }
         .subject-option {
             padding: 10px;
@@ -36,10 +46,10 @@
             align-items: center;
         }
         .subject-option:hover {
-            background: #f8f9fa;
+            background: rgba(108, 99, 255, 0.1);
         }
         .subject-option.selected {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
             color: white;
         }
         .subject-option input[type="checkbox"] {
@@ -50,12 +60,18 @@
         }
         .subject-count {
             font-size: 0.9em;
-            color: #666;
+            color: var(--muted);
             margin-top: 5px;
         }
         .subject-count.limit-reached {
-            color: #dc3545;
+            color: var(--danger);
             font-weight: 600;
+        }
+        legend {
+            color: var(--text) !important;
+        }
+        .form-check-label {
+            color: var(--text);
         }
     </style>
 </head>
@@ -66,7 +82,7 @@
                 <div class="col-md-8 col-lg-6">
                     <div class="register-card">
                         <div class="text-center mb-4">
-                            <h2 class="fw-bold">Registro de Tutor</h2>
+                            <h2 class="fw-bold text-white">Registro de Tutor</h2>
                             <p class="text-muted">Únete a nuestra red de tutores profesionales</p>
                         </div>
 
@@ -81,6 +97,29 @@
 
                         <form method="post" novalidate>
                             {% csrf_token %}
+
+                            {% if form.errors %}
+                            <div style="background: #fee2e2; border: 1px solid #ef4444; border-radius: 8px; padding: 16px; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.1);">
+                                <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                                    <span style="font-size: 20px; margin-right: 8px;">⚠️</span>
+                                    <strong style="color: #991b1b; font-size: 16px;">Errores en el formulario</strong>
+                                </div>
+                                <ul style="margin: 0; padding-left: 20px; color: #7f1d1d; font-size: 14px; line-height: 1.6;">
+                                    {% for field, errors in form.errors.items %}
+                                        <li style="margin-bottom: 8px;">
+                                            <strong style="color: #991b1b;">{{ field|title }}:</strong> 
+                                            {{ errors|join:", " }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+
+                            {% if form.non_field_errors %}
+                            <div style="background: #fff3e0; color: #e65100; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+                                {{ form.non_field_errors }}
+                            </div>
+                            {% endif %}
 
                             <div class="mb-3">
                                 <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
@@ -99,22 +138,93 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="{{ form.subjects.id_for_label }}" class="form-label">
-                                    {{ form.subjects.label }} <span class="text-danger">*</span>
-                                </label>
-                                <div class="subject-selector" id="subjectSelector">
-                                    {{ form.subjects }}
-                                </div>
-                                <div class="subject-count" id="subjectCount">0 de 5 materias seleccionadas</div>
-                                <small class="form-text text-muted d-block mt-1">
-                                    💡 <strong>Consejo:</strong> Usa <kbd>Ctrl + Clic</kbd> o <kbd>Cmd + Clic</kbd> para seleccionar múltiples asignaturas.
-                                </small>
-                                {% if form.subjects.help_text %}
-                                    <div class="form-text">{{ form.subjects.help_text }}</div>
+                                <label for="{{ form.birth_date.id_for_label }}" class="form-label">{{ form.birth_date.label }}</label>
+                                {{ form.birth_date }}
+                                {% if form.birth_date.errors %}
+                                    <div class="text-danger small">{{ form.birth_date.errors }}</div>
                                 {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.country_code.id_for_label }}" class="form-label">Nacionalidad</label>
+                                {{ form.country_code }}
+                                <small class="text-muted">Selecciona tu país de origen (esto no afecta tu ubicación actual)</small>
+                                {% if form.country_code.errors %}
+                                    <div class="text-danger small">{{ form.country_code.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.cedula.id_for_label }}" class="form-label">{{ form.cedula.label }} <span style="color: #ef4444;">*</span></label>
+                                {{ form.cedula }}
+                                <div class="form-text">{{ form.cedula.help_text }}</div>
+                                {% if form.cedula.errors %}
+                                    <div class="text-danger small">{{ form.cedula.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="subjects-section mb-4">
+                                <label class="form-label fw-bold">Materias que enseñas <span style="color: #ef4444;">*</span></label>
+                                <div class="form-text mb-3" style="color: rgba(255,255,255,0.6);">Selecciona hasta 5 materias de las categorías disponibles</div>
+                                
                                 {% if form.subjects.errors %}
-                                    <div class="text-danger small">{{ form.subjects.errors }}</div>
+                                    <div class="alert alert-danger mb-3">{{ form.subjects.errors }}</div>
                                 {% endif %}
+                                
+                                <div class="accordion" id="subjectsAccordion" style="background: transparent;">
+                                    {% regroup form.subjects.field.queryset by knowledge_area as area_list %}
+                                    {% for area in area_list %}
+                                    <div class="accordion-item" style="background: var(--surface, #1f2937); border: 1px solid rgba(108, 99, 255, 0.2); border-radius: 12px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                                        <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                                            <button class="accordion-button collapsed fw-bold" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}"
+                                                    aria-expanded="false" aria-controls="collapse{{ forloop.counter }}"
+                                                    style="background: linear-gradient(135deg, rgba(108, 99, 255, 0.15) 0%, rgba(108, 99, 255, 0.05) 100%); 
+                                                           color: white; 
+                                                           padding: 16px 20px; 
+                                                           font-size: 1rem;
+                                                           border: none;
+                                                           box-shadow: none;">
+                                                <span style="flex-grow: 1;">{{ area.grouper|default:"General" }}</span>
+                                                <span class="badge rounded-pill ms-2" style="background: var(--primary, #6C63FF); color: white; font-size: 0.85rem; padding: 6px 12px;">
+                                                    {{ area.list|length }}
+                                                </span>
+                                            </button>
+                                        </h2>
+                                        <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse" 
+                                             aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#subjectsAccordion">
+                                            <div class="accordion-body" style="background: var(--surface, #1f2937); padding: 20px; max-height: 300px; overflow-y: auto;">
+                                                <div class="row g-3">
+                                                    {% for subject in area.list %}
+                                                    <div class="col-md-6">
+                                                        <div class="subject-card form-check p-3 rounded-3" 
+                                                             style="background: rgba(255,255,255,0.03); 
+                                                                    border: 1px solid rgba(255,255,255,0.1);
+                                                                    border-radius: 8px;
+                                                                    transition: all 0.2s ease;
+                                                                    cursor: pointer;"
+                                                             onmouseover="this.style.background='rgba(108,99,255,0.1)'; this.style.borderColor='var(--primary)';"
+                                                             onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(255,255,255,0.1)';">
+                                                            <input class="form-check-input subject-checkbox" type="checkbox" name="subjects" 
+                                                                   value="{{ subject.id }}" id="subject_{{ subject.id }}"
+                                                                   style="width: 20px; height: 20px; margin-right: 12px; cursor: pointer;">
+                                                            <label class="form-check-label w-100" for="subject_{{ subject.id }}" 
+                                                                   style="color: rgba(255,255,255,0.9); cursor: pointer; font-size: 0.95rem; margin: 0;">
+                                                                {{ subject.name }}
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div id="subject-counter" class="mt-3 text-end" style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">
+                                    <span id="count">0</span> de 5 materias seleccionadas
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -131,6 +241,15 @@
                                 {% if form.experience.errors %}
                                     <div class="text-danger small">{{ form.experience.errors }}</div>
                                 {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.avatar_url.id_for_label }}" class="form-label">{{ form.avatar_url.label }}</label>
+                                {{ form.avatar_url }}
+                                {% if form.avatar_url.errors %}
+                                    <div class="text-danger small">{{ form.avatar_url.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">Opcional: URL de tu foto de perfil (Google Drive, Dropbox, etc.)</small>
                             </div>
 
                             <div class="mb-3">
@@ -164,61 +283,40 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Mejorar UX del selector de materias con límite de 5
+        // Contador y validación de materias (máximo 5)
         document.addEventListener('DOMContentLoaded', function() {
-            const subjectSelector = document.getElementById('subjectSelector');
-            const checkboxes = subjectSelector.querySelectorAll('input[type="checkbox"]');
-            const countDisplay = document.getElementById('subjectCount');
+            const checkboxes = document.querySelectorAll('input[name="subjects"]');
+            const counter = document.getElementById('count');
             const MAX_SUBJECTS = 5;
-
-            // Aplicar estilos a las opciones
-            checkboxes.forEach(checkbox => {
-                const label = checkbox.closest('label');
-                if (label) {
-                    label.classList.add('subject-option');
-                    if (checkbox.checked) {
-                        label.classList.add('selected');
-                    }
-                }
-            });
-
+            
             function updateCount() {
-                const selected = Array.from(checkboxes).filter(cb => cb.checked).length;
-                countDisplay.textContent = `${selected} de ${MAX_SUBJECTS} materias seleccionadas`;
+                const selected = document.querySelectorAll('input[name="subjects"]:checked').length;
+                counter.textContent = selected;
                 
-                if (selected >= MAX_SUBJECTS) {
-                    countDisplay.classList.add('limit-reached');
-                    // Deshabilitar checkboxes no seleccionados
-                    checkboxes.forEach(cb => {
-                        if (!cb.checked) {
-                            cb.disabled = true;
-                            cb.closest('label').style.opacity = '0.5';
-                            cb.closest('label').style.cursor = 'not-allowed';
-                        }
-                    });
+                // Actualizar estilo del contador
+                const counterDiv = document.getElementById('subject-counter');
+                if (selected >= 5) {
+                    counterDiv.style.color = '#ef4444';
+                    counterDiv.style.fontWeight = 'bold';
                 } else {
-                    countDisplay.classList.remove('limit-reached');
-                    // Habilitar todos los checkboxes
-                    checkboxes.forEach(cb => {
-                        cb.disabled = false;
-                        cb.closest('label').style.opacity = '1';
-                        cb.closest('label').style.cursor = 'pointer';
-                    });
+                    counterDiv.style.color = 'rgba(255,255,255,0.6)';
+                    counterDiv.style.fontWeight = 'normal';
                 }
             }
-
-            checkboxes.forEach(checkbox => {
+            
+            checkboxes.forEach(function(checkbox) {
                 checkbox.addEventListener('change', function() {
-                    const label = this.closest('label');
-                    if (this.checked) {
-                        label.classList.add('selected');
-                    } else {
-                        label.classList.remove('selected');
+                    const selected = document.querySelectorAll('input[name="subjects"]:checked').length;
+                    
+                    if (selected > MAX_SUBJECTS) {
+                        this.checked = false;
+                        alert('Solo puedes seleccionar hasta 5 materias');
                     }
+                    
                     updateCount();
                 });
             });
-
+            
             // Inicializar contador
             updateCount();
         });

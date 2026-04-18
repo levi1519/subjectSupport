@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
+
 from django.views.generic import View, TemplateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse
@@ -9,12 +9,23 @@ from django.urls import reverse
 from .models import ClassSession, NotificacionExpansion
 from .forms import SessionRequestForm, SessionConfirmationForm, NotificacionExpansionForm
 from . import services as academic_services
-from apps.accounts.models import User, TutorProfile
+from apps.accounts.models import User, TutorProfile, Notification, KnowledgeArea
 from .services.meeting_service import update_session_with_meeting
-from .utils.geo import get_available_service_areas, get_client_ip
+from .utils import send_cancellation_email
+
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+@login_required
+def mark_notification_read(request, notif_id):
+    """Mark a notification as read via POST."""
+    if request.method == 'POST':
+        Notification.objects.filter(
+            id=notif_id, recipient=request.user
+        ).update(is_read=True)
+    return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
 
 
 class GeoRootRouterView(View):
@@ -44,29 +55,16 @@ class GeoRootRouterView(View):
             # Intentar obtener de sesión como fallback
             geo_data = request.session.get('geo_data', {})
 
-        # Obtener información de geolocalización
-        country = geo_data.get('country', 'Unknown')
-        service_area = geo_data.get('service_area')  # Dict con info si está en área de servicio
+        country_config = geo_data.get('country_config')
+        service_area = geo_data.get('service_area')
 
-        logger.info(
-            f"Geo root router: country={country}, service_area={service_area}"
-        )
+        if not country_config or not country_config.get('active'):
+            return redirect('servicio_no_disponible')
 
-        # NUEVA LÓGICA DE REDIRECCIÓN BASADA EN GEOMETRÍA:
-        # 1. Si está dentro del polígono de ServiceArea → Estudiantes
         if service_area:
-            logger.info(f"Redirecting to student_landing (inside service area: {service_area['city_name']})")
             return redirect('student_landing')
 
-        # 2. Si NO está en service area pero SÍ es Ecuador → Tutores
-        elif country == 'Ecuador':
-            logger.info(f"Redirecting to tutor_landing (Ecuador but outside service area)")
-            return redirect('tutor_landing')
-
-        # 3. Si no es Ecuador → Servicio no disponible
-        else:
-            logger.warning(f"User outside Ecuador: country={country}, redirecting to servicio_no_disponible")
-            return redirect('servicio_no_disponible')
+        return redirect('tutor_landing')
 
 
 def landing_page(request):
@@ -76,11 +74,19 @@ def landing_page(request):
 
 def student_landing_view(request):
     """Landing page for students"""
+    if request.user.is_authenticated:
+        if request.user.user_type == 'tutor':
+            return redirect('tutor_dashboard')
+        return redirect('client_dashboard')
     return render(request, 'landing/student_landing.html', {'user_type': 'Estudiante'})
 
 
 def tutor_landing_view(request):
     """Landing page for tutors"""
+    if request.user.is_authenticated:
+        if request.user.user_type == 'tutor':
+            return redirect('tutor_dashboard')
+        return redirect('client_dashboard')
     return render(request, 'landing/tutor_landing.html', {'user_type': 'Tutor'})
 
 
@@ -96,66 +102,50 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return self.request.user.user_type == 'client'
     
     def get_context_data(self, **kwargs):
-        """Get context data using TutorProfileManager for optimized queries"""
         context = super().get_context_data(**kwargs)
-        
-        # Get client's profile for location-based filtering
+
         try:
-            client_profile = self.request.user.client_profile
-            client_city = client_profile.city
-            client_country = client_profile.country
-        except:
-            client_city = None
-            client_country = None
-        
-        # Get search parameters
-        search_query = self.request.GET.get('search', '')
-        city_filter = self.request.GET.get('city', '')
-        
-        # Use TutorProfileManager for location-based tutor selection
-        if client_city and client_country:
-            prioritized_tutors = TutorProfile.objects.get_tutors_by_location(client_city, client_country)
+            client_country = self.request.user.country_code or ''
+        except Exception:
+            client_country = ''
+
+        # Get active country codes
+        from geoconfig.geo import get_active_country_codes
+        active_codes = get_active_country_codes()
+        from apps.academicTutoring.models import CountryConfig
+
+        # Get filter params
+        search_query   = self.request.GET.get('search', '')
+        country_filter = self.request.GET.get('country_code', '')
+
+        # Query tutors — country filter takes precedence
+        if country_filter:
+            tutors_qs = TutorProfile.objects.get_tutors_filtered_by_country(country_filter, active_codes=active_codes)
+        elif client_country:
+            tutors_qs = TutorProfile.objects.get_tutors_by_country_priority(client_country, active_codes=active_codes)
         else:
-            # Fallback to basic active tutors query
-            prioritized_tutors = TutorProfile.objects.select_related('user').filter(
-                user__user_type='tutor',
-                user__is_active=True
-            ).order_by('user__name')
-        
-        # Apply search filters if provided
-        if search_query:
-            prioritized_tutors = prioritized_tutors.filter(
-                Q(user__name__icontains=search_query) |
-                Q(subjects__name__icontains=search_query)
-            ).distinct()
-        
-        if city_filter:
-            prioritized_tutors = prioritized_tutors.filter(city__icontains=city_filter)
-        
-        # Separate tutors by location for template context
-        same_city_tutors = []
-        same_country_tutors = []
-        other_tutors = []
-        
-        for tutor_profile in prioritized_tutors:
-            if client_city and tutor_profile.city == client_city:
-                same_city_tutors.append(tutor_profile.user)
-            elif client_country and tutor_profile.country == client_country:
-                same_country_tutors.append(tutor_profile.user)
-            else:
-                other_tutors.append(tutor_profile.user)
-        
+            tutors_qs = TutorProfile.objects.get_tutors_fallback(active_codes=active_codes)
+
+        # Apply knowledge area filter if provided
+        knowledge_area_slug = self.request.GET.get('knowledge_area', '')
+        if knowledge_area_slug:
+            tutors_qs = TutorProfile.objects.get_tutors_by_knowledge_area(
+                knowledge_area_slug, active_codes=active_codes
+            )
+
+        # Apply search filter
+        tutors_qs = TutorProfile.objects.filter_by_search(tutors_qs, search_query)
+
         context.update({
-            'tutors': [tutor for tutor in prioritized_tutors],
-            'same_city_tutors': same_city_tutors,
-            'same_country_tutors': same_country_tutors,
-            'other_tutors': other_tutors,
-            'client_city': client_city,
+            'tutors':         tutors_qs,
             'client_country': client_country,
-            'search_query': search_query,
-            'city_filter': city_filter,
+            'search_query':   search_query,
+            'country_filter': country_filter,
+            'countries':      CountryConfig.objects.filter(active=True).order_by('country_name'),
+            'knowledge_areas': KnowledgeArea.objects.all().order_by('name'),
+            'knowledge_area_filter': knowledge_area_slug,
         })
-        
+
         return context
 
 
@@ -173,14 +163,20 @@ class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     
     def dispatch(self, request, *args, **kwargs):
         """Get tutor from URL parameter"""
-        self.tutor = get_object_or_404(User, id=kwargs['tutor_id'], user_type='tutor', is_active=True)
+        self.tutor = get_object_or_404(
+            User.objects.select_related('tutor_profile'),
+            id=kwargs['tutor_id'],
+            user_type='tutor',
+            is_active=True
+        )
         return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({
             'tutor': self.tutor,
-            'tutor_profile': getattr(self.tutor, 'tutor_profile', None)
+            'tutor_profile': getattr(self.tutor, 'tutor_profile', None),
+            'tutor_subjects': getattr(self.tutor, 'tutor_profile', None).subjects_taught.all() if getattr(self.tutor, 'tutor_profile', None) else []
         })
         return context
     
@@ -195,7 +191,7 @@ class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         success, session, error = academic_services.create_session(
             self.tutor,
             self.request.user,
-            form.cleaned_data
+            form  # ← form object, NOT form.cleaned_data
         )
         
         if success:
@@ -247,7 +243,9 @@ class ConfirmSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     def form_valid(self, form):
         """Use academic_services to confirm session"""
         platform = form.cleaned_data.get('meeting_platform', 'google_meet')
-        success, session, error = academic_services.confirm_session(self.session, platform)
+        success, session, error = academic_services.confirm_session(
+            self.session, self.request.user, form
+        )
         
         if success:
             # Show platform-specific success message
@@ -291,16 +289,33 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
     
     def post(self, request, *args, **kwargs):
         """Cancel the session using academic_services"""
+        # Guardar estado previo para idempotencia (no enviar email si ya estaba cancelada)
+        prev_status = self.session.status
+
         success, session, error = academic_services.cancel_session(
             self.session,
             request.user
         )
-        
+
         if success:
-            messages.info(request, 'La sesión ha sido cancelada.')
+            # Enviar email SOLO si la sesión NO estaba ya cancelada (idempotencia)
+            if prev_status != 'cancelled':
+                # Determinar contraparte: quien NO canceló recibe el email
+                if request.user == session.tutor:
+                    recipient = session.client
+                else:
+                    recipient = session.tutor
+                send_cancellation_email(session, request.user, recipient)
+                Notification.objects.create(
+                    recipient=recipient,
+                    message=f'{request.user.name} canceló la clase de {session.subject} del {session.scheduled_date.strftime("%d/%m/%Y")} a las {session.scheduled_time.strftime("%H:%M")}'
+                )
+                messages.info(request, f'La sesión ha sido cancelada. Se notificó a {recipient.name}.')
+            else:
+                messages.info(request, 'La sesión ha sido cancelada.')
         else:
             messages.error(request, f'Error al cancelar sesión: {error}')
-        
+
         return redirect(self.get_success_url())
     
     def get_success_url(self):
@@ -309,6 +324,46 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
             return reverse('tutor_dashboard')
         else:
             return reverse('client_dashboard')
+
+
+class CompleteSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Mark a confirmed session as completed. Tutor only."""
+
+    def test_func(self):
+        self.session = get_object_or_404(ClassSession, id=self.kwargs['session_id'])
+        return self.request.user == self.session.tutor
+
+    def post(self, request, *args, **kwargs):
+        session = self.session
+        if session.status != 'confirmed':
+            messages.warning(request, 'Solo puedes completar sesiones confirmadas.')
+            return redirect('tutor_dashboard')
+        session.status = 'completed'
+        session.save()
+        messages.success(request, f'Sesión de {session.subject} marcada como completada.')
+        return redirect('tutor_dashboard')
+
+
+class UpdateMeetingUrlView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Allow tutor to update meeting_url of a confirmed session."""
+
+    def test_func(self):
+        self.session = get_object_or_404(ClassSession, id=self.kwargs['session_id'])
+        return self.request.user == self.session.tutor
+
+    def post(self, request, *args, **kwargs):
+        session = self.session
+        if session.status != 'confirmed':
+            messages.warning(request, 'Solo puedes actualizar el enlace de sesiones confirmadas.')
+            return redirect('tutor_dashboard')
+        meeting_url = request.POST.get('meeting_url', '').strip()
+        if meeting_url:
+            session.meeting_url = meeting_url
+            session.save()
+            messages.success(request, 'Enlace de reunión actualizado.')
+        else:
+            messages.warning(request, 'El enlace no puede estar vacío.')
+        return redirect('tutor_dashboard')
 
 
 class MeetingRoomView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
@@ -326,6 +381,7 @@ class MeetingRoomView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     
     def dispatch(self, request, *args, **kwargs):
         """Validate session status"""
+        self.session = get_object_or_404(ClassSession, id=kwargs['session_id'])
         if self.session.status != 'confirmed':
             messages.warning(request, 'Esta sesión aún no ha sido confirmada.')
             return redirect(self.get_success_url())
@@ -347,7 +403,7 @@ class MeetingRoomView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         
         # Start meeting if tutor is accessing
         if is_host and not self.session.meeting_started:
-            success, session, error = academic_services.start_meeting(self.session)
+            success, session, error = academic_services.start_meeting(self.session, user)
             if success:
                 self.session = session  # Update session with meeting_started=True
         
@@ -370,7 +426,7 @@ def servicio_no_disponible(request):
     geo_country = request.session.get('geo_country', 'Ecuador')
 
     # Obtener áreas de servicio disponibles (NUEVA LÓGICA GEODJANGO)
-    service_areas = get_available_service_areas()
+    service_areas = academic_services.get_service_areas_for_display()
 
     # Crear formulario pre-llenado con la ciudad detectada
     initial_data = {
@@ -398,14 +454,10 @@ class NotificarmeExpansionView(View):
     def post(self, request):
         form = NotificacionExpansionForm(request.POST)
         if form.is_valid():
-            notificacion = form.save(commit=False)
-
-            # Añadir información de IP y ciudad detectada
-            notificacion.ip_address = get_client_ip(request)
-            notificacion.ciudad_detectada = request.session.get('geo_city', 'Desconocida')
-
-            # Guardar
-            notificacion.save()
+            success, notificacion, error = academic_services.save_expansion_notification(form, request)
+            if not success:
+                messages.error(request, 'Error al procesar tu solicitud.')
+                return redirect('servicio_no_disponible')
 
             logger.info(
                 f"Nueva notificación de expansión: {notificacion.email} "

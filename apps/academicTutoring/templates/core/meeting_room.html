@@ -1,23 +1,34 @@
+{% load static %}
+{% load accounts_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sala de Reunión - SubjectSupport</title>
+    <title>Sala de Reunión - EduLatam</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- EduLatam Theme -->
+    <link rel="stylesheet" href="{% static 'css/edulatam.css' %}">
     <style>
         .meeting-container {
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--dark);
             display: flex;
             align-items: center;
             padding: 40px 0;
         }
         .meeting-card {
-            background: white;
+            background: var(--surface);
+            border: 1px solid rgba(108, 99, 255, 0.2);
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
             padding: 50px;
             max-width: 700px;
             margin: 0 auto;
@@ -25,7 +36,7 @@
         .meeting-icon {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: var(--primary);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -37,7 +48,8 @@
             color: white;
         }
         .info-box {
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(108, 99, 255, 0.2);
             padding: 20px;
             border-radius: 10px;
             margin: 20px 0;
@@ -46,27 +58,27 @@
             display: flex;
             align-items: center;
             padding: 10px 0;
-            border-bottom: 1px solid #dee2e6;
+            border-bottom: 1px solid rgba(108, 99, 255, 0.2);
         }
         .info-item:last-child {
             border-bottom: none;
         }
         .info-item i {
             font-size: 20px;
-            color: #667eea;
+            color: var(--primary);
             margin-right: 15px;
             width: 30px;
         }
         .info-label {
             font-weight: 600;
-            color: #495057;
+            color: var(--muted);
             min-width: 120px;
         }
         .info-value {
-            color: #212529;
+            color: var(--text);
         }
         .join-button {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: var(--primary);
             border: none;
             padding: 18px 40px;
             font-size: 18px;
@@ -78,8 +90,9 @@
             transition: all 0.3s;
         }
         .join-button:hover {
+            background: #5a52d5;
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.4);
+            box-shadow: 0 10px 30px rgba(108, 99, 255, 0.4);
             color: white;
         }
         .platform-badge {
@@ -90,20 +103,20 @@
             font-weight: 600;
         }
         .badge-google {
-            background: #e8f5e9;
-            color: #2e7d32;
+            background: rgba(67, 217, 173, 0.2);
+            color: var(--accent);
         }
         .badge-zoom {
-            background: #e3f2fd;
-            color: #1565c0;
+            background: rgba(108, 99, 255, 0.2);
+            color: var(--primary);
         }
         .badge-custom {
-            background: #f3e5f5;
-            color: #6a1b9a;
+            background: rgba(255, 101, 132, 0.2);
+            color: var(--secondary);
         }
         .meeting-details {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
+            background: rgba(255, 209, 102, 0.1);
+            border-left: 4px solid var(--warning);
             padding: 15px;
             border-radius: 5px;
             margin: 20px 0;
@@ -112,12 +125,48 @@
             text-align: center;
             font-size: 24px;
             font-weight: 600;
-            color: #667eea;
+            color: var(--primary);
             margin: 20px 0;
+        }
+        h2 {
+            color: var(--text);
+        }
+        .text-muted {
+            color: var(--muted) !important;
         }
     </style>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            {% if user.user_type == 'tutor' %}
+                <a class="navbar-brand fw-bold" href="{% url 'tutor_dashboard' %}">EduLatam</a>
+            {% else %}
+                <a class="navbar-brand fw-bold" href="{% url 'client_dashboard' %}">EduLatam</a>
+            {% endif %}
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.user_type == 'tutor' %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'tutor_dashboard' %}">Mi Panel</a></li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'client_dashboard' %}">Mi Panel</a></li>
+                    {% endif %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'user_profile' %}">Mi Perfil</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                    <!-- User Avatar & Country -->
+                    <li class="nav-item d-flex align-items-center gap-2 ms-3">
+                        {% if request.user.avatar_url %}
+                            <img src="{{ request.user.avatar_url|drive_url }}" alt="Avatar" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="rounded-circle d-none align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);font-size:1rem;display:none!important;">{{ request.user.name|slice:":1"|upper }}</div>
+                        {% else %}
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);font-size:1rem;">{{ request.user.name|slice:":1"|upper }}</div>
+                        {% endif %}
+                        {% if request.user.country_code %}<span style="font-size:1.2rem;margin-left:4px;" title="{{ request.user.country_code|upper }}">{% with cc=request.user.country_code|upper %}{% if cc == "EC" %}🇪🇨{% elif cc == "MX" %}🇲🇽{% elif cc == "CO" %}🇨🇴{% elif cc == "AR" %}🇦🇷{% elif cc == "PE" %}🇵🇪{% elif cc == "CL" %}🇨🇱{% elif cc == "VE" %}🇻🇪{% elif cc == "BR" %}🇧🇷{% elif cc == "UY" %}🇺🇾{% elif cc == "PY" %}🇵🇾{% elif cc == "BO" %}🇧🇴{% elif cc == "PA" %}🇵🇦{% elif cc == "CR" %}🇨🇷{% elif cc == "GT" %}🇬🇹{% elif cc == "HN" %}🇭🇳{% elif cc == "SV" %}🇸🇻{% elif cc == "NI" %}🇳🇮{% elif cc == "DO" %}🇩🇴{% elif cc == "CU" %}🇨🇺{% elif cc == "PR" %}🇵🇷{% else %}🌎{% endif %}{% endwith %}</span>{% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
     <div class="meeting-container">
         <div class="container">
             <div class="meeting-card">

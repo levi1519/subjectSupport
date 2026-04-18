@@ -1,9 +1,11 @@
+{% load static %}
+{% load accounts_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SubjectSupport - Encuentra tu Tutor Perfecto</title>
+    <title>EduLatam - Encuentra tu Tutor Perfecto</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .hero-section {
@@ -47,7 +49,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-light navbar-custom fixed-top">
         <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="{% url 'landing' %}">SubjectSupport</a>
+            {% if user.is_authenticated %}<a class="navbar-brand fw-bold text-primary" href="{% url 'dashboard' %}">EduLatam</a>{% else %}<a class="navbar-brand fw-bold text-primary" href="{% url 'register' %}">EduLatam</a>{% endif %}
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -59,6 +61,16 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'tutor_login' %}">Tutores</a>
                     </li>
+                    <!-- Avatar + Bandera -->
+                    <li class="nav-item d-flex align-items-center gap-2 ms-3">
+                        {% if request.user.avatar_url %}
+                            <img src="{{ request.user.avatar_url|drive_url }}" alt="Avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);background:var(--surface);" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:none;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">{{ request.user.name|slice:\":1\" }}</div>
+                        {% else %}
+                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">{{ request.user.name|slice:\":1\" }}</div>
+                        {% endif %}
+                        {% if request.user.country_code %}<span style="font-size: 1.2rem; margin-left: 4px;" title="{{ request.user.country_code|upper }}">{% with country_code=request.user.country_code|upper %}{% if country_code == "EC" %}🇪🇨{% elif country_code == "MX" %}🇲🇽{% elif country_code == "CO" %}🇨🇴{% elif country_code == "AR" %}🇦🇷{% elif country_code == "PE" %}🇵🇪{% elif country_code == "CL" %}🇨🇱{% elif country_code == "VE" %}🇻🇪{% elif country_code == "BR" %}🇧🇷{% elif country_code == "UY" %}🇺🇾{% elif country_code == "PY" %}🇵🇾{% elif country_code == "BO" %}🇧🇴{% elif country_code == "PA" %}🇵🇦{% elif country_code == "CR" %}🇨🇷{% elif country_code == "GT" %}🇬🇹{% elif country_code == "HN" %}🇭🇳{% elif country_code == "SV" %}🇸🇻{% elif country_code == "NI" %}🇳🇮{% elif country_code == "DO" %}🇩🇴{% elif country_code == "CU" %}🇨🇺{% elif country_code == "PR" %}🇵🇷{% elif country_code == "JM" %}🇯🇲{% elif country_code == "HT" %}🇭🇹{% elif country_code == "BZ" %}🇧🇿{% elif country_code == "SR" %}🇸🇷{% elif country_code == "GY" %}🇬🇾{% elif country_code == "GF" %}🇬🇫{% else %}🌎{% endif %}{% endwith %}</span>{% endif %}
+                    </li>
                 </ul>
             </div>
         </div>
@@ -66,7 +78,7 @@
 
     <div class="hero-section" style="margin-top: 56px;">
         <div class="container text-center">
-            <h1 class="display-3 fw-bold mb-4">Bienvenido a SubjectSupport</h1>
+            <h1 class="display-3 fw-bold mb-4">Bienvenido a EduLatam</h1>
             <p class="lead mb-3">Conectamos estudiantes con tutores apasionados</p>
             <p class="mb-5">Experiencias de aprendizaje personalizadas para alcanzar tus metas</p>
         </div>
@@ -115,7 +127,7 @@
 
         <div class="row mt-5 mb-5">
             <div class="col-12 text-center">
-                <h2 class="mb-4">¿Por qué elegir SubjectSupport?</h2>
+                <h2 class="mb-4">¿Por qué elegir EduLatam?</h2>
             </div>
             <div class="col-md-3 text-center mb-4">
                 <div class="fs-1 mb-3">🎯</div>
@@ -142,7 +154,7 @@
 
     <footer class="bg-dark text-white text-center py-4 mt-5">
         <div class="container">
-            <p class="mb-0">&copy; 2024 SubjectSupport. Todos los derechos reservados.</p>
+            <p class="mb-0">&copy; 2024 EduLatam. Todos los derechos reservados.</p>
         </div>
     </footer>
 

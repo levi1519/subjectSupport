@@ -6,8 +6,51 @@ from django.utils.text import slugify
 from django.db.models import Count, Q, Case, When, IntegerField, Value
 
 
+class KnowledgeArea(models.Model):
+    """Model for knowledge areas (e.g., Sciences, Humanities, Arts)"""
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='Nombre del Área'
+    )
+    slug = models.SlugField(
+        max_length=120,
+        unique=True,
+        blank=True,
+        verbose_name='Slug'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Área de Conocimiento'
+        verbose_name_plural = 'Áreas de Conocimiento'
+        ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class SubjectManager(models.Manager):
+    def get_subjects_for_grouping(self):
+        return self.select_related('knowledge_area').order_by('knowledge_area__name', 'name')
+
+
 class Subject(models.Model):
     """Model for subjects/materias that tutors can teach"""
+    objects = SubjectManager()
+    knowledge_area = models.ForeignKey(
+        KnowledgeArea,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='subjects',
+        verbose_name='Área de Conocimiento'
+    )
     name = models.CharField(
         max_length=100,
         unique=True,
@@ -58,12 +101,16 @@ class User(AbstractUser):
 
     )
     name = models.CharField(max_length=200, verbose_name='Nombre Completo')
+    country_code = models.CharField(
+        max_length=2,
+        blank=True,
+        default='',
+        verbose_name='Código de País'
+    )
     user_type = models.CharField(
-    max_length=10,
-    choices=USER_TYPE_CHOICES,
-    blank=True,
-    default='',
-    verbose_name='Tipo de Usuario'
+        max_length=10,
+        choices=USER_TYPE_CHOICES,
+        verbose_name='Tipo de Usuario'
     )
     is_active = models.BooleanField(default=True)
 
@@ -98,59 +145,77 @@ class TutorProfileManager(models.Manager):
     Provides optimized queries for tutor selection and filtering.
     """
     
-    def get_tutors_by_location(self, city, country):
-        """
-        Get prioritized tutors by location with optimized queries.
-        
-        Args:
-            city: Client's city
-            country: Client's country
-            
-        Returns:
-            QuerySet: Tutors prioritized by location with select_related optimization
-        """
-        # Get all active tutors with optimized queries
-        queryset = self.select_related('user').filter(
+    def get_tutors_by_knowledge_area(self, knowledge_area_slug, active_codes=None):
+        queryset = self.select_related('user').prefetch_related(
+            'subjects_taught__knowledge_area'
+        ).filter(
+            subjects_taught__knowledge_area__slug=knowledge_area_slug,
+            user__user_type='tutor',
+            user__is_active=True
+        ).distinct()
+        if active_codes is not None:
+            queryset = queryset.filter(user__country_code__in=active_codes)
+        return queryset
+
+    def get_tutors_fallback(self, active_codes=None):
+        """Fallback queryset returning all active tutors ordered by name."""
+        queryset = self.select_related('user').prefetch_related('subjects_taught').filter(
             user__user_type='tutor',
             user__is_active=True
         )
-        
-        # Combine with priority: same city > same country > others
-        # Using single annotated queryset with Case/When for optimization
-        prioritized_queryset = queryset.annotate(
-            location_priority=Case(
-                When(city__iexact=city, then=Value(1)),
-                When(country__iexact=country, then=Value(2)),
-                default=Value(3),
+        if active_codes is not None:
+            queryset = queryset.filter(user__country_code__in=active_codes)
+        return queryset.order_by('user__name')
+
+    def filter_by_search(self, queryset, search_query):
+        """Filter tutors by name or subject."""
+        if not search_query:
+            return queryset
+        return queryset.filter(
+            Q(user__name__icontains=search_query) |
+            Q(subjects_taught__name__icontains=search_query) |
+            Q(subjects_taught__knowledge_area__name__icontains=search_query)
+        ).distinct()
+
+    def get_tutors_by_country_priority(self, country_code, active_codes=None):
+        """
+        Returns all active tutors ordered by country proximity.
+        Same country first (using User.country_code), then others.
+        """
+        queryset = self.select_related('user').prefetch_related(
+            'subjects_taught', 'subjects_taught__knowledge_area'
+        ).filter(
+            user__user_type='tutor',
+            user__is_active=True
+        )
+        if active_codes is not None:
+            queryset = queryset.filter(user__country_code__in=active_codes)
+        return queryset.annotate(
+            country_priority=Case(
+                When(user__country_code__iexact=country_code, then=Value(1)),
+                default=Value(2),
                 output_field=IntegerField()
             )
-        ).order_by('location_priority', 'user__name')
-        
-        return prioritized_queryset
-    
-    def get_tutors_categorized_by_location(self, city, country):
-        base_qs = self.select_related('user').filter(
-            user__user_type='tutor',
-            user__is_active=True
-        ).prefetch_related('subjects', 'subjects_taught')
+        ).order_by('country_priority', 'user__name')
 
-        same_city = base_qs.filter(city__iexact=city)
-        same_country = base_qs.filter(
-            country__iexact=country
-        ).exclude(city__iexact=city)
-        others = base_qs.exclude(country__iexact=country)
-        all_tutors = self.get_tutors_by_location(city, country).prefetch_related(
-            'subjects', 'subjects_taught'
+    def get_tutors_filtered_by_country(self, country_code, active_codes=None):
+        """
+        Returns active tutors from a specific country only.
+        Filters by User.country_code captured at registration.
+        """
+        queryset = self.select_related('user').prefetch_related(
+            'subjects_taught', 'subjects_taught__knowledge_area'
+        ).filter(
+            user__user_type='tutor',
+            user__is_active=True,
+            user__country_code__iexact=country_code
         )
-        return {
-            'same_city': same_city,
-            'same_country': same_country,
-            'others': others,
-            'all': all_tutors
-        }
+        if active_codes is not None:
+            queryset = queryset.filter(user__country_code__in=active_codes)
+        return queryset.order_by('user__name')
 
     def get_profile_for_user(self, user):
-        return self.select_related('user').get(user=user)
+        return self.select_related('user').prefetch_related('subjects_taught').get(user=user)
 
     def get_or_create_for_user(self, user):
         return self.get_or_create(user=user)
@@ -174,11 +239,10 @@ class TutorProfile(models.Model):
     # ManyToMany relationship with SubjectLevel model (refactorización)
     # Permite especificar materias Y niveles que enseña el tutor
     subjects_taught = models.ManyToManyField(
-        'academicTutoring.SubjectLevel',
-        related_name='tutors',
-        verbose_name='Materias y Niveles',
+        'Subject',
+        related_name='tutors_taught',
+        verbose_name='Materias que enseña',
         blank=True,
-        help_text='Materias y niveles educativos que enseña este tutor'
     )
     # DEPRECATED: Mantener por compatibilidad con código legacy
     # TODO: Eliminar después de migración completa
@@ -217,15 +281,23 @@ class TutorProfile(models.Model):
     # Location fields for GeoRestrictionMiddleware
     city = models.CharField(
         max_length=100,
-        default='Milagro',
+        blank=True,
+        default='',
         verbose_name='Ciudad'
     )
     country = models.CharField(
         max_length=100,
-        default='Ecuador',
+        blank=True,
+        default='',
         verbose_name='País'
     )
+    birth_date = models.DateField(null=True, blank=True, verbose_name='Fecha de nacimiento')
+    cedula = models.CharField(max_length=20, blank=True, null=True, verbose_name='Cédula / Identificación')
     created_at = models.DateTimeField(auto_now_add=True)
+    documents_required = models.BooleanField(
+        default=True,
+        verbose_name='Documentos Requeridos'
+    )
 
     # Custom manager
     objects = TutorProfileManager()
@@ -236,6 +308,14 @@ class TutorProfile(models.Model):
 
     def __str__(self):
         return f"Perfil de {self.user.name}"
+
+    @property
+    def age(self):
+        if not self.birth_date:
+            return None
+        from datetime import date
+        today = date.today()
+        return today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
 
 
 class ClientProfile(models.Model):
@@ -284,14 +364,18 @@ class ClientProfile(models.Model):
     # Location fields for GeoRestrictionMiddleware
     city = models.CharField(
         max_length=100,
-        default='Milagro',
+        blank=True,
+        default='',
         verbose_name='Ciudad'
     )
     country = models.CharField(
         max_length=100,
-        default='Ecuador',
+        blank=True,
+        default='',
         verbose_name='País'
     )
+    birth_date = models.DateField(null=True, blank=True, verbose_name='Fecha de nacimiento')
+    cedula = models.CharField(max_length=20, blank=True, null=True, verbose_name='Cédula / Identificación')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -307,3 +391,21 @@ class ClientProfile(models.Model):
             raise ValidationError({
                 'parent_email': 'parent_email is required when is_minor=True.'
             })
+
+
+class Notification(models.Model):
+    """In-app notification for session events."""
+    recipient = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    message = models.CharField(max_length=255)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notif→{self.recipient.name}: {self.message}"

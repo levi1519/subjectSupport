@@ -21,7 +21,7 @@ from apps.accounts import views as accounts_views
 from apps.accounts.views_internal import ShellProbeView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('gestion-ss-2026/', admin.site.urls),
 
     # Geo-router inteligente en la raíz
     path('', core_views.GeoRootRouterView.as_view(), name='home'),

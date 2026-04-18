@@ -1,43 +1,82 @@
+{% load static %}
+{% load accounts_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solicitar Clase - SubjectSupport</title>
+    <title>Solicitar Clase - EduLatam</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- EduLatam Theme -->
+    <link rel="stylesheet" href="{% static 'css/edulatam.css' %}">
     <style>
         .request-section {
             min-height: 100vh;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: var(--dark);
             display: flex;
             align-items: center;
             padding: 40px 0;
         }
         .request-card {
-            background: white;
+            background: var(--surface);
+            border: 1px solid rgba(108, 99, 255, 0.2);
             padding: 40px;
             border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
     </style>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'client_dashboard' %}">EduLatam</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'client_dashboard' %}">Mi Panel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'user_profile' %}">Mi Perfil</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'tutor_selection' %}">Buscar Tutores</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                    <!-- User Avatar & Country -->
+                    <li class="nav-item d-flex align-items-center gap-2 ms-3">
+                        {% if request.user.avatar_url %}
+                            <img src="{{ request.user.avatar_url|drive_url }}" alt="Avatar" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="rounded-circle d-none align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);font-size:1rem;display:none!important;">{{ request.user.name|slice:":1"|upper }}</div>
+                        {% else %}
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);font-size:1rem;">{{ request.user.name|slice:":1"|upper }}</div>
+                        {% endif %}
+                        {% if request.user.country_code %}<span style="font-size:1.2rem;margin-left:4px;" title="{{ request.user.country_code|upper }}">{% with cc=request.user.country_code|upper %}{% if cc == "EC" %}🇪🇨{% elif cc == "MX" %}🇲🇽{% elif cc == "CO" %}🇨🇴{% elif cc == "AR" %}🇦🇷{% elif cc == "PE" %}🇵🇪{% elif cc == "CL" %}🇨🇱{% elif cc == "VE" %}🇻🇪{% elif cc == "BR" %}🇧🇷{% elif cc == "UY" %}🇺🇾{% elif cc == "PY" %}🇵🇾{% elif cc == "BO" %}🇧🇴{% elif cc == "PA" %}🇵🇦{% elif cc == "CR" %}🇨🇷{% elif cc == "GT" %}🇬🇹{% elif cc == "HN" %}🇭🇳{% elif cc == "SV" %}🇸🇻{% elif cc == "NI" %}🇳🇮{% elif cc == "DO" %}🇩🇴{% elif cc == "CU" %}🇨🇺{% elif cc == "PR" %}🇵🇷{% else %}🌎{% endif %}{% endwith %}</span>{% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
     <div class="request-section">
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-md-8 col-lg-6">
                     <div class="request-card">
                         <div class="text-center mb-4">
-                            <h2 class="fw-bold">Solicitar Clase con {{ tutor.name }}</h2>
+                            <h2 class="fw-bold text-white">Solicitar Clase con {{ tutor.name }}</h2>
                             <p class="text-muted">Completa el formulario para solicitar una sesión</p>
                         </div>
 
                         {% if tutor_profile %}
-                        <div class="alert alert-info mb-4">
+                        <div class="alert alert-info mb-4" style="background: rgba(108, 99, 255, 0.15); border-color: var(--primary); color: var(--primary);">
                             <h6 class="fw-bold">Información del Tutor</h6>
                             <p class="mb-1"><strong>Nombre:</strong> {{ tutor.name }}</p>
                             <p class="mb-1"><strong>Ubicación:</strong> {{ tutor_profile.city }}, {{ tutor_profile.country }}</p>
-                            <p class="mb-0"><strong>Materias:</strong> {{ tutor_profile.subjects }}</p>
+                            <p class="mb-0"><strong>Materias:</strong>
+                    {% if tutor_profile.subjects_taught.all %}
+                        {% for subject in tutor_profile.subjects_taught.all %}{{ subject.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                    {% else %}
+                        No especificadas
+                    {% endif %}
+                </p>
                         </div>
                         {% endif %}
 
@@ -54,8 +93,13 @@
                             {% csrf_token %}
 
                             <div class="mb-3">
-                                <label for="{{ form.subject.id_for_label }}" class="form-label">{{ form.subject.label }}</label>
-                                {{ form.subject }}
+                                <label class="form-label">Materia</label>
+                                <select name="subject" class="form-control" required>
+                                    <option value="">-- Selecciona una materia --</option>
+                                    {% for subject in tutor_subjects %}
+                                        <option value="{{ subject.name }}">{{ subject.name }}</option>
+                                    {% endfor %}
+                                </select>
                                 {% if form.subject.errors %}
                                     <div class="text-danger small">{{ form.subject.errors }}</div>
                                 {% endif %}
@@ -93,6 +137,15 @@
                                 {% if form.notes.errors %}
                                     <div class="text-danger small">{{ form.notes.errors }}</div>
                                 {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.material_url.id_for_label }}" class="form-label">{{ form.material_url.label }}</label>
+                                {{ form.material_url }}
+                                {% if form.material_url.errors %}
+                                    <div class="text-danger small">{{ form.material_url.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">Opcional: enlace a material de estudio, documentos o recursos para la clase</small>
                             </div>
 
                             <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">Enviar Solicitud</button>

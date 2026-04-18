@@ -1,135 +1,119 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SubjectSupport - Estudiantes</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            border-radius: 20px;
-            padding: 60px 40px;
-            max-width: 600px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            text-align: center;
-        }
-        h1 {
-            color: #667eea;
-            font-size: 2.5em;
-            margin-bottom: 20px;
-        }
-        .user-type {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            margin-bottom: 30px;
-            font-weight: 600;
-        }
-        p {
-            color: #555;
-            font-size: 1.1em;
-            line-height: 1.6;
-            margin-bottom: 30px;
-        }
-        .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px 40px;
-            border-radius: 30px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1em;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-        }
-        .features {
-            margin-top: 40px;
-            text-align: left;
-        }
-        .feature-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-            color: #555;
-        }
-        .feature-icon {
-            width: 24px;
-            height: 24px;
-            background: #667eea;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            margin-right: 12px;
-            flex-shrink: 0;
-        }
-    </style>
-</head>
-<body>
+{% extends "base_public.html" %}
+
+{% block title %}EduLatam — Encuentra tu Tutor{% endblock %}
+
+{% block nav_buttons %}
+    <a href="{% url 'student_login' %}" class="btn btn-primary me-2 px-4 py-2 fw-bold" style="border: 2px solid rgba(255,255,255,0.3); background: var(--primary); color: white;">Iniciar Sesión</a>
+    <a href="{% url 'register_client' %}" class="btn btn-primary btn-sm">Registrarme</a>
+{% endblock %}
+
+{% block content %}
+<!-- HERO -->
+<section class="dashboard-header" style="padding: 80px 0;">
     <div class="container">
-        <h1>SubjectSupport</h1>
-        <span class="user-type">{{ user_type }}</span>
-
-        <p>
-            Bienvenido a SubjectSupport, la plataforma de tutorías en línea diseñada para estudiantes de Milagro.
-        </p>
-
-        <div class="features">
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span>Encuentra tutores calificados en todas las materias</span>
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <span class="badge bg-primary mb-3 px-3 py-2">Para Estudiantes 🎓</span>
+                <h1 class="display-3 fw-bold mb-4 text-white" style="text-shadow: 0 4px 20px rgba(0,0,0,0.5); letter-spacing: 1px;">Aprende con los mejores tutores de América Latina</h1>
+                <p class="lead mb-4 text-white" style="text-shadow: 0 2px 4px rgba(0,0,0,0.3); font-weight: 500;">Encuentra tutores calificados en todas las materias. Clases personalizadas, online, a tu ritmo y desde cualquier país LATAM.</p>
+                <div class="d-flex flex-column flex-md-row gap-3 mt-4">
+                    <a href="{% url 'register_client' %}" class="btn btn-primary btn-lg px-5 py-3 fw-bold" style="min-width: 200px;">
+                        Comenzar Gratis
+                    </a>
+                    <a href="{% url 'student_login' %}" class="btn btn-outline-light btn-lg px-5 py-3 fw-bold" style="min-width: 200px; border-width: 2px;">
+                        Ya tengo cuenta
+                    </a>
+                </div>
             </div>
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span>Clases personalizadas a tu ritmo</span>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span>Plataforma segura y fácil de usar</span>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon">✓</div>
-                <span>Sesiones online desde cualquier lugar</span>
+            <div class="col-lg-5 text-center mt-4 mt-lg-0">
+                <div style="font-size: 8rem;">📚</div>
             </div>
         </div>
-
-        <div style="margin-top: 40px;">
-            <a href="{% url 'register_client' %}" class="cta-button">Comenzar Ahora</a>
-        </div>
-
-        <p style="margin-top: 30px; font-size: 0.9em;">
-            ¿Ya tienes cuenta? <a href="{% url 'student_login' %}" style="color: #667eea; font-weight: 600;">Inicia sesión</a>
-        </p>
-
-        <p style="margin-top: 20px; font-size: 0.85em; color: #888;">
-            ¿Eres maestro? <a href="{% url 'tutor_login' %}" style="color: #f5576c; font-weight: 600;">Inicia sesión aquí</a> |
-            <a href="{% url 'tutor_landing' %}" style="color: #f5576c; font-weight: 600;">Regístrate como Tutor</a>
-        </p>
     </div>
-</body>
-</html>
+</section>
+
+<!-- FEATURES -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="section-title text-center fw-bold mb-5">¿Por qué EduLatam?</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100" style="margin-top: 15px; margin-bottom: 15px; border: 1px solid rgba(108, 99, 255, 0.2);">
+                    <div class="feature-icon">🔍</div>
+                    <div class="card-body" style="padding: 1.5rem;">
+                        <h5 class="fw-bold">Encuentra tu tutor ideal</h5>
+                        <p class="text-muted">Busca por materia, área o país. Filtra entre tutores de Ecuador, Colombia, México y más.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100" style="margin-top: 15px; margin-bottom: 15px; border: 1px solid rgba(108, 99, 255, 0.2);">
+                    <div class="feature-icon">📅</div>
+                    <div class="card-body" style="padding: 1.5rem;">
+                        <h5 class="fw-bold">Agenda cuando quieras</h5>
+                        <p class="text-muted">Solicita clases a la hora que más te convenga. El tutor confirma y recibes el link de Meet.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100" style="margin-top: 15px; margin-bottom: 15px; border: 1px solid rgba(108, 99, 255, 0.2);">
+                    <div class="feature-icon">🌎</div>
+                    <div class="card-body" style="padding: 1.5rem;">
+                        <h5 class="fw-bold">Cobertura LATAM</h5>
+                        <p class="text-muted">Disponible en 23 países hispanohablantes. Conecta con tutores de toda América Latina.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100" style="margin-top: 15px; margin-bottom: 15px; border: 1px solid rgba(108, 99, 255, 0.2);">
+                    <div class="feature-icon">💻</div>
+                    <div class="card-body" style="padding: 1.5rem;">
+                        <h5 class="fw-bold">100% Online</h5>
+                        <p class="text-muted">Clases por Google Meet o Zoom. Sin desplazamientos, desde tu casa.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100" style="margin-top: 15px; margin-bottom: 15px; border: 1px solid rgba(108, 99, 255, 0.2);">
+                    <div class="feature-icon">📖</div>
+                    <div class="card-body" style="padding: 1.5rem;">
+                        <h5 class="fw-bold">Todas las materias</h5>
+                        <p class="text-muted">Matemáticas, Física, Química, Programación, Ingeniería y más áreas de conocimiento.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100" style="margin-top: 15px; margin-bottom: 15px; border: 1px solid rgba(108, 99, 255, 0.2);">
+                    <div class="feature-icon">🔒</div>
+                    <div class="card-body" style="padding: 1.5rem;">
+                        <h5 class="fw-bold">Plataforma segura</h5>
+                        <p class="text-muted">Registro verificado de tutores. Tu información siempre protegida.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h2 class="display-5 fw-bold mb-4 text-white" style="text-shadow: 0 2px 10px rgba(0,0,0,0.3);">¿Listo para aprender?</h2>
+            <p class="lead mb-5 text-white" style="opacity: 0.9;">Conecta con los mejores tutores de Latinoamérica.</p>
+            
+            <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-3">
+                <a href="{% url 'register_client' %}" class="btn btn-primary btn-lg px-5 py-3 fw-bold" style="font-size: 1.2rem; box-shadow: 0 4px 15px rgba(108,99,255,0.4);">
+                    Registrarme como Estudiante
+                </a>
+                
+                <div class="d-flex align-items-center px-4 py-3 rounded-pill" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);">
+                    <span class="text-white me-2">¿Eres tutor?</span>
+                    <a href="{% url 'tutor_landing' %}" class="text-white fw-bold text-decoration-underline" style="font-size: 1.1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                        Regístrate como tutor →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.conf import settings
-from .models import ServiceArea, TutorLead, ClassSession, NotificacionExpansion, Level, SubjectLevel
+from .models import ServiceArea, TutorLead, ClassSession, NotificacionExpansion, Level, SubjectLevel, CountryConfig
 
 # Importar GISModelAdmin solo si está disponible
 GIS_AVAILABLE = getattr(settings, 'GIS_AVAILABLE', False)
@@ -176,6 +176,19 @@ class LevelAdmin(admin.ModelAdmin):
     )
 
     list_editable = ['order']
+
+
+@admin.register(CountryConfig)
+class CountryConfigAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for CountryConfig model.
+    """
+    list_display = ['country_code', 'country_name', 'active', 'geo_restricted', 'updated_at']
+    list_editable = ['active', 'geo_restricted']
+    list_filter = ['active', 'geo_restricted']
+    search_fields = ['country_code', 'country_name']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['country_name']
 
 
 @admin.register(SubjectLevel)

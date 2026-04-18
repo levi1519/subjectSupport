@@ -43,6 +43,14 @@ staticfiles/
 .DS_Store
 Thumbs.db
 
+####################################3
+##variables de produccion
+
+nixpacks.toml
+
+
+
+
 # ============================================================
 # Build
 # ============================================================
@@ -83,6 +91,7 @@ apps/*/CRITIC_REPORT/
 apps/*/logs/
 *_unit_report.json
 *_test_output.json
+AG/
 
 # ============================================================
 # Fixtures de desarrollo — no para producción
@@ -100,4 +109,10 @@ system_convergence_report.json
 test_base.py
 test_report_generator.py
 verify_sync.py
-requirements/
+
+
+AG/
+.env.example
+build.sh
+git
+nixpacks.toml

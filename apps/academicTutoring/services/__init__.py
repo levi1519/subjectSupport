@@ -3,9 +3,28 @@ Service functions for academicTutoring app.
 Handles business logic for session management and tutoring operations.
 """
 
-from django.core.exceptions import ValidationError, PermissionDenied
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from ..models import ClassSession
+
+
+def save_expansion_notification(form, request):
+    """Save NotificacionExpansion from form data."""
+    from geoconfig.geo import get_client_ip
+    try:
+        notificacion = form.save(commit=False)
+        notificacion.ip_address = get_client_ip(request)
+        notificacion.ciudad_detectada = request.session.get('geo_city', 'Desconocida')
+        notificacion.save()
+        return True, notificacion, None
+    except Exception as e:
+        return False, None, str(e)
+
+
+def get_service_areas_for_display():
+    """Get active service areas for display in servicio_no_disponible."""
+    from geoconfig.geo import get_available_service_areas
+    return get_available_service_areas()
 
 
 class SessionError(Exception):
@@ -15,103 +34,68 @@ class SessionError(Exception):
 
 @transaction.atomic
 def create_session(tutor, client, form):
-    """
-    Create a new tutoring session.
-    
-    Args:
-        tutor: User instance (must be tutor)
-        client: User instance (must be client)
-        form: SessionRequestForm instance
-        
-    Raises:
-        SessionError: If form is invalid
-        
-    Returns:
-        ClassSession: The created session
-    """
     if not form.is_valid():
-        raise SessionError('Invalid session form data.')
+        return False, None, 'Invalid form data.'
     session = form.save(commit=False)
     session.tutor = tutor
     session.client = client
     session.status = 'pending'
     session.save()
-    return session
+    return True, session, None
 
 
 @transaction.atomic
 def confirm_session(session, user, form):
     """
     Confirm a tutoring session and generate meeting URL.
-    
-    Args:
-        session: ClassSession instance
-        user: User confirming the session (must be tutor)
-        form: SessionConfirmationForm instance
-        
-    Raises:
-        PermissionDenied: If user is not the assigned tutor
-        SessionError: If form is invalid
-        
-    Returns:
-        ClassSession: The confirmed session
+    Returns: (success: bool, session: ClassSession|None, error: str|None)
     """
-    if session.tutor != user:
-        raise PermissionDenied('Only the assigned tutor can confirm this session.')
-    if not form.is_valid():
-        raise SessionError('Invalid confirmation form data.')
-    session.meeting_platform = form.cleaned_data['meeting_platform']
-    session.notes = form.cleaned_data.get('notes', '')
-    session.status = 'confirmed'
-    session.save()
-    return session
+    try:
+        if session.tutor != user:
+            return False, None, 'No tienes permiso para confirmar esta sesión'
+        if not form.is_valid():
+            return False, None, 'Invalid confirmation form data.'
+        session.meeting_platform = form.cleaned_data['meeting_platform']
+        session.notes = form.cleaned_data.get('notes', '')
+        session.status = 'confirmed'
+        session.save()
+        return True, session, None
+    except Exception as e:
+        return False, None, str(e)
 
 
 @transaction.atomic
 def cancel_session(session, user):
     """
     Cancel a tutoring session with ownership validation.
-    
-    Args:
-        session: ClassSession instance
-        user: User requesting cancellation
-        
-    Raises:
-        PermissionDenied: If user is not a participant
-        SessionError: If session status doesn't allow cancellation
-        
-    Returns:
-        ClassSession: The cancelled session
+    Returns: (success: bool, session: ClassSession|None, error: str|None)
     """
-    if session.tutor != user and session.client != user:
-        raise PermissionDenied('Only participants can cancel this session.')
-    if session.status not in ['pending', 'confirmed']:
-        raise SessionError(f'Cannot cancel session with status: {session.status}')
-    session.status = 'cancelled'
-    session.save()
-    return session
+    try:
+        if session.tutor != user and session.client != user:
+            return False, None, 'No tienes permiso para cancelar esta sesión'
+        if session.status not in ['pending', 'confirmed']:
+            return False, None, f'Cannot cancel session with status: {session.status}'
+        session.status = 'cancelled'
+        session.save()
+        return True, session, None
+    except Exception as e:
+        return False, None, str(e)
 
 
 @transaction.atomic
 def start_meeting(session, user):
     """
     Start a meeting session.
-    
-    Args:
-        session: ClassSession instance
-        user: User starting the meeting (must be tutor)
-        
-    Raises:
-        PermissionDenied: If user is not the tutor
-        
-    Returns:
-        ClassSession: The session with meeting started
+    Returns: (success: bool, session: ClassSession|None, error: str|None)
     """
-    if session.tutor != user:
-        raise PermissionDenied('Only the tutor can start the meeting.')
-    session.meeting_started = True
-    session.save()
-    return session
+    try:
+        if session.tutor != user:
+            return False, None, 'Solo el tutor puede iniciar la reunión.'
+        session.meeting_started = True
+        session.save()
+        return True, session, None
+    except Exception as e:
+        return False, None, str(e)
 
 
 # Backwards compatibility: keep SessionService class for existing code

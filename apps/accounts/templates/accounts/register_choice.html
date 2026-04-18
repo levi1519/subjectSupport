@@ -1,40 +1,46 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro - SubjectSupport</title>
+    <title>Registro - EduLatam</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- EduLatam Theme -->
+    <link rel="stylesheet" href="{% static 'css/edulatam.css' %}">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--dark);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            font-family: 'DM Sans', sans-serif;
         }
         .container {
-            background: white;
+            background: var(--surface);
+            border: 1px solid rgba(108, 99, 255, 0.2);
             border-radius: 20px;
             padding: 60px 40px;
             max-width: 800px;
             width: 100%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
             text-align: center;
         }
         h1 {
-            color: #667eea;
+            color: var(--primary);
             font-size: 2.5em;
             margin-bottom: 15px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .subtitle {
-            color: #666;
+            color: var(--muted);
             font-size: 1.1em;
             margin-bottom: 50px;
         }
@@ -45,7 +51,7 @@
             margin-bottom: 40px;
         }
         .choice-card {
-            background: #f8f9fa;
+            background: rgba(255,255,255,0.05);
             border-radius: 15px;
             padding: 40px 30px;
             text-align: center;
@@ -57,38 +63,42 @@
         }
         .choice-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: rgba(108, 99, 255, 0.1);
         }
         .choice-card.student {
-            border-color: #667eea;
+            border-color: var(--primary);
         }
         .choice-card.student:hover {
-            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-color: var(--primary);
+            background: rgba(108, 99, 255, 0.15);
         }
         .choice-card.tutor {
-            border-color: #f5576c;
+            border-color: var(--secondary);
         }
         .choice-card.tutor:hover {
-            background: linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%);
+            border-color: var(--secondary);
+            background: rgba(255, 101, 132, 0.15);
         }
         .choice-icon {
             font-size: 4em;
             margin-bottom: 20px;
         }
         .choice-card.student .choice-icon {
-            color: #667eea;
+            color: var(--primary);
         }
         .choice-card.tutor .choice-icon {
-            color: #f5576c;
+            color: var(--secondary);
         }
         .choice-title {
             font-size: 1.8em;
             font-weight: 600;
             margin-bottom: 15px;
-            color: #333;
+            color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .choice-description {
-            color: #666;
+            color: var(--muted);
             line-height: 1.6;
             margin-bottom: 20px;
         }
@@ -101,18 +111,18 @@
             transition: all 0.3s ease;
         }
         .choice-card.student .choice-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
         }
         .choice-card.tutor .choice-btn {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: var(--secondary);
         }
         .login-link {
             margin-top: 30px;
-            color: #666;
+            color: var(--muted);
             font-size: 1em;
         }
         .login-link a {
-            color: #667eea;
+            color: var(--primary);
             font-weight: 600;
             text-decoration: none;
         }
@@ -128,7 +138,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Únete a SubjectSupport</h1>
+        <h1>Únete a EduLatam</h1>
         <p class="subtitle">Elige el tipo de cuenta que deseas crear</p>
 
         <div class="choice-container">
@@ -146,7 +156,7 @@
                 <div class="choice-icon">👨‍🏫</div>
                 <h2 class="choice-title">Tutor</h2>
                 <p class="choice-description">
-                    Comparte tu conocimiento y ayuda a estudiantes de todo Ecuador.
+                    Comparte tu conocimiento y ayuda a estudiantes de toda América Latina.
                     Define tus horarios y tarifas.
                 </p>
                 <span class="choice-btn">Registrarme como Tutor</span>

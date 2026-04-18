@@ -34,6 +34,39 @@ class TutorRegistrationForm(UserCreationForm):
         }),
         label='Experiencia'
     )
+    cedula = forms.CharField(
+        required=True,
+        max_length=20,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
+        label='Cédula / ID Nacional',
+        help_text='Documento de identidad de tu país.',
+    )
+    avatar_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://drive.google.com/... o https://mega.nz/...'}),
+        label='Foto de Perfil (opcional)',
+        help_text='Pega el link directo a tu foto (Google Drive, MEGA, Dropbox, etc.)'
+    )
+    birth_date = forms.DateField(
+        required=True,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Fecha de nacimiento',
+        help_text='Debes ser mayor de 18 años para registrarte como tutor.',
+    )
+    country_code = forms.ChoiceField(
+        choices=[('', 'Selecciona tu país')] + [
+            ('AR', 'Argentina'), ('BO', 'Bolivia'), ('CL', 'Chile'),
+            ('CO', 'Colombia'), ('CR', 'Costa Rica'), ('CU', 'Cuba'),
+            ('DO', 'República Dominicana'), ('EC', 'Ecuador'),
+            ('SV', 'El Salvador'), ('GT', 'Guatemala'), ('HN', 'Honduras'),
+            ('MX', 'México'), ('NI', 'Nicaragua'), ('PA', 'Panamá'),
+            ('PY', 'Paraguay'), ('PE', 'Perú'), ('PR', 'Puerto Rico'),
+            ('UY', 'Uruguay'), ('VE', 'Venezuela'),
+        ],
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='País de residencia',
+    )
 
     class Meta:
         model = User
@@ -106,10 +139,23 @@ class TutorRegistrationForm(UserCreationForm):
             raise ValidationError('Las contraseñas no coinciden.')
         return password2
 
-    def save(self, commit=True):
+    def clean_birth_date(self):
+        from datetime import date
+        birth_date = self.cleaned_data.get('birth_date')
+        if birth_date:
+            today = date.today()
+            age = today.year - birth_date.year - (
+                (today.month, today.day) < (birth_date.month, birth_date.day)
+            )
+            if age < 18:
+                raise forms.ValidationError('Debes ser mayor de 18 años para registrarte como tutor.')
+        return birth_date
+
+    def save(self, commit=True, country_code=''):
         user = super().save(commit=False)
         user.user_type = 'tutor'
         user.username = self.cleaned_data['email']
+        user.country_code = country_code
         if commit:
             user.save()
             # Create tutor profile
@@ -118,6 +164,9 @@ class TutorRegistrationForm(UserCreationForm):
                 bio=self.cleaned_data.get('bio', ''),
                 experience=self.cleaned_data.get('experience', '')
             )
+            profile.cedula = self.cleaned_data.get('cedula', '')
+            profile.avatar_url = self.cleaned_data.get('avatar_url', '')
+            profile.save()
             # Save ManyToMany relationships (subjects)
             subjects = self.cleaned_data.get('subjects')
             if subjects:
@@ -142,6 +191,38 @@ class ClientRegistrationForm(UserCreationForm):
             'placeholder': 'Nombre del padre o tutor legal'
         }),
         label='Nombre del padre/tutor legal'
+    )
+    cedula = forms.CharField(
+        required=False,
+        max_length=20,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
+        label='Cédula / Identificación',
+    )
+    avatar_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://drive.google.com/... o https://mega.nz/...'}),
+        label='Foto de Perfil (opcional)',
+        help_text='Pega el link directo a tu foto (Google Drive, MEGA, Dropbox, etc.)'
+    )
+    birth_date = forms.DateField(
+        required=True,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Fecha de nacimiento',
+        help_text='Requerida para verificar si eres menor de edad.',
+    )
+    country_code = forms.ChoiceField(
+        choices=[('', 'Selecciona tu país')] + [
+            ('AR', 'Argentina'), ('BO', 'Bolivia'), ('CL', 'Chile'),
+            ('CO', 'Colombia'), ('CR', 'Costa Rica'), ('CU', 'Cuba'),
+            ('DO', 'República Dominicana'), ('EC', 'Ecuador'),
+            ('SV', 'El Salvador'), ('GT', 'Guatemala'), ('HN', 'Honduras'),
+            ('MX', 'México'), ('NI', 'Nicaragua'), ('PA', 'Panamá'),
+            ('PY', 'Paraguay'), ('PE', 'Perú'), ('PR', 'Puerto Rico'),
+            ('UY', 'Uruguay'), ('VE', 'Venezuela'),
+        ],
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='País de residencia',
     )
 
     class Meta:
@@ -207,6 +288,18 @@ class ClientRegistrationForm(UserCreationForm):
             raise ValidationError('Las contraseñas no coinciden.')
         return password2
 
+    def clean_birth_date(self):
+        from datetime import date
+        birth_date = self.cleaned_data.get('birth_date')
+        if birth_date:
+            today = date.today()
+            age = today.year - birth_date.year - (
+                (today.month, today.day) < (birth_date.month, birth_date.day)
+            )
+            is_minor = age < 18
+            self.calculated_is_minor = is_minor
+        return birth_date
+
     def clean(self):
         """Validate parent name if minor"""
         cleaned_data = super().clean()
@@ -220,18 +313,22 @@ class ClientRegistrationForm(UserCreationForm):
 
         return cleaned_data
 
-    def save(self, commit=True):
+    def save(self, commit=True, country_code=''):
         user = super().save(commit=False)
         user.user_type = 'client'
         user.username = self.cleaned_data['email']
+        user.country_code = country_code
         if commit:
             user.save()
             # Create client profile
-            ClientProfile.objects.create(
+            profile = ClientProfile.objects.create(
                 user=user,
                 is_minor=self.cleaned_data.get('is_minor', False),
                 parent_name=self.cleaned_data.get('parent_name', '')
             )
+            profile.cedula = self.cleaned_data.get('cedula', '')
+            profile.avatar_url = self.cleaned_data.get('avatar_url', '')
+            profile.save()
         return user
 
 
@@ -271,27 +368,35 @@ class TutorSubjectsForm(forms.ModelForm):
     Formulario para que los tutores gestionen las materias que enseñan.
     Permite selección múltiple de materias existentes.
     """
-    subjects = forms.ModelMultipleChoiceField(
-        queryset=Subject.objects.all().order_by('name'),
+    subjects_taught = forms.ModelMultipleChoiceField(
+        queryset=Subject.objects.all().order_by('knowledge_area__name', 'name'),
         required=False,
-        widget=forms.SelectMultiple(attrs={
-            'class': 'form-control',
-            'size': '7'
-        }),
+        widget=forms.CheckboxSelectMultiple(),
         label='Materias que enseño',
         help_text='Selecciona todas las materias que puedes enseñar (mantén Ctrl/Cmd para selección múltiple)'
     )
 
     class Meta:
         model = TutorProfile
-        fields = ['subjects']
+        fields = ['subjects_taught']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Personalizar mensajes de error
-        self.fields['subjects'].error_messages = {
+        self.fields['subjects_taught'].error_messages = {
             'required': 'Por favor selecciona al menos una materia.',
         }
+
+    def clean_subjects_taught(self):
+        subjects = self.cleaned_data.get('subjects_taught')
+        if subjects and subjects.count() > 5:
+            raise forms.ValidationError(
+                'Solo puedes seleccionar un máximo de 5 materias. '
+                'Has seleccionado %(count)d.',
+                code='too_many',
+                params={'count': subjects.count()}
+            )
+        return subjects
 
 
 class ClientProfileEditForm(forms.ModelForm):
@@ -328,10 +433,30 @@ class ClientProfileEditForm(forms.ModelForm):
         label='Biografía',
         help_text='Información adicional sobre ti (opcional)'
     )
+    cedula = forms.CharField(
+        required=False,
+        max_length=20,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
+        label='Cédula / Identificación',
+    )
+    birth_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Fecha de nacimiento',
+    )
+    avatar_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'https://ejemplo.com/mi-foto.jpg'
+        }),
+        label='URL de Foto de Perfil',
+        help_text='Pega el enlace directo a tu foto'
+    )
 
     class Meta:
         model = ClientProfile
-        fields = ['phone_number', 'bio']
+        fields = ['phone_number', 'bio', 'cedula', 'birth_date', 'avatar_url']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -414,10 +539,30 @@ class TutorProfileEditForm(forms.ModelForm):
         label='Tarifa por Hora (USD)',
         help_text='Precio por hora de tutoría (opcional)'
     )
+    cedula = forms.CharField(
+        required=False,
+        max_length=20,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
+        label='Cédula / Identificación',
+    )
+    birth_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Fecha de nacimiento',
+    )
+    avatar_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'https://ejemplo.com/mi-foto.jpg'
+        }),
+        label='URL de Foto de Perfil',
+        help_text='Pega el enlace directo a tu foto (Google Drive, Imgur, etc.)'
+    )
 
     class Meta:
         model = TutorProfile
-        fields = ['phone_number', 'bio', 'experience', 'hourly_rate']
+        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'cedula', 'birth_date', 'avatar_url']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -434,10 +579,10 @@ class TutorProfileEditForm(forms.ModelForm):
 
     def clean_hourly_rate(self):
         rate = self.cleaned_data.get('hourly_rate')
-        if rate and rate < 0:
-            raise ValidationError('La tarifa no puede ser negativa.')
-        if rate and rate > 9999:
-            raise ValidationError('La tarifa es demasiado alta.')
+        if rate is not None and rate > 50:
+            raise forms.ValidationError('La tarifa máxima permitida es $50/hora.')
+        if rate is not None and rate < 0:
+            raise forms.ValidationError('La tarifa no puede ser negativa.')
         return rate
 
     def save(self, commit=True):

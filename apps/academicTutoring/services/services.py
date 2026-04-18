@@ -51,13 +51,14 @@ class SessionService:
     
     @staticmethod
     @transaction.atomic
-    def confirm_session(session, platform):
+    def confirm_session(session, user, form):
         """
         Confirm a tutoring session and generate meeting URL.
         
         Args:
             session: ClassSession instance
-            platform: Meeting platform choice
+            user: User instance confirming the session
+            form: SessionConfirmationForm with cleaned data
             
         Returns:
             tuple: (success: bool, session: ClassSession or None, error: str or None)
@@ -67,8 +68,8 @@ class SessionService:
                 return False, None, 'Session already processed'
             
             session.status = 'confirmed'
-            session.meeting_platform = platform
-            update_session_with_meeting(session, save=False)
+            session.meeting_platform = form.cleaned_data.get('meeting_platform', 'google_meet')
+            session.meeting_url = form.cleaned_data.get('meeting_url', '')
             session.save()
             
             return True, session, None

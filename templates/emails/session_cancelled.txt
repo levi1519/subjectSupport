@@ -1,0 +1,23 @@
+SubjectSupport - Sesión Cancelada
+
+Hola {{ recipient_name }},
+
+Te informamos que {{ cancelled_by_name }} ha cancelado la siguiente sesión de tutoría:
+
+DETALLES DE LA SESIÓN CANCELADA
+================================
+Materia: {{ session_subject }}
+Fecha: {{ session_date }}
+Hora: {{ session_time }}
+{% if cancellation_reason %}
+Motivo: {{ cancellation_reason }}
+{% endif %}
+
+Puedes revisar tu panel en: {{ dashboard_url }}
+
+Si tienes alguna pregunta, no dudes en contactarnos.
+
+Saludos,
+El equipo de SubjectSupport
+
+© 2024 SubjectSupport. Todos los derechos reservados.
