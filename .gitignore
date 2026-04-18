@@ -91,6 +91,7 @@ apps/*/CRITIC_REPORT/
 apps/*/logs/
 *_unit_report.json
 *_test_output.json
+AG/
 
 # ============================================================
 # Fixtures de desarrollo — no para producción
@@ -108,5 +109,5 @@ system_convergence_report.json
 test_base.py
 test_report_generator.py
 verify_sync.py
-AG/
+
 
