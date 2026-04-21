@@ -1,77 +1,90 @@
 # EduLatam
 
-**Academic tutoring platform connecting university students with qualified tutors in Ecuador.**
+**Plataforma de tutoría académica para estudiantes universitarios de Ecuador**
 
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/downloads/)
 [![Django 5.2](https://img.shields.io/badge/Django-5.2-darkgreen)](https://www.djangoproject.com/)
 [![Railway Deploy](https://img.shields.io/badge/Deploy-Railway-0B0D0E)](https://railway.app/)
-[![License MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![Licencia MIT](https://img.shields.io/badge/Licencia-MIT-green)](LICENSE)
 
-## Description
+## ¿Qué es EduLatam?
 
-EduLatam connects university students with qualified tutors through a streamlined digital platform. Students search for tutors by name, subject, or knowledge area; request sessions with optional learning materials; and join video conferences once tutors confirm availability. All operations are restricted to Ecuador through IP-based geolocation detection, ensuring compliance with regional requirements.
+EduLatam es una plataforma web que conecta estudiantes universitarios ecuatorianos con tutores académicos calificados para recibir clases en línea mediante videoconferencia. La plataforma automatiza todo el proceso: desde la búsqueda y solicitud de clases, hasta la confirmación y realización de sesiones.
 
-The platform automates geographic verification at registration, automatically detecting city location and enforcing country restrictions. Video meeting links are shared directly between participants, enabling flexible scheduling and seamless real-time collaboration.
+El flujo de uso es simple: el estudiante busca un tutor por nombre, materia o área de conocimiento; solicita una clase adjuntando material de estudio si lo desea; el tutor acepta o rechaza la solicitud; una vez aceptada, el tutor comparte el enlace de videoconferencia; y finalmente se realiza la sesión en línea.
 
-## Features
+Toda la plataforma está geográficamente restringida a Ecuador. El sistema detecta automáticamente la ubicación del usuario mediante su dirección IP y solo permite acceso a usuarios ubicados en el país.
 
-**For Tutors:**
-- Manage subjects across 5+ knowledge areas
-- Set personalized hourly rates
-- Upload custom avatar
-- Accept or reject student session requests
-- Share video conference links (Google Meet, Zoom)
+## Funcionalidades principales
 
-**For Students:**
-- Search and filter tutors by name, subject, or knowledge area
-- Filter tutors by country (Ecuador-based by default)
-- Request sessions with optional material URL attachments
-- View complete session history
-- Join meetings once confirmed
+**Para Tutores:**
+- Gestión de materias agrupadas por área de conocimiento (máximo 5)
+- Configuración de tarifa por hora en dólares
+- Foto de perfil mediante URL
+- Aceptar o rechazar solicitudes de clase desde su dashboard
+- Compartir enlace de videoconferencia (Google Meet, Zoom u otro)
+- Historial completo de sesiones y su estado
 
-**System-wide:**
-- Geo-restriction to 23 LATAM countries (configurable; currently Ecuador only)
-- Automatic city detection at registration via IP geolocation
-- Bootstrap 5 responsive design for mobile & desktop
-- Admin panel at `/gestion-ss-2026/`
+**Para Estudiantes:**
+- Búsqueda de tutores por nombre, materia o área de conocimiento
+- Filtro de tutores por país (configurable desde administración)
+- Solicitar clase especificando fecha, hora, duración y material adjunto (URL)
+- Ver tarifa del tutor antes de confirmar solicitud
+- Historial de sesiones reservadas y completadas
 
-## Tech Stack
+**Del Sistema:**
+- Restricción geográfica por detección de IP (Ecuador activo, otros países configurables)
+- Detección automática de ciudad en el momento del registro
+- Interfaz responsiva con Bootstrap 5 para móviles y escritorio
+- Notificación automática cuando una sesión es cancelada
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Backend** | Django 5.2, Python 3.12 | Web framework, business logic |
-| **Database** | PostgreSQL + PostGIS | Relational DB, geospatial queries |
-| **Hosting** | Supabase | Managed PostgreSQL, real-time features |
-| **Deploy** | Railway + Nixpacks | Continuous deployment, auto-scaling |
-| **Frontend** | Bootstrap 5, Django Templates | Responsive UI, server-rendered HTML |
-| **Geolocation** | ipgeolocation.io API | IP-based country/city detection |
-| **Meetings** | Google Meet, Zoom | Video conferencing integration |
+## Roles y usuarios
 
-## Project Structure
+**TUTOR**
+Se registra en `/tutores/` completando nombre, email, materias, tarifa y biografía. Recibe solicitudes de clase en su dashboard, puede aceptar o rechazar según disponibilidad, comparte el enlace de videoconferencia, y puede cancelar sesiones pendientes. Acceso a: Dashboard, Mi Perfil, Mis Materias.
+
+**ESTUDIANTE**
+Se registra en `/estudiantes/` con nombre, email y contraseña. Accede al buscador de tutores, solicita clases con material adjunto, recibe confirmación con el enlace de reunión, y puede cancelar sesiones. Acceso a: Dashboard, Mi Perfil, Buscar Tutores.
+
+**ADMINISTRADOR**
+Accede al panel administrativo con credenciales especiales. Gestiona usuarios, materias, áreas de conocimiento y países. Puede activar o desactivar países desde el panel de control.
+
+## Stack tecnológico
+
+| Capa | Tecnología | Propósito |
+|------|-----------|----------|
+| Backend | Django 5.2 + Python 3.12 | Lógica de negocio y vistas |
+| Base de datos | PostgreSQL + PostGIS (Supabase) | Almacenamiento y consultas espaciales |
+| Deploy | Railway + Nixpacks | Hosting y CI/CD automático |
+| Frontend | Bootstrap 5 + Django Templates | Interfaz responsiva |
+| Geolocalización | ipgeolocation.io | Detección de país por IP |
+| Reuniones | Google Meet / Zoom | Videoconferencias (enlace externo) |
+
+## Estructura del proyecto
 
 ```
-apps/accounts/          User authentication & profiles
-apps/academicTutoring/  Tutoring sessions & subject management
-geoconfig/              Geographic restriction middleware & utilities
-templates/              Django HTML templates
-static/                 CSS, JavaScript, images
-subjectSupport/         Django settings & project configuration
+apps/accounts/           Modelos y lógica de usuarios, tutores y estudiantes
+apps/academicTutoring/   Modelos de sesiones, países y configuración
+geoconfig/               Middleware y lógica de geo-restricción
+templates/               Templates HTML base y landing pages
+static/                  CSS y recursos estáticos
+subjectSupport/          Configuración principal de Django
 ```
 
-## Setup — Local Development
+## Configuración local — paso a paso
 
-1. **Clone the repository**
+1. **Clonar el repositorio**
    ```bash
-   git clone https://github.com/your-org/edulatam.git
-   cd edulatam
+   git clone <URL-del-repo>
+   cd subjectsSuport
    ```
 
-2. **Create virtual environment**
+2. **Crear entorno virtual**
    ```bash
    python -m venv env
    ```
 
-3. **Activate and install dependencies**
+3. **Activar entorno e instalar dependencias**
    ```bash
    # Windows
    env\Scripts\activate
@@ -80,71 +93,62 @@ subjectSupport/         Django settings & project configuration
    pip install -r requirements.txt
    ```
 
-4. **Configure environment variables**
+4. **Configurar variables de entorno**
    ```bash
    cp .env.example .env
-   # Edit .env with your values (see Environment Variables section below)
+   # Editar .env con tus valores
    ```
 
-5. **Run migrations**
+5. **Aplicar migraciones**
    ```bash
    python manage.py migrate
    ```
 
-6. **Create superuser**
+6. **Crear superusuario**
    ```bash
    python manage.py createsuperuser
    ```
 
-7. **Start development server**
+7. **Iniciar servidor de desarrollo**
    ```bash
    python manage.py runserver
    ```
 
-**Note:** GDAL/GEOS libraries are not required for local development. PostGIS features activate only in production with proper database configuration.
+**Nota:** GDAL no es necesario en desarrollo local. PostGIS funciona solo en producción con Railway + Supabase.
 
-## Environment Variables
+## Variables de entorno
 
-| Variable | Description | Example |
+| Variable | Descripción | Ejemplo |
 |----------|-------------|---------|
-| `DEBUG` | Development mode flag | `True` |
-| `SECRET_KEY` | Django secret key (50+ chars) | `your-random-key-here` |
-| `ALLOWED_HOSTS` | Comma-separated hosts | `localhost,127.0.0.1` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host/db` |
-| `CSRF_TRUSTED_ORIGINS` | Trusted origins for CSRF | `https://yourdomain.railway.app` |
-| `SKIP_GEO_CHECK` | Bypass geolocation (dev only) | `True` |
-| `IPGEOLOCATION_API_KEY` | IP geolocation service API key | `your-api-key` |
+| `DEBUG` | Modo desarrollo | `True` |
+| `SECRET_KEY` | Clave secreta Django (50+ caracteres) | `cambiar-por-clave-segura` |
+| `ALLOWED_HOSTS` | Hosts permitidos separados por coma | `localhost,127.0.0.1` |
+| `DATABASE_URL` | URL de conexión a PostgreSQL | `postgresql://user:pass@host/db` |
+| `CSRF_TRUSTED_ORIGINS` | Orígenes de confianza CSRF | `https://tuapp.railway.app` |
+| `SKIP_GEO_CHECK` | Omitir verificación geo (solo desarrollo) | `True` |
+| `IPGEOLOCATION_API_KEY` | Clave API para geolocalización | `tu-clave-aqui` |
 
-## Deploy on Railway
+## Deploy en Railway
 
-1. Connect your GitHub repository to Railway
-2. Set environment variables in the Railway dashboard (see Environment Variables section)
-3. Railway auto-detects Nixpacks and deploys automatically
-4. Database migrations run automatically on each deployment
+1. Conectar el repositorio de GitHub en Railway
+2. Configurar variables de entorno en el dashboard de Railway
+3. Railway detecta automáticamente la configuración con Nixpacks
+4. Las migraciones se ejecutan automáticamente en cada deploy
+5. El servidor inicia con Gunicorn en el puerto 8080
 
-**Note:** Configuration files `nixpacks.toml` and `build.sh` are at the repository root.
+**Nota:** Los archivos `nixpacks.toml` y `build.sh` están en la raíz del proyecto.
 
-## Admin Panel
+## Flujo de desarrollo recomendado
 
-The Django admin panel is accessible at `/gestion-ss-2026/`. Administrators can:
-- Manage user accounts and permissions
-- Create and modify tutor profiles and qualifications
-- Configure subjects and knowledge areas
-- Enable/disable supported countries
-- Monitor and manage active sessions
-- View platform analytics and statistics
+Rama principal de desarrollo: `latam-mvp`. Los cambios se hacen en `latam-mvp` y se mergean a `main` al estabilizar. Cada cambio debe ser quirúrgico: un archivo, un problema. Verificar estado con `git status` antes de modificar. Después de cada sesión: `git diff` para confirmar que solo se modificaron los archivos esperados. Mensajes de commit en formato: `tipo: descripción corta` (ejemplo: `fix: error en búsqueda de tutores`, `feat: campo material_url en solicitud`).
 
-## Key Architecture Decisions
+## Decisiones arquitecturales clave
 
-- **Services Layer:** All business logic resides in `services.py` files, never in views. Views remain thin and delegate to services.
-- **Database Managers:** Custom managers (e.g., `TutorProfileManager`) handle all database queries, ensuring consistency and reusability.
-- **Geo-restriction:** Middleware intercepts all requests and delegates geographic verification to `geoconfig/geo.py`.
-- **Subject Mapping:** Tutors' subjects reference `accounts.Subject` via M2M relation, not `SubjectLevel`.
+- **Capa de servicios:** Toda la lógica de negocio vive en `services.py`, las vistas solo coordinan y delegan.
+- **Managers personalizados:** Todas las consultas a la base de datos se hacen a través de managers (`TutorProfileManager`, `ClientProfileManager`) — nunca ORM directo en vistas.
+- **Geo-restriction:** Un middleware intercepta todas las solicitudes y verifica el país del visitante antes de permitir acceso.
+- **subjects_taught:** El campo de materias del tutor apunta al modelo `Subject` — no a `SubjectLevel`.
 
-## Contributing
+## Licencia
 
-EduLatam follows a deterministic, directive-based development workflow. All code changes are planned through explicit directives before implementation. This ensures consistency, traceability, and quality across the codebase.
-
-## License
-
-MIT License — see [LICENSE](LICENSE) file for details.
+MIT License — ver archivo [LICENSE](LICENSE)
