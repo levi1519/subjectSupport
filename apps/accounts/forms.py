@@ -6,15 +6,12 @@ from .models import User, TutorProfile, ClientProfile, Subject
 
 class TutorRegistrationForm(UserCreationForm):
     """Form for tutor registration"""
-    subjects = forms.ModelMultipleChoiceField(
-        queryset=Subject.objects.all().order_by('name'),
+    subjects_taught = forms.ModelMultipleChoiceField(
+        queryset=Subject.objects.all().order_by('knowledge_area__name', 'name'),
         required=False,
-        widget=forms.SelectMultiple(attrs={
-            'class': 'form-control',
-            'size': '7'
-        }),
+        widget=forms.CheckboxSelectMultiple(),
         label='Materias que enseñas',
-        help_text='Selecciona todas las materias que puedes enseñar (mantén Ctrl/Cmd para selección múltiple)'
+        help_text='Selecciona hasta 5 materias'
     )
     bio = forms.CharField(
         required=False,
@@ -40,6 +37,16 @@ class TutorRegistrationForm(UserCreationForm):
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
         label='Cédula / ID Nacional',
         help_text='Documento de identidad de tu país.',
+    )
+    phone_number = forms.CharField(
+        required=True,
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '+593 99 999 9999'
+        }),
+        label='Número de Teléfono',
+        help_text='Número de contacto para estudiantes'
     )
     avatar_url = forms.URLField(
         required=False,
@@ -124,9 +131,9 @@ class TutorRegistrationForm(UserCreationForm):
             raise ValidationError('Este correo electrónico ya está registrado.')
         return email
 
-    def clean_subjects(self):
+    def clean_subjects_taught(self):
         """Validate maximum 5 subjects selected"""
-        subjects = self.cleaned_data.get('subjects')
+        subjects = self.cleaned_data.get('subjects_taught')
         if subjects and subjects.count() > 5:
             raise ValidationError('Solo puedes seleccionar un máximo de 5 materias.')
         return subjects
@@ -162,15 +169,16 @@ class TutorRegistrationForm(UserCreationForm):
             profile = TutorProfile.objects.create(
                 user=user,
                 bio=self.cleaned_data.get('bio', ''),
-                experience=self.cleaned_data.get('experience', '')
+                experience=self.cleaned_data.get('experience', ''),
+                phone_number=self.cleaned_data.get('phone_number', '')
             )
             profile.cedula = self.cleaned_data.get('cedula', '')
             profile.avatar_url = self.cleaned_data.get('avatar_url', '')
             profile.save()
             # Save ManyToMany relationships (subjects)
-            subjects = self.cleaned_data.get('subjects')
+            subjects = self.cleaned_data.get('subjects_taught')
             if subjects:
-                profile.subjects.set(subjects)
+                profile.subjects_taught.set(subjects)
         return user
 
 

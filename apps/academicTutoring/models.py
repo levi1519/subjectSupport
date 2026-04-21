@@ -333,6 +333,11 @@ class ClassSession(models.Model):
         null=True,
         verbose_name='Notas'
     )
+    cancellation_reason = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Motivo de cancelación'
+    )
     material_url = models.URLField(
         null=True,
         blank=True,

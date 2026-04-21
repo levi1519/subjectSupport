@@ -116,6 +116,16 @@
 
                         <form method="post">
                             {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="cancellation_reason" class="form-label fw-bold">
+                                    Motivo de cancelación (opcional)
+                                </label>
+                                <textarea name="cancellation_reason"
+                                          id="cancellation_reason"
+                                          class="form-control"
+                                          rows="3"
+                                          placeholder="Explica brevemente el motivo de la cancelación..."></textarea>
+                            </div>
                             <div class="row">
                                 <div class="col-6">
                                     <a href="{% url 'dashboard' %}" class="btn btn-secondary btn-lg w-100">No, volver</a>

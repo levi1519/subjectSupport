@@ -402,6 +402,11 @@ class Notification(models.Model):
     )
     message = models.CharField(max_length=255)
     is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Leída el'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

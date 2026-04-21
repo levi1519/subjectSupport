@@ -373,6 +373,3 @@ LOGGING = {
         },
     },
 }
-
-
-ARCHITECTGUARD_SECRET = "ag-subjectsupport-2026"

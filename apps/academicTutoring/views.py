@@ -291,6 +291,9 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
         """Cancel the session using academic_services"""
         # Guardar estado previo para idempotencia (no enviar email si ya estaba cancelada)
         prev_status = self.session.status
+        
+        # Obtener motivo de cancelación
+        cancellation_reason = request.POST.get('cancellation_reason', '').strip()
 
         success, session, error = academic_services.cancel_session(
             self.session,
@@ -298,6 +301,11 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
         if success:
+            # Guardar motivo de cancelación si se proporcionó
+            if cancellation_reason:
+                session.cancellation_reason = cancellation_reason
+                session.save(update_fields=['cancellation_reason'])
+            
             # Enviar email SOLO si la sesión NO estaba ya cancelada (idempotencia)
             if prev_status != 'cancelled':
                 # Determinar contraparte: quien NO canceló recibe el email
@@ -306,9 +314,13 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
                 else:
                     recipient = session.tutor
                 send_cancellation_email(session, request.user, recipient)
+                notification_message = (f'{request.user.name} canceló la clase de {session.subject} '
+                                      f'el {session.scheduled_date.strftime("%d/%m/%Y")} a las '
+                                      f'{session.scheduled_time.strftime("%H:%M")}'
+                                      f'{" : " + cancellation_reason if cancellation_reason else "."}')
                 Notification.objects.create(
                     recipient=recipient,
-                    message=f'{request.user.name} canceló la clase de {session.subject} del {session.scheduled_date.strftime("%d/%m/%Y")} a las {session.scheduled_time.strftime("%H:%M")}'
+                    message=notification_message
                 )
                 messages.info(request, f'La sesión ha sido cancelada. Se notificó a {recipient.name}.')
             else:

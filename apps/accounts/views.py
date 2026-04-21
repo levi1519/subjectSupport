@@ -212,6 +212,8 @@ class TutorDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context['notifications'] = Notification.objects.filter(
             recipient=self.request.user, is_read=False
         )
+        context['pending_count'] = context['pending_sessions'].count()
+        context['all_active_sessions'] = list(context['pending_sessions']) + list(context['upcoming_sessions'])
         return context
 
 
