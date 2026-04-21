@@ -1,6 +1,12 @@
 import os
-GDAL_LIBRARY_PATH = os.environ.get('GDAL_LIBRARY_PATH')
-GEOS_LIBRARY_PATH = os.environ.get('GEOS_LIBRARY_PATH')
+import glob as _glob
+
+def _find_lib(pattern):
+    paths = _glob.glob(f'/nix/store/*/{pattern}')
+    return paths[0] if paths else None
+
+GDAL_LIBRARY_PATH = os.environ.get('GDAL_LIBRARY_PATH') or _find_lib('lib/libgdal.so')
+GEOS_LIBRARY_PATH = os.environ.get('GEOS_LIBRARY_PATH') or _find_lib('lib/libgeos_c.so')
 
 
 
