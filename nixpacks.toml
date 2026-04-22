@@ -1,5 +1,8 @@
 [phases.setup]
 nixPkgs = ["python312", "gcc", "gdal"]
 
+[phases.build]
+cmds = ["echo 'Build complete'"]
+
 [start]
 cmd = "export GDAL_LIBRARY_PATH=$(find /nix/store -name 'libgdal.so*' 2>/dev/null | head -1) && export GEOS_LIBRARY_PATH=$(find /nix/store -name 'libgeos_c.so*' 2>/dev/null | head -1) && python manage.py collectstatic --noinput && python manage.py migrate && gunicorn subjectSupport.wsgi:application --bind 0.0.0.0:8080"
