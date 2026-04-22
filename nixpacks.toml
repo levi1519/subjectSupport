@@ -1,6 +1,9 @@
 [phases.setup]
 nixPkgs = ["python312", "gcc", "gdal"]
 
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
+
 [phases.build]
 cmds = ["chmod +x build.sh && ./build.sh"]
 
