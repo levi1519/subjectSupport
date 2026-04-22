@@ -1,12 +1,23 @@
 import os
-import glob as _glob
 
-def _find_lib(pattern):
-    paths = _glob.glob(f'/nix/store/*/{pattern}')
-    return paths[0] if paths else None
+def _find_lib(name):
+    import glob as _glob
+    patterns = [
+        f'/nix/store/*/{name}',
+        f'/nix/store/*/{name}.*',
+        f'/nix/store/*/lib/{name}',
+        f'/nix/store/*/lib/{name}.*',
+        f'/nix/store/*/lib/lib{name}.so',
+        f'/nix/store/*/lib/lib{name}.so.*',
+    ]
+    for p in patterns:
+        found = _glob.glob(p)
+        if found:
+            return found[0]
+    return None
 
-GDAL_LIBRARY_PATH = os.environ.get('GDAL_LIBRARY_PATH') or _find_lib('lib/libgdal.so')
-GEOS_LIBRARY_PATH = os.environ.get('GEOS_LIBRARY_PATH') or _find_lib('lib/libgeos_c.so')
+GDAL_LIBRARY_PATH = os.environ.get('GDAL_LIBRARY_PATH') or _find_lib('gdal')
+GEOS_LIBRARY_PATH = os.environ.get('GEOS_LIBRARY_PATH') or _find_lib('geos_c')
 
 
 
