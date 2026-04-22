@@ -1,6 +1,5 @@
 [phases.setup]
 nixPkgs = ["python312", "python312Packages.pip", "python312Packages.setuptools", "python312Packages.wheel", "gcc", "gdal", "postgresql", "libjpeg", "libpng", "zlib"]
-nixLibs = ["libpq"]
 
 [phases.install]
 cmds = [
