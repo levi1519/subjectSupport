@@ -1,6 +1,6 @@
 # Generated manually for RF-REGISTER-001
 
-from django.db import migrations, models
+from django.db import migrations
 
 
 class Migration(migrations.Migration):
@@ -10,24 +10,20 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='tutorprofile',
-            name='university_name',
-            field=models.CharField(
-                max_length=200,
-                blank=True,
-                null=True,
-                verbose_name='Universidad / Institución',
-            ),
-        ),
-        migrations.AddField(
-            model_name='clientprofile',
-            name='university_name',
-            field=models.CharField(
-                max_length=200,
-                blank=True,
-                null=True,
-                verbose_name='Universidad donde estudia',
-            ),
+        migrations.RunSQL(
+            sql="""
+                ALTER TABLE accounts_tutorprofile
+                ADD COLUMN IF NOT EXISTS university_name VARCHAR(200) NOT NULL DEFAULT '';
+                
+                ALTER TABLE accounts_clientprofile
+                ADD COLUMN IF NOT EXISTS university_name VARCHAR(200) NOT NULL DEFAULT '';
+            """,
+            reverse_sql="""
+                ALTER TABLE accounts_tutorprofile
+                DROP COLUMN IF EXISTS university_name;
+                
+                ALTER TABLE accounts_clientprofile
+                DROP COLUMN IF EXISTS university_name;
+            """,
         ),
     ]
