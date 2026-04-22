@@ -1,23 +1,56 @@
 import os
+import subprocess
 
 def _find_lib(name):
+    """Try multiple methods to find a library"""
     import glob as _glob
+    
+    # Method 1: Check environment variable first
+    env_path = os.environ.get(f'{name.upper()}_LIBRARY_PATH')
+    if env_path and os.path.exists(env_path):
+        return env_path
+    
+    # Method 2: Try ldconfig (most reliable)
+    try:
+        result = subprocess.run(
+            ['ldconfig', '-p'],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            lines = result.stdout.split('\n')
+            for line in lines:
+                if name in line.lower() and '.so' in line:
+                    # Extract path from ldconfig output
+                    parts = line.strip().split('=>')
+                    if len(parts) > 1:
+                        path = parts[1].strip()
+                        if os.path.exists(path):
+                            return path
+    except (subprocess.SubprocessError, FileNotFoundError, TimeoutError):
+        pass
+    
+    # Method 3: Glob patterns in common locations
     patterns = [
-        f'/nix/store/*/{name}',
-        f'/nix/store/*/{name}.*',
-        f'/nix/store/*/lib/{name}',
-        f'/nix/store/*/lib/{name}.*',
-        f'/nix/store/*/lib/lib{name}.so',
-        f'/nix/store/*/lib/lib{name}.so.*',
+        f'/nix/store/*/lib/lib{name}.so*',
+        f'/nix/store/*/{name}*',
+        f'/usr/lib*/lib{name}.so*',
+        f'/usr/local/lib*/lib{name}.so*',
     ]
     for p in patterns:
         found = _glob.glob(p)
         if found:
             return found[0]
+    
     return None
 
-GDAL_LIBRARY_PATH = os.environ.get('GDAL_LIBRARY_PATH') or _find_lib('gdal')
-GEOS_LIBRARY_PATH = os.environ.get('GEOS_LIBRARY_PATH') or _find_lib('geos_c')
+# Try to find GDAL and GEOS libraries
+GDAL_LIBRARY_PATH = _find_lib('gdal')
+GEOS_LIBRARY_PATH = _find_lib('geos_c')
+
+# Only enable GIS if both libraries are found
+GIS_AVAILABLE = bool(GDAL_LIBRARY_PATH and GEOS_LIBRARY_PATH)
 
 
 
@@ -113,27 +146,14 @@ SKIP_GEO_CHECK = os.getenv('SKIP_GEO_CHECK', 'False') == 'True'
 # Application definition
 
 # Determinar si GIS está disponible (necesario para GeoDjango)
-GIS_AVAILABLE = False
-if not DEBUG:
-    # En producción siempre usar GIS (PostGIS estará disponible)
-    GIS_AVAILABLE = True
-else:
-    # En desarrollo LOCAL, deshabilitar temporalmente GIS (GDAL no instalado)
-    # Para habilitar: instalar GDAL y descomentar la siguiente línea
-    GIS_AVAILABLE = False
-    
-    # # Descomentar esto cuando GDAL esté instalado en Windows
-    # try:
-    #     from django.contrib.gis.db.backends.spatialite.base import DatabaseWrapper  # noqa: F401
-    #     GIS_AVAILABLE = True
-    # except (ImportError, Exception):
-    #     GIS_AVAILABLE = False
-    #     import warnings
-    #     warnings.warn(
-    #         "GDAL not available in development. GIS features disabled locally. "
-    #         "To enable: install OSGeo4W (Windows) or gdal-bin (Linux/Mac). "
-    #         "Production will use PostGIS normally."
-    #     )
+# GIS_AVAILABLE ya fue establecido arriba basado en si GDAL y GEOS fueron encontrados
+# En production, si no se encuentran, GIS será deshabilitado automáticamente
+if not GIS_AVAILABLE and not DEBUG:
+    import warnings
+    warnings.warn(
+        "GDAL/GEOS libraries not found. GIS will be disabled. "
+        f"GDAL_LIBRARY_PATH: {GDAL_LIBRARY_PATH}, GEOS_LIBRARY_PATH: {GEOS_LIBRARY_PATH}"
+    )
 
 INSTALLED_APPS = [
     'django.contrib.admin',
