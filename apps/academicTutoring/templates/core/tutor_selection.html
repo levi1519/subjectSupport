@@ -56,12 +56,29 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a></li>
                     <!-- User Avatar & Country -->
                     <li class="nav-item d-flex align-items-center gap-2 ms-3">
-                        {% if request.user.avatar_url %}
-                            <img src="{{ request.user.avatar_url|drive_url }}" alt="Avatar" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-                            <div class="rounded-circle d-none align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);font-size:1rem;display:none!important;">{{ request.user.name|slice:":1"|upper }}</div>
-                        {% else %}
-                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);font-size:1rem;">{{ request.user.name|slice:":1"|upper }}</div>
-                        {% endif %}
+                        {% with avatar=None %}
+                          {% if request.user.user_type == 'tutor' and request.user.tutor_profile.avatar %}
+                            <img src="{{ request.user.tutor_profile.avatar.url }}"
+                                 alt="Avatar"
+                                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:none;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">
+                                {{ request.user.name|slice:":1"|upper|default:"U" }}
+                            </div>
+                          {% elif request.user.user_type == 'client' and request.user.client_profile.avatar %}
+                            <img src="{{ request.user.client_profile.avatar.url }}"
+                                 alt="Avatar"
+                                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:none;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">
+                                {{ request.user.name|slice:":1"|upper|default:"U" }}
+                            </div>
+                          {% else %}
+                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">
+                                {{ request.user.name|slice:":1"|upper|default:"U" }}
+                            </div>
+                          {% endif %}
+                        {% endwith %}
                         {% if request.user.country_code %}<span style="font-size:1.2rem;margin-left:4px;" title="{{ request.user.country_code|upper }}">{% with cc=request.user.country_code|upper %}{% if cc == "EC" %}🇪🇨{% elif cc == "MX" %}🇲🇽{% elif cc == "CO" %}🇨🇴{% elif cc == "AR" %}🇦🇷{% elif cc == "PE" %}🇵🇪{% elif cc == "CL" %}🇨🇱{% elif cc == "VE" %}🇻🇪{% elif cc == "BR" %}🇧🇷{% elif cc == "UY" %}🇺🇾{% elif cc == "PY" %}🇵🇾{% elif cc == "BO" %}🇧🇴{% elif cc == "PA" %}🇵🇦{% elif cc == "CR" %}🇨🇷{% elif cc == "GT" %}🇬🇹{% elif cc == "HN" %}🇭🇳{% elif cc == "SV" %}🇸🇻{% elif cc == "NI" %}🇳🇮{% elif cc == "DO" %}🇩🇴{% elif cc == "CU" %}🇨🇺{% elif cc == "PR" %}🇵🇷{% else %}🌎{% endif %}{% endwith %}</span>{% endif %}
                     </li>
                 </ul>
@@ -126,13 +143,17 @@
                         <div class="card-body d-flex flex-column h-100">
                             <div class="flex-grow-1">
                                 <div class="d-flex align-items-center mb-3">
-                                    {% load accounts_filters %}
-                                    {% if tutor.avatar_url %}
-                                        <img src="{{ tutor.avatar_url|drive_url }}"
-                                             style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);margin-right:12px;">
+                                    {% if tutor.avatar %}
+                                        <img src="{{ tutor.avatar.url }}"
+                                             alt="Avatar tutor"
+                                             style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);margin-right:12px;"
+                                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                        <div style="width:48px;height:48px;border-radius:50%;background:var(--primary);display:none;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.2rem;margin-right:12px;">
+                                            {{ tutor.user.name|slice:":1"|upper }}
+                                        </div>
                                     {% else %}
                                         <div style="width:48px;height:48px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.2rem;margin-right:12px;">
-                                            {{ tutor.user.name|slice:":1" }}
+                                            {{ tutor.user.name|slice:":1"|upper }}
                                         </div>
                                     {% endif %}
                                 </div>
