@@ -250,14 +250,24 @@ if DEBUG:
             }
         }
 else:
-    # Production: PostgreSQL con PostGIS para GeoDjango
+    # Production: PostgreSQL - use PostGIS if GDAL is available, otherwise standard PostgreSQL
     db_config = dj_database_url.config(
         default=os.getenv('DATABASE_URL'),
         conn_max_age=600,
         conn_health_checks=True,
     )
-    # Cambiar engine a PostGIS backend
-    db_config['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
+    # Use PostGIS backend only if GDAL/GEOS are available, otherwise use standard PostgreSQL
+    if GDAL_LIBRARY_PATH and GEOS_LIBRARY_PATH:
+        db_config['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
+    else:
+        db_config['ENGINE'] = 'django.db.backends.postgresql'
+        if not DEBUG:
+            import warnings
+            warnings.warn(
+                "GDAL/GEOS not found in production. Using standard PostgreSQL backend. "
+                "Geo-features will be limited. "
+                f"GDAL_LIBRARY_PATH: {GDAL_LIBRARY_PATH}, GEOS_LIBRARY_PATH: {GEOS_LIBRARY_PATH}"
+            )
     DATABASES = {
         'default': db_config
     }
