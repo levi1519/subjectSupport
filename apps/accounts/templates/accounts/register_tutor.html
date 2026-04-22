@@ -95,7 +95,7 @@
                             {% endfor %}
                         {% endif %}
 
-                        <form method="post" novalidate>
+                        <form method="post" novalidate enctype="multipart/form-data">
                             {% csrf_token %}
 
                             {% if form.errors %}
@@ -161,6 +161,29 @@
                                 {% if form.cedula.errors %}
                                     <div class="text-danger small">{{ form.cedula.errors }}</div>
                                 {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.university_name.id_for_label }}" class="form-label">
+                                    {{ form.university_name.label }}
+                                </label>
+                                {{ form.university_name }}
+                                <div class="form-text">{{ form.university_name.help_text }}</div>
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                {{ form.is_foreign_institution }}
+                                <label class="form-check-label" for="id_is_foreign_institution">
+                                    {{ form.is_foreign_institution.label }}
+                                </label>
+                            </div>
+
+                            <div class="mb-3" id="university_url_wrapper" style="display:none;">
+                                <label for="{{ form.university_url.id_for_label }}" class="form-label">
+                                    {{ form.university_url.label }}
+                                </label>
+                                {{ form.university_url }}
+                                <div class="form-text">{{ form.university_url.help_text }}</div>
                             </div>
 
                             <div class="subjects-section mb-4">
@@ -244,10 +267,10 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="{{ form.avatar_url.id_for_label }}" class="form-label">{{ form.avatar_url.label }}</label>
-                                {{ form.avatar_url }}
-                                {% if form.avatar_url.errors %}
-                                    <div class="text-danger small">{{ form.avatar_url.errors }}</div>
+                                <label for="{{ form.avatar.id_for_label }}" class="form-label">{{ form.avatar.label }}</label>
+                                {{ form.avatar }}
+                                {% if form.avatar.errors %}
+                                    <div class="text-danger small">{{ form.avatar.errors }}</div>
                                 {% endif %}
                                 <small class="text-muted">Opcional: URL de tu foto de perfil (Google Drive, Dropbox, etc.)</small>
                             </div>
@@ -319,6 +342,15 @@
             
             // Inicializar contador
             updateCount();
+
+            // Mostrar/ocultar URL de institución extranjera
+            const foreignChk = document.getElementById('id_is_foreign_institution');
+            const urlWrapper = document.getElementById('university_url_wrapper');
+            if (foreignChk) {
+                foreignChk.addEventListener('change', function() {
+                    urlWrapper.style.display = this.checked ? 'block' : 'none';
+                });
+            }
         });
     </script>
 </body>

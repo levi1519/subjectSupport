@@ -162,6 +162,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'storages',
 ]
 
 # Agregar django.contrib.gis solo si está disponible
@@ -333,6 +334,18 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',  # Global static folder for EduLatam CSS
 ]
+
+# Supabase Storage (S3-compatible)
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+AWS_ACCESS_KEY_ID = os.getenv('SUPABASE_S3_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('SUPABASE_S3_SECRET')
+AWS_STORAGE_BUCKET_NAME = os.getenv('SUPABASE_S3_BUCKET', 'edulatam-media')
+AWS_S3_ENDPOINT_URL = os.getenv('SUPABASE_S3_URL')
+AWS_S3_REGION_NAME = 'us-east-1'
+AWS_DEFAULT_ACL = 'public-read'
+AWS_S3_FILE_OVERWRITE = False
+MEDIA_URL = f"{os.getenv('SUPABASE_S3_URL')}/storage/v1/object/public/{os.getenv('SUPABASE_S3_BUCKET', 'edulatam-media')}/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -268,6 +268,13 @@ class TutorProfile(models.Model):
         null=True,
         verbose_name='Número de teléfono'
     )
+    avatar = models.ImageField(
+        upload_to='tutors/avatars/',
+        blank=True,
+        null=True,
+        verbose_name='Foto de perfil',
+        help_text='Sube tu foto de perfil'
+    )
     bio = models.TextField(
         blank=True,
         null=True,
@@ -293,6 +300,23 @@ class TutorProfile(models.Model):
     )
     birth_date = models.DateField(null=True, blank=True, verbose_name='Fecha de nacimiento')
     cedula = models.CharField(max_length=20, blank=True, null=True, verbose_name='Cédula / Identificación')
+    university_name = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='Universidad / Institución',
+        help_text='Universidad donde enseña o trabajó'
+    )
+    university_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='URL de la Institución',
+        help_text='Solo para instituciones extranjeras'
+    )
+    is_foreign_institution = models.BooleanField(
+        default=False,
+        verbose_name='Institución en el extranjero'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     documents_required = models.BooleanField(
         default=True,
@@ -339,11 +363,11 @@ class ClientProfile(models.Model):
         null=True,
         verbose_name='Número de teléfono'
     )
-    avatar_url = models.URLField(
+    avatar = models.ImageField(
+        upload_to='clients/avatars/',
         blank=True,
         null=True,
-        verbose_name='URL del Avatar',
-        help_text='Enlace a tu foto de perfil'
+        verbose_name='Foto de perfil',
     )
     is_minor = models.BooleanField(
         default=False,
@@ -376,6 +400,13 @@ class ClientProfile(models.Model):
     )
     birth_date = models.DateField(null=True, blank=True, verbose_name='Fecha de nacimiento')
     cedula = models.CharField(max_length=20, blank=True, null=True, verbose_name='Cédula / Identificación')
+    university_name = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='Universidad donde estudia',
+        help_text='Universidad actual del estudiante'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

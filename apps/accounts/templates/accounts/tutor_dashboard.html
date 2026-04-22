@@ -76,8 +76,8 @@
                         <a class="nav-link" href="{% url 'logout' %}?next={% url 'tutor_landing' %}">Cerrar Sesión</a>
                     </li>
                     <li class="nav-item d-flex align-items-center ms-3">
-                        {% if profile.avatar_url %}
-                            <img src="{{ profile.avatar_url|drive_url }}" 
+                        {% if profile.avatar %}
+                            <img src="{{ profile.avatar.url }}" 
                                  alt="Avatar"
                                  style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);background:var(--surface);"
                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -167,8 +167,8 @@
                                         <tr style="border: none;">
                                             <td style="padding: 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle;">
                                                 <div class="d-flex align-items-center gap-2">
-                                                    {% if session.client.client_profile.avatar_url %}
-                                                        <img src="{{ session.client.client_profile.avatar_url|drive_url }}" 
+                                                    {% if session.client.client_profile.avatar %}
+                                                        <img src="{{ session.client.client_profile.avatar.url }}" 
                                                              style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
                                                     {% else %}
                                                         <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width:32px;height:32px;background:var(--accent);font-size:0.9rem;">
@@ -233,8 +233,8 @@
                                     {% for session in upcoming_sessions %}
                                         <tr>
                                             <td class="d-flex align-items-center gap-2">
-                                                {% if session.client.client_profile.avatar_url %}
-                                                    <img src="{{ session.client.client_profile.avatar_url|drive_url }}"
+                                                {% if session.client.client_profile.avatar %}
+                                                    <img src="{{ session.client.client_profile.avatar.url }}"
                                                          style="width:28px;height:28px;border-radius:50%;object-fit:cover;">
                                                 {% else %}
                                                     <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#1A1A2E;font-size:0.8rem;font-weight:700;">

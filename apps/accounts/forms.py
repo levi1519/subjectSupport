@@ -38,6 +38,32 @@ class TutorRegistrationForm(UserCreationForm):
         label='Cédula / ID Nacional',
         help_text='Documento de identidad de tu país.',
     )
+    university_name = forms.CharField(
+        required=False,
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ej: Universidad de Guayaquil, ESPOL, UCSG'
+        }),
+        label='Universidad / Institución donde enseñas',
+        help_text='Si actualmente enseñas en una universidad o institución'
+    )
+    is_foreign_institution = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input',
+                                            'id': 'id_is_foreign_institution'}),
+        label='La institución es del extranjero'
+    )
+    university_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'https://www.universidad.edu',
+            'id': 'university_url_field'
+        }),
+        label='URL de la institución extranjera',
+        help_text='Requerido si la institución es extranjera'
+    )
     phone_number = forms.CharField(
         required=True,
         max_length=20,
@@ -48,11 +74,11 @@ class TutorRegistrationForm(UserCreationForm):
         label='Número de Teléfono',
         help_text='Número de contacto para estudiantes'
     )
-    avatar_url = forms.URLField(
+    avatar = forms.ImageField(
         required=False,
-        widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://drive.google.com/... o https://mega.nz/...'}),
-        label='Foto de Perfil (opcional)',
-        help_text='Pega el link directo a tu foto (Google Drive, MEGA, Dropbox, etc.)'
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+        label='Foto de Perfil',
+        help_text='Sube una foto (JPG, PNG, máximo 5MB)'
     )
     birth_date = forms.DateField(
         required=True,
@@ -173,7 +199,11 @@ class TutorRegistrationForm(UserCreationForm):
                 phone_number=self.cleaned_data.get('phone_number', '')
             )
             profile.cedula = self.cleaned_data.get('cedula', '')
-            profile.avatar_url = self.cleaned_data.get('avatar_url', '')
+            if self.cleaned_data.get('avatar'):
+                profile.avatar = self.cleaned_data.get('avatar')
+            profile.university_name = self.cleaned_data.get('university_name', '')
+            profile.university_url = self.cleaned_data.get('university_url', '')
+            profile.is_foreign_institution = self.cleaned_data.get('is_foreign_institution', False)
             profile.save()
             # Save ManyToMany relationships (subjects)
             subjects = self.cleaned_data.get('subjects_taught')
@@ -206,11 +236,21 @@ class ClientRegistrationForm(UserCreationForm):
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 0912345678'}),
         label='Cédula / Identificación',
     )
-    avatar_url = forms.URLField(
+    university_name = forms.CharField(
+        required=True,
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ej: Universidad de Guayaquil, ESPOL'
+        }),
+        label='Universidad donde estudias',
+        help_text='Universidad en la que estás matriculado actualmente'
+    )
+    avatar = forms.ImageField(
         required=False,
-        widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://drive.google.com/... o https://mega.nz/...'}),
-        label='Foto de Perfil (opcional)',
-        help_text='Pega el link directo a tu foto (Google Drive, MEGA, Dropbox, etc.)'
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+        label='Foto de Perfil',
+        help_text='Sube una foto (JPG, PNG, máximo 5MB)'
     )
     birth_date = forms.DateField(
         required=True,
@@ -335,7 +375,9 @@ class ClientRegistrationForm(UserCreationForm):
                 parent_name=self.cleaned_data.get('parent_name', '')
             )
             profile.cedula = self.cleaned_data.get('cedula', '')
-            profile.avatar_url = self.cleaned_data.get('avatar_url', '')
+            if self.cleaned_data.get('avatar'):
+                profile.avatar = self.cleaned_data.get('avatar')
+            profile.university_name = self.cleaned_data.get('university_name', '')
             profile.save()
         return user
 
@@ -464,7 +506,7 @@ class ClientProfileEditForm(forms.ModelForm):
 
     class Meta:
         model = ClientProfile
-        fields = ['phone_number', 'bio', 'cedula', 'birth_date', 'avatar_url']
+        fields = ['phone_number', 'bio', 'cedula', 'birth_date', 'avatar']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -558,19 +600,16 @@ class TutorProfileEditForm(forms.ModelForm):
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         label='Fecha de nacimiento',
     )
-    avatar_url = forms.URLField(
+    avatar = forms.ImageField(
         required=False,
-        widget=forms.URLInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'https://ejemplo.com/mi-foto.jpg'
-        }),
-        label='URL de Foto de Perfil',
-        help_text='Pega el enlace directo a tu foto (Google Drive, Imgur, etc.)'
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+        label='Foto de Perfil',
+        help_text='Sube una foto (JPG, PNG, máximo 5MB)'
     )
 
     class Meta:
         model = TutorProfile
-        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'cedula', 'birth_date', 'avatar_url']
+        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'cedula', 'birth_date', 'avatar']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)

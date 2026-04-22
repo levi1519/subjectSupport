@@ -106,8 +106,8 @@
                     </li>
                     <!-- User Avatar + Country Flag -->
                     <li class="nav-item d-flex align-items-center gap-2 ms-3">
-                        {% if request.user.avatar_url %}
-                            <img src="{{ request.user.avatar_url|drive_url }}" 
+                        {% if request.user.tutor_profile.avatar %}
+                            <img src="{{ request.user.tutor_profile.avatar.url }}" 
                                  alt="Avatar"
                                  class="rounded-circle"
                                  style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);background:var(--surface);"
