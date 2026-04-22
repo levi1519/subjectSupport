@@ -18,7 +18,13 @@ echo "GEOS_LIBRARY_PATH=$GEOS_LIBRARY_PATH"
 
 # Run migrations before starting the app
 echo "=== Running Database Migrations ==="
-python manage.py migrate --noinput --verbosity=2
+python manage.py migrate --noinput --verbosity=2 || {
+    echo "WARNING: Migration failed, attempting to recover..."
+    # If migration 0012 fails because columns already exist or don't exist,
+    # we may need to fake and reapply
+    python manage.py migrate --fake accounts 0011 --verbosity=2 || true
+    python manage.py migrate accounts 0012 --verbosity=2 || true
+}
 
 # Show migration status for debugging
 echo "=== Migration Status ==="

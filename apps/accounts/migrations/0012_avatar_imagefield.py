@@ -10,10 +10,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='clientprofile',
-            name='avatar_url',
-        ),
+        # NOTE: Removed RemoveField for avatar_url since it never existed
+        # in the production database schema. The field was only present
+        # in a transient local state.
         migrations.AddField(
             model_name='clientprofile',
             name='avatar',
