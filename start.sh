@@ -7,8 +7,8 @@ set -e
 echo "=== Starting subjectSupport Application ==="
 
 # Set up GDAL/GEOS library paths for production
-GDAL_LIB=$(ldconfig -p 2>/dev/null | grep -m1 libgdal | awk -F" " "{print \$(NF)}" || echo "")
-GEOS_LIB=$(ldconfig -p 2>/dev/null | grep -m1 libgeos_c | awk -F" " "{print \$(NF)}" || echo "")
+GDAL_LIB=$(ldconfig -p 2>/dev/null | grep -m1 libgdal | awk -F" " '{print $(NF)}' || echo "")
+GEOS_LIB=$(ldconfig -p 2>/dev/null | grep -m1 libgeos_c | awk -F" " '{print $(NF)}' || echo "")
 
 [ -n "$GDAL_LIB" ] && export GDAL_LIBRARY_PATH=$GDAL_LIB
 [ -n "$GEOS_LIB" ] && export GEOS_LIBRARY_PATH=$GEOS_LIB
@@ -18,7 +18,11 @@ echo "GEOS_LIBRARY_PATH=$GEOS_LIBRARY_PATH"
 
 # Run migrations before starting the app
 echo "=== Running Database Migrations ==="
-python manage.py migrate --noinput
+python manage.py migrate --noinput --verbosity=2
+
+# Show migration status for debugging
+echo "=== Migration Status ==="
+python manage.py showmigrations accounts
 
 # Ensure staticfiles directory exists
 echo "=== Ensuring staticfiles directory exists ==="
