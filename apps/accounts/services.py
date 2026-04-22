@@ -27,8 +27,6 @@ def register_tutor(request, form, country_code=''):
             if age < 18:
                 return False, None, 'El tutor debe ser mayor de 18 años.'
         user.save()
-        user.country_code = form.cleaned_data.get('country_code', '')
-        user.save()
         profile = TutorProfile.objects.create(
             user=user,
             bio=form.cleaned_data.get('bio', ''),
@@ -63,8 +61,6 @@ def register_client(request, form, country_code=''):
         return False, None, 'Invalid form data'
     try:
         user = form.save(country_code=country_code)
-        user.country_code = form.cleaned_data.get('country_code', '')
-        user.save()
         profile = user.client_profile
         geo_data = getattr(request, 'geo_data', {}) or {}
         if geo_data.get('city'):

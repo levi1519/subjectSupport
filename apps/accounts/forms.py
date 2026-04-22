@@ -86,21 +86,6 @@ class TutorRegistrationForm(UserCreationForm):
         label='Fecha de nacimiento',
         help_text='Debes ser mayor de 18 años para registrarte como tutor.',
     )
-    country_code = forms.ChoiceField(
-        choices=[('', 'Selecciona tu país')] + [
-            ('AR', 'Argentina'), ('BO', 'Bolivia'), ('CL', 'Chile'),
-            ('CO', 'Colombia'), ('CR', 'Costa Rica'), ('CU', 'Cuba'),
-            ('DO', 'República Dominicana'), ('EC', 'Ecuador'),
-            ('SV', 'El Salvador'), ('GT', 'Guatemala'), ('HN', 'Honduras'),
-            ('MX', 'México'), ('NI', 'Nicaragua'), ('PA', 'Panamá'),
-            ('PY', 'Paraguay'), ('PE', 'Perú'), ('PR', 'Puerto Rico'),
-            ('UY', 'Uruguay'), ('VE', 'Venezuela'),
-        ],
-        required=True,
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        label='País de residencia',
-    )
-
     class Meta:
         model = User
         fields = ['name', 'email', 'password1', 'password2']
@@ -258,19 +243,15 @@ class ClientRegistrationForm(UserCreationForm):
         label='Fecha de nacimiento',
         help_text='Requerida para verificar si eres menor de edad.',
     )
-    country_code = forms.ChoiceField(
-        choices=[('', 'Selecciona tu país')] + [
-            ('AR', 'Argentina'), ('BO', 'Bolivia'), ('CL', 'Chile'),
-            ('CO', 'Colombia'), ('CR', 'Costa Rica'), ('CU', 'Cuba'),
-            ('DO', 'República Dominicana'), ('EC', 'Ecuador'),
-            ('SV', 'El Salvador'), ('GT', 'Guatemala'), ('HN', 'Honduras'),
-            ('MX', 'México'), ('NI', 'Nicaragua'), ('PA', 'Panamá'),
-            ('PY', 'Paraguay'), ('PE', 'Perú'), ('PR', 'Puerto Rico'),
-            ('UY', 'Uruguay'), ('VE', 'Venezuela'),
-        ],
+    phone_number = forms.CharField(
         required=True,
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        label='País de residencia',
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '+593 99 999 9999'
+        }),
+        label='Número de Teléfono Celular',
+        help_text='Número de contacto para emergencias.'
     )
 
     class Meta:
@@ -378,6 +359,7 @@ class ClientRegistrationForm(UserCreationForm):
             if self.cleaned_data.get('avatar'):
                 profile.avatar = self.cleaned_data.get('avatar')
             profile.university_name = self.cleaned_data.get('university_name', '')
+            profile.phone_number = self.cleaned_data.get('phone_number', '')
             profile.save()
         return user
 
