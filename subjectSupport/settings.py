@@ -328,24 +328,26 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # WhiteNoise configuration for serving static files
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Additional static files directories (if needed)
 STATICFILES_DIRS = [
     BASE_DIR / 'static',  # Global static folder for EduLatam CSS
 ]
 
-# Supabase Storage (S3-compatible)
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-AWS_ACCESS_KEY_ID = os.getenv('SUPABASE_S3_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.getenv('SUPABASE_S3_SECRET')
-AWS_STORAGE_BUCKET_NAME = os.getenv('SUPABASE_S3_BUCKET', 'edulatam-media')
-AWS_S3_ENDPOINT_URL = os.getenv('SUPABASE_S3_URL')
-AWS_S3_REGION_NAME = 'us-east-1'
-AWS_DEFAULT_ACL = 'public-read'
-AWS_S3_FILE_OVERWRITE = False
-MEDIA_URL = f"{os.getenv('SUPABASE_S3_URL')}/storage/v1/object/public/{os.getenv('SUPABASE_S3_BUCKET', 'edulatam-media')}/"
+# ─── Supabase S3 — MEDIA FILES ONLY ───────────────────────────────────────
+# Static files are served by WhiteNoise and must NOT go to S3.
+_SUPABASE_KEY = os.getenv('SUPABASE_S3_KEY_ID', '')
+if not DEBUG and _SUPABASE_KEY:
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_ACCESS_KEY_ID = _SUPABASE_KEY
+    AWS_SECRET_ACCESS_KEY = os.getenv('SUPABASE_S3_SECRET', '')
+    AWS_STORAGE_BUCKET_NAME = os.getenv('SUPABASE_S3_BUCKET', '')
+    AWS_S3_ENDPOINT_URL = os.getenv('SUPABASE_S3_URL', '')
+    AWS_DEFAULT_ACL = 'public-read'
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_QUERYSTRING_AUTH = False
+# ──────────────────────────────────────────────────────────────────────────
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
