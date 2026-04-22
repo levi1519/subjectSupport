@@ -1,15 +1,5 @@
 [phases.setup]
-nixPkgs = ["python312", "python312Packages.pip", "python312Packages.setuptools", "python312Packages.wheel", "gcc", "gdal", "postgresql", "libjpeg", "libpng", "zlib"]
-
-[phases.install]
-cmds = [
-    "python -m venv /opt/venv && . /opt/venv/bin/activate",
-    "pip install --upgrade pip setuptools wheel",
-    "pip install -r requirements.txt"
-]
-
-[phases.build]
-cmds = ["chmod +x build.sh && chmod +x start.sh"]
+nixPkgs = ["python312", "gcc", "gdal"]
 
 [start]
-cmd = "bash start.sh"
+cmd = "export GDAL_LIBRARY_PATH=$(find /nix/store -name 'libgdal.so*' 2>/dev/null | head -1) && export GEOS_LIBRARY_PATH=$(find /nix/store -name 'libgeos_c.so*' 2>/dev/null | head -1) && python manage.py collectstatic --noinput && python manage.py migrate && gunicorn subjectSupport.wsgi:application --bind 0.0.0.0:8080"
