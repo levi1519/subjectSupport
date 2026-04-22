@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["python312", "gcc", "gdal"]
+
+[phases.build]
+cmds = ["chmod +x build.sh && ./build.sh"]
+
+[phases.release]
+cmds = ["python manage.py migrate"]
+
+[start]
+cmd = "bash -c 'GDAL_LIB=$(ldconfig -p 2>/dev/null | grep -m1 libgdal | awk -F\" \" \"{print \\$(NF)}\" || echo \"\"); GEOS_LIB=$(ldconfig -p 2>/dev/null | grep -m1 libgeos_c | awk -F\" \" \"{print \\$(NF)}\" || echo \"\"); [ -n \"$GDAL_LIB\" ] && export GDAL_LIBRARY_PATH=$GDAL_LIB; [ -n \"$GEOS_LIB\" ] && export GEOS_LIBRARY_PATH=$GEOS_LIB; echo \"GDAL=$GDAL_LIBRARY_PATH\"; echo \"GEOS=$GEOS_LIBRARY_PATH\"; gunicorn subjectSupport.wsgi:application --bind 0.0.0.0:8080'"
