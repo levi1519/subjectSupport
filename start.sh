@@ -20,9 +20,13 @@ echo "GEOS_LIBRARY_PATH=$GEOS_LIBRARY_PATH"
 echo "=== Running Database Migrations ==="
 python manage.py migrate --noinput
 
+# Ensure staticfiles directory exists
+echo "=== Ensuring staticfiles directory exists ==="
+mkdir -p /app/staticfiles
+
 # Collect static files
 echo "=== Collecting Static Files ==="
-python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput --clear
 
 # Start the application
 echo "=== Starting Gunicorn ==="
