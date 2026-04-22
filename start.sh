@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Activate virtual environment
+. /opt/venv/bin/activate
+
 echo "=== Starting subjectSupport Application ==="
 
 # Set up GDAL/GEOS library paths for production
