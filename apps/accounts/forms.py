@@ -119,7 +119,7 @@ class TutorRegistrationForm(UserCreationForm):
             'invalid': 'Por favor ingresa un correo electrónico válido.',
             'unique': 'Este correo electrónico ya está registrado.',
         }
-        self.fields['subjects'].error_messages = {
+        self.fields['subjects_taught'].error_messages = {
             'required': 'Por favor ingresa las materias que enseñas.',
             'max_length': 'La descripción de materias es demasiado larga.',
         }

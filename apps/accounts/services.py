@@ -32,15 +32,18 @@ def register_tutor(request, form, country_code=''):
         profile = TutorProfile.objects.create(
             user=user,
             bio=form.cleaned_data.get('bio', ''),
-            experience=form.cleaned_data.get('experience', '')
+            experience=form.cleaned_data.get('experience', ''),
+            phone_number=form.cleaned_data.get('phone_number', '')
         )
+        profile.cedula = form.cleaned_data.get('cedula', '')
+        profile.avatar_url = form.cleaned_data.get('avatar_url', '')
         geo_data = getattr(request, 'geo_data', {}) or {}
         if geo_data.get('city'):
             profile.city = geo_data['city']
         if geo_data.get('country'):
             profile.country = geo_data['country']
         profile.save()
-        subjects = form.cleaned_data.get('subjects')
+        subjects = form.cleaned_data.get('subjects_taught')
         if subjects:
             profile.subjects_taught.set(subjects)
             profile.refresh_from_db()
