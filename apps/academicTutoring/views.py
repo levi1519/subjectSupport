@@ -314,10 +314,10 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
                 else:
                     recipient = session.tutor
                 send_cancellation_email(session, request.user, recipient)
+                _reason_text = f' Motivo: {cancellation_reason}' if cancellation_reason else ''
                 notification_message = (f'{request.user.name} canceló la clase de {session.subject} '
-                                      f'el {session.scheduled_date.strftime("%d/%m/%Y")} a las '
-                                      f'{session.scheduled_time.strftime("%H:%M")}'
-                                      f'{" : " + cancellation_reason if cancellation_reason else "."}')
+                                      f'del {session.scheduled_date.strftime("%d/%m/%Y")} a las '
+                                      f'{session.scheduled_time.strftime("%H:%M")}.{_reason_text}')
                 Notification.objects.create(
                     recipient=recipient,
                     message=notification_message
