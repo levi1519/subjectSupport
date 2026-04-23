@@ -355,6 +355,8 @@ if not DEBUG and _SUPABASE_KEY:
     AWS_S3_REGION_NAME = 'us-west-2'
     AWS_S3_ADDRESSING_STYLE = 'path'
     AWS_S3_SIGNATURE_VERSION = 's3v4'
+    _SUPABASE_REF = os.getenv('SUPABASE_S3_URL', '').split('.')[0].replace('https://', '')
+    AWS_S3_CUSTOM_DOMAIN = f'{_SUPABASE_REF}.supabase.co/storage/v1/object/public/{os.getenv("SUPABASE_S3_BUCKET", "")}'
     AWS_S3_OBJECT_PARAMETERS = {
         'CacheControl': 'max-age=86400',
     }
