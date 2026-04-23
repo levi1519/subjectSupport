@@ -91,23 +91,34 @@
             <h1 class="display-5 fw-bold mb-3">Encuentra tu Tutor Perfecto</h1>
             <p class="lead mb-4">{% if client_city %}Mostrando tutores priorizados para tu país: {{ client_city }}{% else %}Explora nuestra red de tutores{% endif %}</p>
 
-            <form method="get" class="row g-3">
+            <form method="get" class="row g-3" id="search-form">
                 <div class="col-md-3">
-                    <input type="text" name="search" class="form-control form-control-lg"
-                           placeholder="Nombre o materia..." value="{{ search_query }}">
-                </div>
-                <div class="col-md-3">
-                    <select name="city" class="form-control form-control-lg" id="province-select">
+                    <select name="province" class="form-control form-control-lg" id="province-select">
                         <option value="">Todas las provincias</option>
-                        {% for province in ecuador_provinces %}
+                        {% for province, cities in ecuador_provinces %}
                             <option value="{{ province }}"
-                                {% if city_filter == province %}selected{% endif %}>
+                                {% if province_filter == province %}selected{% endif %}>
                                 {{ province }}
                             </option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <select name="city" class="form-control form-control-lg" id="city-select">
+                        <option value="">Todas las ciudades</option>
+                        {% for province, cities in ecuador_provinces %}
+                            {% if province_filter == province %}
+                                {% for city in cities %}
+                                    <option value="{{ city }}"
+                                        {% if city_filter == city %}selected{% endif %}>
+                                        {{ city }}
+                                    </option>
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <select name="knowledge_area" class="form-control form-control-lg" id="area-select">
                         <option value="">Todas las áreas</option>
                         {% for area in knowledge_areas %}
@@ -118,13 +129,19 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2" id="subject-container" style="display:none;">
-                    <select name="search_subject" class="form-control form-control-lg" id="subject-select">
+                <div class="col-md-2">
+                    <select name="subject" class="form-control form-control-lg" id="subject-select">
                         <option value="">Todas las materias</option>
                     </select>
                 </div>
+                <div class="col-md-2">
+                    <input type="text" name="search" class="form-control form-control-lg"
+                           placeholder="Nombre..." value="{{ search_query }}">
+                </div>
                 <div class="col-md-1">
-                    <button type="submit" class="btn btn-primary btn-lg w-100">Buscar</button>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        Buscar
+                    </button>
                 </div>
             </form>
         </div>
@@ -202,45 +219,66 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    // Datos de materias por área (inyectados desde Django)
-    const subjectsByArea = {
-      {% for area in knowledge_areas %}
-        "{{ area.slug }}": [
-          {% for subject in area.subjects.all %}
-            { id: {{ subject.id }}, name: "{{ subject.name }}" },
-          {% endfor %}
-        ],
+    // Mapa provincia → ciudades
+    const provinceCities = {
+      {% for province, cities in ecuador_provinces %}
+        "{{ province }}": [{% for city in cities %}"{{ city }}"{% if not forloop.last %},{% endif %}{% endfor %}],
       {% endfor %}
     };
 
-    const areaSelect = document.getElementById('area-select');
-    const subjectSelect = document.getElementById('subject-select');
+    // Mapa área → materias
+    const areaSubs = {
+      {% for area in knowledge_areas %}
+        "{{ area.slug }}": [{% for s in area.subjects.all %}"{{ s.name }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+      {% endfor %}
+    };
 
-    function updateSubjects() {
-        const selectedArea = areaSelect.value;
-        subjectSelect.innerHTML = '<option value="">Todas las materias</option>';
+    const provinceSelect = document.getElementById('province-select');
+    const citySelect     = document.getElementById('city-select');
+    const areaSelect     = document.getElementById('area-select');
+    const subjectSelect  = document.getElementById('subject-select');
 
-        const container = document.getElementById('subject-container');
-        if (selectedArea && subjectsByArea[selectedArea]) {
-            subjectsByArea[selectedArea].forEach(function(subject) {
-                const option = document.createElement('option');
-                option.value = subject.name;
-                option.textContent = subject.name;
-                subjectSelect.appendChild(option);
+    function updateCities() {
+        const province = provinceSelect.value;
+        citySelect.innerHTML = '<option value="">Todas las ciudades</option>';
+        if (province && provinceCities[province]) {
+            provinceCities[province].forEach(function(city) {
+                const opt = document.createElement('option');
+                opt.value = city;
+                opt.textContent = city;
+                citySelect.appendChild(opt);
             });
-            container.style.display = 'block';
-        } else {
-            container.style.display = 'none';
         }
     }
 
+    function updateSubjects() {
+        const area = areaSelect.value;
+        subjectSelect.innerHTML = '<option value="">Todas las materias</option>';
+        if (area && areaSubs[area]) {
+            areaSubs[area].forEach(function(sub) {
+                const opt = document.createElement('option');
+                opt.value = sub;
+                opt.textContent = sub;
+                subjectSelect.appendChild(opt);
+            });
+        }
+    }
+
+    provinceSelect.addEventListener('change', function() {
+        updateCities();
+        citySelect.value = '';
+    });
+
     areaSelect.addEventListener('change', updateSubjects);
 
-    // Inicializar estado al cargar
-    if (!areaSelect.value) {
-        subjectSelect.disabled = true;
-    } else {
+    // Restaurar ciudades si hay provincia seleccionada al cargar
+    if (provinceSelect.value) { updateCities(); }
+    if ("{{ city_filter }}" && citySelect) { citySelect.value = "{{ city_filter }}"; }
+
+    // Restaurar materias si hay área seleccionada al cargar
+    if (areaSelect.value) {
         updateSubjects();
+        if ("{{ subject_filter }}") { subjectSelect.value = "{{ subject_filter }}"; }
     }
     </script>
 </body>

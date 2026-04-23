@@ -114,48 +114,80 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         active_codes = get_active_country_codes()
         from apps.academicTutoring.models import CountryConfig
 
-        # Get filter params
-        search_query   = self.request.GET.get('search', '')
-        country_filter = self.request.GET.get('country_code', '')
-        city_filter    = self.request.GET.get('city', '').strip()
+        search_query         = self.request.GET.get('search', '')
+        province_filter      = self.request.GET.get('province', '').strip()
+        city_filter          = self.request.GET.get('city', '').strip()
+        knowledge_area_slug  = self.request.GET.get('knowledge_area', '')
+        subject_filter       = self.request.GET.get('subject', '').strip()
 
+        # Base queryset
         if city_filter:
-            tutors_qs = TutorProfile.objects.get_tutors_fallback(active_codes=['EC']).filter(
-                city__icontains=city_filter
-            )
-        elif country_filter:
-            tutors_qs = TutorProfile.objects.get_tutors_filtered_by_country(country_filter, active_codes=active_codes)
+            tutors_qs = TutorProfile.objects.get_tutors_fallback(
+                active_codes=['EC']
+            ).filter(city__icontains=city_filter)
+        elif province_filter:
+            tutors_qs = TutorProfile.objects.get_tutors_fallback(
+                active_codes=['EC']
+            ).filter(country__icontains='Ecuador')
         elif client_country:
-            tutors_qs = TutorProfile.objects.get_tutors_by_country_priority(client_country, active_codes=active_codes)
+            tutors_qs = TutorProfile.objects.get_tutors_by_country_priority(
+                client_country, active_codes=active_codes
+            )
         else:
-            tutors_qs = TutorProfile.objects.get_tutors_fallback(active_codes=active_codes)
+            tutors_qs = TutorProfile.objects.get_tutors_fallback(
+                active_codes=active_codes
+            )
 
-        # Apply knowledge area filter if provided
-        knowledge_area_slug = self.request.GET.get('knowledge_area', '')
+        # Filtro por área
         if knowledge_area_slug:
             tutors_qs = TutorProfile.objects.get_tutors_by_knowledge_area(
                 knowledge_area_slug, active_codes=active_codes
             )
 
-        # Apply search filter
+        # Filtro por materia específica
+        if subject_filter:
+            tutors_qs = tutors_qs.filter(
+                subjects_taught__name__icontains=subject_filter
+            ).distinct()
+
+        # Filtro por búsqueda libre
         tutors_qs = TutorProfile.objects.filter_by_search(tutors_qs, search_query)
 
         context.update({
-            'tutors':         tutors_qs,
-            'client_country': client_country,
-            'search_query':   search_query,
-            'country_filter': country_filter,
-            'city_filter':    city_filter,
-            'countries':      CountryConfig.objects.filter(active=True).order_by('country_name'),
-            'knowledge_areas': KnowledgeArea.objects.all().order_by('name'),
+            'tutors':            tutors_qs,
+            'client_country':    client_country,
+            'search_query':      search_query,
+            'province_filter':   province_filter,
+            'city_filter':       city_filter,
             'knowledge_area_filter': knowledge_area_slug,
+            'subject_filter':    subject_filter,
+            'countries':         CountryConfig.objects.filter(active=True).order_by('country_name'),
+            'knowledge_areas':   KnowledgeArea.objects.prefetch_related('subjects').all().order_by('name'),
             'ecuador_provinces': [
-                'Azuay', 'Bolívar', 'Cañar', 'Carchi', 'Chimborazo',
-                'Cotopaxi', 'El Oro', 'Esmeraldas', 'Galápagos', 'Guayas',
-                'Imbabura', 'Loja', 'Los Ríos', 'Manabí', 'Morona Santiago',
-                'Napo', 'Orellana', 'Pastaza', 'Pichincha', 'Santa Elena',
-                'Santo Domingo de los Tsáchilas', 'Sucumbíos', 'Tungurahua',
-                'Zamora Chinchipe'
+                ('Azuay', ['Cuenca', 'Gualaceo', 'Paute']),
+                ('Bolívar', ['Guaranda', 'Chillanes']),
+                ('Cañar', ['Azogues', 'Cañar', 'La Troncal']),
+                ('Carchi', ['Tulcán', 'Montúfar']),
+                ('Chimborazo', ['Riobamba', 'Alausí', 'Guano']),
+                ('Cotopaxi', ['Latacunga', 'La Maná', 'Salcedo']),
+                ('El Oro', ['Machala', 'Pasaje', 'Santa Rosa', 'Huaquillas']),
+                ('Esmeraldas', ['Esmeraldas', 'Atacames', 'Quinindé']),
+                ('Galápagos', ['Puerto Ayora', 'Puerto Baquerizo Moreno']),
+                ('Guayas', ['Guayaquil', 'Milagro', 'Durán', 'Samborondón', 'Daule', 'El Triunfo', 'Naranjito', 'Yaguachi']),
+                ('Imbabura', ['Ibarra', 'Otavalo', 'Cotacachi']),
+                ('Loja', ['Loja', 'Catamayo', 'Cariamanga']),
+                ('Los Ríos', ['Babahoyo', 'Quevedo', 'Ventanas', 'Vinces']),
+                ('Manabí', ['Portoviejo', 'Manta', 'Chone', 'Jipijapa', 'Pedernales']),
+                ('Morona Santiago', ['Macas', 'Gualaquiza']),
+                ('Napo', ['Tena', 'Archidona']),
+                ('Orellana', ['Francisco de Orellana', 'Loreto']),
+                ('Pastaza', ['Puyo', 'Mera']),
+                ('Pichincha', ['Quito', 'Cayambe', 'Rumiñahui', 'Mejía']),
+                ('Santa Elena', ['Santa Elena', 'Salinas', 'La Libertad']),
+                ('Santo Domingo de los Tsáchilas', ['Santo Domingo']),
+                ('Sucumbíos', ['Nueva Loja', 'Shushufindi']),
+                ('Tungurahua', ['Ambato', 'Baños', 'Pelileo']),
+                ('Zamora Chinchipe', ['Zamora', 'Yantzaza']),
             ],
         })
 
