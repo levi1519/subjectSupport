@@ -344,7 +344,7 @@ if not DEBUG and _SUPABASE_KEY:
     AWS_STORAGE_BUCKET_NAME = os.getenv('SUPABASE_S3_BUCKET', '')
     AWS_S3_ENDPOINT_URL = os.getenv('SUPABASE_S3_URL', '')
     AWS_DEFAULT_ACL = 'public-read'
-    AWS_S3_FILE_OVERWRITE = False
+    AWS_S3_FILE_OVERWRITE = True
     AWS_QUERYSTRING_AUTH = False
     AWS_S3_REGION_NAME = 'us-east-1'
     AWS_S3_ADDRESSING_STYLE = 'path'
