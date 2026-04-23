@@ -72,17 +72,17 @@
                     <!-- User Avatar + Country Flag -->
                     <li class="nav-item d-flex align-items-center gap-2 ms-3">
                         {% if request.user.tutor_profile.avatar %}
-                            <img src="{{ request.user.tutor_profile.avatar.url }}" 
+                            <img src="{{ request.user.tutor_profile.avatar.url }}"
                                  alt="Avatar"
                                  class="rounded-circle"
-                                 style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);background:var(--surface);"
-                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-                            <div class="rounded-circle d-none align-items-center justify-content-center text-white fw-bold" 
-                                 style="width:36px;height:36px;background:var(--primary);display:none!important;font-size:1rem;">
+                                 style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.removeProperty('display');">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                                 style="width:36px;height:36px;background:var(--primary);font-size:1rem;display:none;">
                                 {{ request.user.name|slice:":1"|upper }}
                             </div>
                         {% else %}
-                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" 
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
                                  style="width:36px;height:36px;background:var(--primary);font-size:1rem;">
                                 {{ request.user.name|slice:":1"|upper }}
                             </div>
