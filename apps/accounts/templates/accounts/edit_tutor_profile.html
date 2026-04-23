@@ -75,12 +75,7 @@
                             <img src="{{ request.user.tutor_profile.avatar.url }}"
                                  alt="Avatar"
                                  class="rounded-circle"
-                                 style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);"
-                                 onerror="this.style.display='none';this.nextElementSibling.style.removeProperty('display');">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
-                                 style="width:36px;height:36px;background:var(--primary);font-size:1rem;display:none;">
-                                {{ request.user.name|slice:":1"|upper }}
-                            </div>
+                                 style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);">
                         {% else %}
                             <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
                                  style="width:36px;height:36px;background:var(--primary);font-size:1rem;">
