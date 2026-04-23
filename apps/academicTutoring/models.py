@@ -4,7 +4,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.db.models import Count
 import uuid
-
+ 
 # Importar GIS models solo si está disponible en settings
 # En desarrollo sin GDAL, usar models normales
 GIS_AVAILABLE = getattr(settings, 'GIS_AVAILABLE', False)
@@ -426,3 +426,37 @@ class SubjectLevel(models.Model):
 
     def __str__(self):
         return f"{self.subject.name} - {self.level.name}"
+
+
+class PlatformConfig(models.Model):
+    """
+    Singleton de configuración de plataforma.
+    Solo debe existir una instancia. Editable desde admin.
+    """
+    require_tutor_document = models.BooleanField(
+        default=False,
+        verbose_name='Exigir documento a tutores',
+        help_text='Si activo, el tutor debe subir CV o credencial al registrarse'
+    )
+    require_student_document = models.BooleanField(
+        default=False,
+        verbose_name='Exigir documento a estudiantes',
+        help_text='Si activo, el estudiante debe subir documento institucional al registrarse'
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Configuración de Plataforma'
+        verbose_name_plural = 'Configuración de Plataforma'
+
+    def __str__(self):
+        return 'Configuración de Plataforma'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  # Singleton: siempre pk=1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_config(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

@@ -322,6 +322,13 @@ class TutorProfile(models.Model):
         default=True,
         verbose_name='Documentos Requeridos'
     )
+    document_file = models.FileField(
+        upload_to='documents/tutors/',
+        blank=True,
+        null=True,
+        verbose_name='Documento (CV / Credencial)',
+        help_text='PDF, imagen u otro archivo que acredite tu experiencia'
+    )
 
     # Custom manager
     objects = TutorProfileManager()
@@ -406,6 +413,13 @@ class ClientProfile(models.Model):
         null=True,
         verbose_name='Universidad donde estudia',
         help_text='Universidad actual del estudiante'
+    )
+    document_file = models.FileField(
+        upload_to='documents/students/',
+        blank=True,
+        null=True,
+        verbose_name='Documento institucional',
+        help_text='Constancia de matrícula, carnet u otro documento de tu institución educativa'
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
