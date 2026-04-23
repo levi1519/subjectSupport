@@ -117,9 +117,13 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Get filter params
         search_query   = self.request.GET.get('search', '')
         country_filter = self.request.GET.get('country_code', '')
+        city_filter    = self.request.GET.get('city', '').strip()
 
-        # Query tutors — country filter takes precedence
-        if country_filter:
+        if city_filter:
+            tutors_qs = TutorProfile.objects.get_tutors_fallback(active_codes=['EC']).filter(
+                city__icontains=city_filter
+            )
+        elif country_filter:
             tutors_qs = TutorProfile.objects.get_tutors_filtered_by_country(country_filter, active_codes=active_codes)
         elif client_country:
             tutors_qs = TutorProfile.objects.get_tutors_by_country_priority(client_country, active_codes=active_codes)
@@ -141,9 +145,18 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             'client_country': client_country,
             'search_query':   search_query,
             'country_filter': country_filter,
+            'city_filter':    city_filter,
             'countries':      CountryConfig.objects.filter(active=True).order_by('country_name'),
             'knowledge_areas': KnowledgeArea.objects.all().order_by('name'),
             'knowledge_area_filter': knowledge_area_slug,
+            'ecuador_provinces': [
+                'Azuay', 'Bolívar', 'Cañar', 'Carchi', 'Chimborazo',
+                'Cotopaxi', 'El Oro', 'Esmeraldas', 'Galápagos', 'Guayas',
+                'Imbabura', 'Loja', 'Los Ríos', 'Manabí', 'Morona Santiago',
+                'Napo', 'Orellana', 'Pastaza', 'Pichincha', 'Santa Elena',
+                'Santo Domingo de los Tsáchilas', 'Sucumbíos', 'Tungurahua',
+                'Zamora Chinchipe'
+            ],
         })
 
         return context
