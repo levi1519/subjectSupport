@@ -338,6 +338,12 @@ STATICFILES_DIRS = [
 # ─── Supabase S3 — MEDIA FILES ONLY ───────────────────────────────────────
 # Static files are served by WhiteNoise and must NOT go to S3.
 _SUPABASE_KEY = os.getenv('SUPABASE_S3_KEY_ID', '')
+import logging
+_s3_logger = logging.getLogger(__name__)
+_s3_logger.warning(f"S3_KEY_ID length: {len(_SUPABASE_KEY)}")
+_s3_logger.warning(f"S3_SECRET length: {len(os.getenv('SUPABASE_S3_SECRET', ''))}")
+_s3_logger.warning(f"S3_BUCKET: {os.getenv('SUPABASE_S3_BUCKET', '')}")
+_s3_logger.warning(f"S3_URL length: {len(os.getenv('SUPABASE_S3_URL', ''))}")
 if not DEBUG and _SUPABASE_KEY:
     AWS_ACCESS_KEY_ID = _SUPABASE_KEY
     AWS_SECRET_ACCESS_KEY = os.getenv('SUPABASE_S3_SECRET', '')
