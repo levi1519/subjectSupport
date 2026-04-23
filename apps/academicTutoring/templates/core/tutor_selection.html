@@ -118,7 +118,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2" id="subject-container" style="display:none;">
                     <select name="search_subject" class="form-control form-control-lg" id="subject-select">
                         <option value="">Todas las materias</option>
                     </select>
@@ -220,6 +220,7 @@
         const selectedArea = areaSelect.value;
         subjectSelect.innerHTML = '<option value="">Todas las materias</option>';
 
+        const container = document.getElementById('subject-container');
         if (selectedArea && subjectsByArea[selectedArea]) {
             subjectsByArea[selectedArea].forEach(function(subject) {
                 const option = document.createElement('option');
@@ -227,9 +228,9 @@
                 option.textContent = subject.name;
                 subjectSelect.appendChild(option);
             });
-            subjectSelect.disabled = false;
+            container.style.display = 'block';
         } else {
-            subjectSelect.disabled = true;
+            container.style.display = 'none';
         }
     }
 
