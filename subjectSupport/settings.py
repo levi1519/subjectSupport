@@ -348,6 +348,10 @@ if not DEBUG and _SUPABASE_KEY:
     AWS_QUERYSTRING_AUTH = False
     AWS_S3_REGION_NAME = 'us-east-1'
     AWS_S3_ADDRESSING_STYLE = 'path'
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
     STORAGES = {
         "default": {
             "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
