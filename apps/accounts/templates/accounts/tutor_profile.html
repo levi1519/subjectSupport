@@ -210,6 +210,24 @@
                         <div class="info-value">${{ profile.hourly_rate }} USD</div>
                     </div>
                     {% endif %}
+
+                    {% if profile.university_name %}
+                    <div class="info-item">
+                        <div class="info-label">Institución Educativa</div>
+                        <div class="info-value">{{ profile.university_name }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if profile.document_file %}
+                    <div class="info-item">
+                        <div class="info-label">Documento de Verificación</div>
+                        <div class="info-value">
+                            <a href="{{ profile.document_file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                📄 Ver documento
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- Biografía -->
