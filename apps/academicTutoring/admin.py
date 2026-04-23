@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.conf import settings
-from .models import ServiceArea, TutorLead, ClassSession, NotificacionExpansion, Level, SubjectLevel, CountryConfig
+from .models import ServiceArea, TutorLead, ClassSession, NotificacionExpansion, Level, SubjectLevel, CountryConfig, PlatformConfig
 
 # Importar GISModelAdmin solo si está disponible
 GIS_AVAILABLE = getattr(settings, 'GIS_AVAILABLE', False)
@@ -248,3 +248,22 @@ class SubjectLevelAdmin(admin.ModelAdmin):
             f'{duplicated_count} nueva(s) combinación(es) Materia-Nivel creada(s)'
         )
     duplicate_for_all_levels.short_description = 'Duplicar materia en todos los niveles'
+
+
+@admin.register(PlatformConfig)
+class PlatformConfigAdmin(admin.ModelAdmin):
+    """Singleton de configuración de plataforma."""
+
+    def has_add_permission(self, request):
+        return not PlatformConfig.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    list_display = ['require_tutor_document', 'require_student_document', 'updated_at']
+    fieldsets = (
+        ('Documentos obligatorios', {
+            'fields': ('require_tutor_document', 'require_student_document'),
+            'description': 'Activa para exigir carga de documentos al momento del registro.'
+        }),
+    )
