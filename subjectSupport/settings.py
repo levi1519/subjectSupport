@@ -346,6 +346,7 @@ if not DEBUG and _SUPABASE_KEY:
     AWS_DEFAULT_ACL = 'public-read'
     AWS_S3_FILE_OVERWRITE = False
     AWS_QUERYSTRING_AUTH = False
+    AWS_S3_REGION_NAME = 'us-east-1'
     STORAGES = {
         "default": {
             "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
