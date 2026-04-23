@@ -346,7 +346,7 @@ if not DEBUG and _SUPABASE_KEY:
     AWS_DEFAULT_ACL = 'public-read'
     AWS_S3_FILE_OVERWRITE = True
     AWS_QUERYSTRING_AUTH = False
-    AWS_S3_REGION_NAME = 'us-east-1'
+    AWS_S3_REGION_NAME = 'us-west-2'
     AWS_S3_ADDRESSING_STYLE = 'path'
     AWS_S3_SIGNATURE_VERSION = 's3v4'
     AWS_S3_OBJECT_PARAMETERS = {
