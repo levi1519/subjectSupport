@@ -34,6 +34,11 @@ class RegisterTutorView(FormView):
 
     def form_valid(self, form):
         # DEBUG: print(f"DEBUG TUTOR: Form validado OK. Datos: {form.cleaned_data.get('email')}")
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        if config.require_tutor_document and not form.cleaned_data.get('document_file'):
+            form.add_error('document_file', 'Debes subir un documento (CV o credencial) para registrarte como tutor.')
+            return self.form_invalid(form)
         country_code = self.request.geo_data.get('country_code', '') if hasattr(self.request, 'geo_data') else ''
         success, user, error = services.register_tutor(self.request, form, country_code)
         if success:
@@ -61,6 +66,11 @@ class RegisterClientView(FormView):
 
     def form_valid(self, form):
         # DEBUG: print(f"DEBUG CLIENT: Form validado OK. Datos: {form.cleaned_data.get('email')}")
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        if config.require_student_document and not form.cleaned_data.get('document_file'):
+            form.add_error('document_file', 'Debes subir un documento institucional para registrarte.')
+            return self.form_invalid(form)
         country_code = self.request.geo_data.get('country_code', '') if hasattr(self.request, 'geo_data') else ''
         success, user, error = services.register_client(self.request, form, country_code)
         if success:
@@ -190,6 +200,14 @@ class TutorDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from django.utils import timezone as tz
+        from datetime import timedelta
+        # RF-011-B: eliminar notificaciones leídas hace más de 24h
+        Notification.objects.filter(
+            recipient=self.request.user,
+            is_read=True,
+            read_at__lt=tz.now() - timedelta(hours=24)
+        ).delete()
         from apps.academicTutoring.models import ClassSession
         context['pending_sessions'] = ClassSession.objects.get_tutor_sessions(
             self.request.user, status='pending'
@@ -230,6 +248,14 @@ class ClientDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from django.utils import timezone as tz
+        from datetime import timedelta
+        # RF-011-B: eliminar notificaciones leídas hace más de 24h
+        Notification.objects.filter(
+            recipient=self.request.user,
+            is_read=True,
+            read_at__lt=tz.now() - timedelta(hours=24)
+        ).delete()
         from apps.academicTutoring.models import ClassSession
         context['upcoming_sessions'] = ClassSession.objects.get_client_sessions(
             self.request.user, status='confirmed'

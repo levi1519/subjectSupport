@@ -22,9 +22,10 @@ logger = logging.getLogger(__name__)
 def mark_notification_read(request, notif_id):
     """Mark a notification as read via POST."""
     if request.method == 'POST':
+        from django.utils import timezone as tz
         Notification.objects.filter(
             id=notif_id, recipient=request.user
-        ).update(is_read=True)
+        ).update(is_read=True, read_at=tz.now())
     return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
 
 
