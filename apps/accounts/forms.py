@@ -80,6 +80,22 @@ class TutorRegistrationForm(UserCreationForm):
         label='Foto de Perfil',
         help_text='Sube una foto (JPG, PNG, máximo 5MB)'
     )
+    university_name = forms.CharField(
+        required=False,
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ej: Universidad de Guayaquil'
+        }),
+        label='Universidad / Institución (opcional)',
+        help_text='Institución donde estudias o estudiaste'
+    )
+    document_file = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        label='Documento (CV o Credencial)',
+        help_text='PDF o imagen que acredite tu experiencia como tutor'
+    )
     birth_date = forms.DateField(
         required=True,
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
@@ -189,6 +205,10 @@ class TutorRegistrationForm(UserCreationForm):
             profile.university_name = self.cleaned_data.get('university_name', '')
             profile.university_url = self.cleaned_data.get('university_url', '')
             profile.is_foreign_institution = self.cleaned_data.get('is_foreign_institution', False)
+            if self.cleaned_data.get('university_name'):
+                profile.university_name = self.cleaned_data['university_name']
+            if self.cleaned_data.get('document_file'):
+                profile.document_file = self.cleaned_data['document_file']
             profile.save()
             # Save ManyToMany relationships (subjects)
             subjects = self.cleaned_data.get('subjects_taught')
@@ -236,6 +256,22 @@ class ClientRegistrationForm(UserCreationForm):
         widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
         label='Foto de Perfil',
         help_text='Sube una foto (JPG, PNG, máximo 5MB)'
+    )
+    university_name = forms.CharField(
+        required=False,
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ej: UNEMI, ESPOL, UG...'
+        }),
+        label='Institución educativa',
+        help_text='Nombre de tu colegio, universidad u otra institución'
+    )
+    document_file = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        label='Documento institucional (opcional)',
+        help_text='Constancia de matrícula, carnet u otro documento de tu institución'
     )
     birth_date = forms.DateField(
         required=True,
@@ -360,6 +396,10 @@ class ClientRegistrationForm(UserCreationForm):
                 profile.avatar = self.cleaned_data.get('avatar')
             profile.university_name = self.cleaned_data.get('university_name', '')
             profile.phone_number = self.cleaned_data.get('phone_number', '')
+            if self.cleaned_data.get('university_name'):
+                profile.university_name = self.cleaned_data['university_name']
+            if self.cleaned_data.get('document_file'):
+                profile.document_file = self.cleaned_data['document_file']
             profile.save()
         return user
 
@@ -485,10 +525,16 @@ class ClientProfileEditForm(forms.ModelForm):
         label='URL de Foto de Perfil',
         help_text='Pega el enlace directo a tu foto'
     )
+    document_file = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        label='Documento',
+        help_text='Actualiza tu documento de verificación (opcional)'
+    )
 
     class Meta:
         model = ClientProfile
-        fields = ['phone_number', 'bio', 'cedula', 'birth_date', 'avatar']
+        fields = ['phone_number', 'bio', 'cedula', 'birth_date', 'avatar', 'university_name', 'document_file']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -588,10 +634,16 @@ class TutorProfileEditForm(forms.ModelForm):
         label='Foto de Perfil',
         help_text='Sube una foto (JPG, PNG, máximo 5MB)'
     )
+    document_file = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        label='Documento',
+        help_text='Actualiza tu documento de verificación (opcional)'
+    )
 
     class Meta:
         model = TutorProfile
-        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'cedula', 'birth_date', 'avatar']
+        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'cedula', 'birth_date', 'avatar', 'university_name', 'document_file']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
