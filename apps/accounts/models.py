@@ -329,6 +329,15 @@ class TutorProfile(models.Model):
         verbose_name='Documento (CV / Credencial)',
         help_text='PDF, imagen u otro archivo que acredite tu experiencia'
     )
+    is_approved = models.BooleanField(
+        default=True,
+        verbose_name='Tutor aprobado',
+        help_text='Desactivar cuando documentación está pendiente de revisión'
+    )
+    welcome_shown = models.BooleanField(
+        default=False,
+        verbose_name='Mensaje de bienvenida mostrado'
+    )
 
     # Custom manager
     objects = TutorProfileManager()

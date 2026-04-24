@@ -443,6 +443,11 @@ class PlatformConfig(models.Model):
         verbose_name='Exigir documento a estudiantes',
         help_text='Si activo, el estudiante debe subir documento institucional al registrarse'
     )
+    enable_minor_accounts = models.BooleanField(
+        default=False,
+        verbose_name='Habilitar cuentas de menores de edad',
+        help_text='Si activo, muestra el flujo de registro para menores en la app'
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
