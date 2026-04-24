@@ -258,10 +258,20 @@ class PlatformConfigAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-    list_display = ['require_tutor_document', 'require_student_document', 'enable_minor_accounts', 'updated_at']
+    list_display = ['require_tutor_document', 'require_student_document', 'require_tutor_knowledge_document', 'enable_minor_accounts', 'updated_at']
     fieldsets = (
         ('Documentos obligatorios', {
             'fields': ('require_tutor_document', 'require_student_document'),
+            'description': 'require_tutor_document: activa el flujo de aprobación '
+                          'genérico (CV o credencial). '
+                          'require_tutor_knowledge_document: específico para '
+                          'validación de conocimiento académico.'
+        }),
+        ('Validación de conocimiento', {
+            'fields': ('require_tutor_knowledge_document',),
+            'description': 'Cuando está activo, el tutor debe subir CV, títulos o '
+                          'certificados al registrarse. Su cuenta queda bloqueada '
+                          'hasta aprobación manual del administrador.'
         }),
         ('Funcionalidades', {
             'fields': ('enable_minor_accounts', 'require_student_university'),

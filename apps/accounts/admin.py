@@ -87,6 +87,13 @@ class TutorProfileAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'welcome_shown']
     filter_horizontal = ['subjects_taught']
     actions = ['approve_tutors']
+    fieldsets = (
+        ('Documentos de verificación', {
+            'fields': ('document_file', 'institutional_credential_file', 'is_approved'),
+            'description': 'document_file: CV/títulos/certificados. '
+                          'institutional_credential_file: carnet o ID universitario.'
+        }),
+    )
 
     def approve_tutors(self, request, queryset):
         from apps.accounts.models import Notification

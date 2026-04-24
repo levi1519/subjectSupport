@@ -329,6 +329,13 @@ class TutorProfile(models.Model):
         verbose_name='Documento (CV / Credencial)',
         help_text='PDF, imagen u otro archivo que acredite tu experiencia'
     )
+    institutional_credential_file = models.FileField(
+        upload_to='documents/tutors/institutional/',
+        blank=True,
+        null=True,
+        verbose_name='Credencial institucional',
+        help_text='Carnet o ID de la universidad/institución donde enseñas actualmente'
+    )
     is_approved = models.BooleanField(
         default=True,
         verbose_name='Tutor aprobado',

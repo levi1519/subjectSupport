@@ -96,6 +96,12 @@ class TutorRegistrationForm(UserCreationForm):
         label='Documento (CV o Credencial)',
         help_text='PDF o imagen que acredite tu experiencia como tutor'
     )
+    institutional_credential_file = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        label='Credencial institucional',
+        help_text='Si enseñas en una universidad, sube tu carnet o ID institucional'
+    )
     birth_date = forms.DateField(
         required=True,
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
@@ -209,6 +215,8 @@ class TutorRegistrationForm(UserCreationForm):
                 profile.university_name = self.cleaned_data['university_name']
             if self.cleaned_data.get('document_file'):
                 profile.document_file = self.cleaned_data['document_file']
+            if self.cleaned_data.get('institutional_credential_file'):
+                profile.institutional_credential_file = self.cleaned_data['institutional_credential_file']
             profile.save()
             # Save ManyToMany relationships (subjects)
             subjects = self.cleaned_data.get('subjects_taught')

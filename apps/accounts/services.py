@@ -44,6 +44,9 @@ def register_tutor(request, form, country_code=''):
         config = PlatformConfig.get_config()
         if config.require_tutor_document:
             profile.is_approved = False
+        # Flujo aprobación por conocimiento
+        if config.require_tutor_knowledge_document:
+            profile.is_approved = False
         profile.save()
         subjects = form.cleaned_data.get('subjects_taught')
         if subjects:

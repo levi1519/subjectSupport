@@ -443,6 +443,12 @@ class PlatformConfig(models.Model):
         verbose_name='Exigir documento a estudiantes',
         help_text='Si activo, el estudiante debe subir documento institucional al registrarse'
     )
+    require_tutor_knowledge_document = models.BooleanField(
+        default=False,
+        verbose_name='Exigir documento de conocimiento al tutor',
+        help_text='Si activo, el tutor debe subir CV, título o certificados. '
+                  'Su cuenta quedará pendiente de aprobación hasta revisión del admin.'
+    )
     enable_minor_accounts = models.BooleanField(
         default=False,
         verbose_name='Habilitar cuentas de menores de edad',
