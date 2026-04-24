@@ -264,7 +264,7 @@ class PlatformConfigAdmin(admin.ModelAdmin):
             'fields': ('require_tutor_document', 'require_student_document'),
         }),
         ('Funcionalidades', {
-            'fields': ('enable_minor_accounts',),
+            'fields': ('enable_minor_accounts', 'require_student_university'),
             'description': 'Activa flujos opcionales de la plataforma.'
         }),
     )

@@ -448,6 +448,11 @@ class PlatformConfig(models.Model):
         verbose_name='Habilitar cuentas de menores de edad',
         help_text='Si activo, muestra el flujo de registro para menores en la app'
     )
+    require_student_university = models.BooleanField(
+        default=True,
+        verbose_name='Exigir universidad al estudiante',
+        help_text='Si activo, el estudiante debe declarar su institución educativa al registrarse'
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

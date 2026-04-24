@@ -368,6 +368,14 @@ class ClientRegistrationForm(UserCreationForm):
     def clean(self):
         """Validate parent name if minor"""
         cleaned_data = super().clean()
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        if config.require_student_university:
+            university_name = cleaned_data.get('university_name', '').strip()
+            if not university_name:
+                raise ValidationError({
+                    'university_name': 'Debes declarar tu institución educativa para registrarte.'
+                })
         is_minor = cleaned_data.get('is_minor')
         parent_name = cleaned_data.get('parent_name')
 

@@ -116,7 +116,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="{{ form.university_name.id_for_label }}" class="form-label">{{ form.university_name.label }}</label>
+                                <label for="{{ form.university_name.id_for_label }}" class="form-label">{{ form.university_name.label }} <span class="text-danger">*</span></label>
                                 {{ form.university_name }}
                                 <div class="form-text">{{ form.university_name.help_text }}</div>
                                 {% if form.university_name.errors %}
