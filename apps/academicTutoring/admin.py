@@ -252,18 +252,19 @@ class SubjectLevelAdmin(admin.ModelAdmin):
 
 @admin.register(PlatformConfig)
 class PlatformConfigAdmin(admin.ModelAdmin):
-    """Singleton de configuración de plataforma."""
-
     def has_add_permission(self, request):
         return not PlatformConfig.objects.exists()
 
     def has_delete_permission(self, request, obj=None):
         return False
 
-    list_display = ['require_tutor_document', 'require_student_document', 'updated_at']
+    list_display = ['require_tutor_document', 'require_student_document', 'enable_minor_accounts', 'updated_at']
     fieldsets = (
         ('Documentos obligatorios', {
             'fields': ('require_tutor_document', 'require_student_document'),
-            'description': 'Activa para exigir carga de documentos al momento del registro.'
+        }),
+        ('Funcionalidades', {
+            'fields': ('enable_minor_accounts',),
+            'description': 'Activa flujos opcionales de la plataforma.'
         }),
     )

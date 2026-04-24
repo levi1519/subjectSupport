@@ -78,35 +78,43 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(TutorProfile)
 class TutorProfileAdmin(admin.ModelAdmin):
-    """Admin configuration for TutorProfile model"""
-    list_display = ['user', 'get_subjects_taught_display', 'cedula', 'birth_date', 'hourly_rate', 'phone_number', 'get_location_display', 'documents_required', 'created_at']
+    list_display = ['user', 'is_approved', 'get_subjects_taught_display', 'cedula',
+                    'university_name', 'hourly_rate', 'phone_number',
+                    'get_location_display', 'documents_required', 'created_at']
+    list_filter = ['is_approved', 'created_at', 'country']
+    list_editable = ['is_approved', 'documents_required']
     search_fields = ['user__name', 'user__email', 'phone_number', 'city', 'country']
-    list_filter = ['created_at', 'country']
-    list_editable = ['documents_required']
-    readonly_fields = ['created_at']
+    readonly_fields = ['created_at', 'welcome_shown']
     filter_horizontal = ['subjects_taught']
-    
+    actions = ['approve_tutors']
+
+    def approve_tutors(self, request, queryset):
+        from apps.accounts.models import Notification
+        updated = 0
+        for profile in queryset.filter(is_approved=False):
+            profile.is_approved = True
+            profile.save()
+            Notification.objects.create(
+                recipient=profile.user,
+                message=f'¡Felicitaciones, {profile.user.name}! Tu cuenta de tutor ha sido aprobada. Ya puedes iniciar sesión y comenzar a recibir estudiantes.'
+            )
+            updated += 1
+        self.message_user(request, f'{updated} tutor(es) aprobado(s) y notificado(s).')
+    approve_tutors.short_description = 'Aprobar tutores seleccionados'
+
     def get_location_display(self, obj):
-        """Muestra ubicación formateada desde geolocalización"""
         if obj.city and obj.country:
             return f"{obj.city}, {obj.country}"
-        elif obj.country:
-            return obj.country
-        elif obj.city:
-            return obj.city
-        return "No disponible"
-    get_location_display.short_description = 'Ubicación Actual'
+        return obj.country or obj.city or 'No disponible'
+    get_location_display.short_description = 'Ubicación'
 
     def get_subjects_taught_display(self, obj):
         subjects = obj.subjects_taught.all()[:3]
-        return ", ".join([s.name for s in subjects]) or "Ninguno"
-    get_subjects_taught_display.short_description = 'Materias (Nuevo)'
+        return ', '.join([s.name for s in subjects]) or 'Ninguno'
+    get_subjects_taught_display.short_description = 'Materias'
 
-    def get_subjects_legacy_display(self, obj):
-        """Display legacy subjects as comma-separated list"""
-        subjects = obj.subjects.all()[:3]
-        return ", ".join([subject.name for subject in subjects]) or "Ninguno"
-    get_subjects_legacy_display.short_description = 'Materias (Legacy)'
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user').prefetch_related('subjects_taught')
 
 
 @admin.register(ClientProfile)
