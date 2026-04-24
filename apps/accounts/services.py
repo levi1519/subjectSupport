@@ -40,6 +40,10 @@ def register_tutor(request, form, country_code=''):
             profile.city = geo_data['city']
         if geo_data.get('country'):
             profile.country = geo_data['country']
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        if config.require_tutor_document:
+            profile.is_approved = False
         profile.save()
         subjects = form.cleaned_data.get('subjects_taught')
         if subjects:
