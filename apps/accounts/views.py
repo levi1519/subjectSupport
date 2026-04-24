@@ -42,7 +42,18 @@ class RegisterTutorView(FormView):
         country_code = self.request.geo_data.get('country_code', '') if hasattr(self.request, 'geo_data') else ''
         success, user, error = services.register_tutor(self.request, form, country_code)
         if success:
-            # DEBUG: print(f"DEBUG TUTOR: Usuario creado exitosamente, redirigiendo a tutor_dashboard...")
+            from apps.academicTutoring.models import PlatformConfig
+            config = PlatformConfig.get_config()
+            if config.require_tutor_document:
+                messages.info(
+                    self.request,
+                    '¡Registro exitoso! Tu cuenta está pendiente de revisión. '
+                    'Te notificaremos por correo cuando sea aprobada. '
+                    'Mientras tanto no podrás iniciar sesión.'
+                )
+                from django.contrib.auth import logout as auth_logout
+                auth_logout(self.request)
+                return redirect('tutor_login')
             messages.success(self.request, '¡Bienvenido! Tu cuenta de tutor ha sido creada exitosamente.')
             return redirect('tutor_dashboard')
         # DEBUG: print(f"DEBUG TUTOR: Error en services.register_tutor: {error}")
@@ -128,6 +139,16 @@ class StudentLoginView(LoginView):
         if user.user_type != 'client':
             form.add_error(None, 'Credenciales incorrectas.')
             return self.form_invalid(form)
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        if config.require_tutor_document:
+            try:
+                if not user.tutor_profile.is_approved:
+                    form.add_error(None, 'Tu cuenta está pendiente de aprobación por el administrador. '
+                                         'Recibirás una notificación cuando sea revisada.')
+                    return self.form_invalid(form)
+            except Exception:
+                pass
         messages.success(self.request, f'¡Bienvenido de nuevo, {user.name}!')
         return super().form_valid(form)
 
@@ -232,6 +253,14 @@ class TutorDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         )
         context['pending_count'] = context['pending_sessions'].count()
         context['all_active_sessions'] = list(context['pending_sessions']) + list(context['upcoming_sessions'])
+        try:
+            profile = context.get('profile')
+            if profile and not profile.welcome_shown:
+                context['show_welcome'] = True
+                profile.welcome_shown = True
+                profile.save(update_fields=['welcome_shown'])
+        except Exception:
+            pass
         return context
 
 

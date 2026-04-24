@@ -131,6 +131,20 @@
             {% endfor %}
         {% endif %}
 
+        {% if show_welcome %}
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-3"
+             role="alert"
+             style="border: 1px solid var(--accent); background: rgba(67,217,173,0.15);">
+            <span style="font-size:2rem;">🎉</span>
+            <div>
+                <strong>¡Bienvenido a EduLatam, {{ user.name }}!</strong><br>
+                <span>Tu cuenta ha sido aprobada. Ya puedes recibir solicitudes de estudiantes.
+                Completa tu perfil y agrega tus materias para aparecer en las búsquedas.</span>
+            </div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
         {% if notifications %}
             {% for notif in notifications %}
                 <div class="alert alert-warning alert-dismissible fade show d-flex justify-content-between align-items-center" role="alert">
