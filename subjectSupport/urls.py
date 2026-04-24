@@ -20,7 +20,7 @@ from apps.academicTutoring import views as core_views
 from apps.accounts import views as accounts_views
 
 urlpatterns = [
-    path('gestion-ss-2026/', admin.site.urls),
+    path('gestion-ay-2026-4/', admin.site.urls),
 
     # Geo-router inteligente en la raíz
     path('', core_views.GeoRootRouterView.as_view(), name='home'),
