@@ -32,6 +32,12 @@ class RegisterTutorView(FormView):
     template_name = 'accounts/register_tutor.html'
     form_class = TutorRegistrationForm
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.method in ('POST', 'PUT'):
+            kwargs['files'] = self.request.FILES
+        return kwargs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         from apps.academicTutoring.models import PlatformConfig
