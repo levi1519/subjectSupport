@@ -84,16 +84,57 @@ class TutorProfileAdmin(admin.ModelAdmin):
     list_filter = ['is_approved', 'created_at', 'country']
     list_editable = ['is_approved', 'documents_required']
     search_fields = ['user__name', 'user__email', 'phone_number', 'city', 'country']
-    readonly_fields = ['created_at', 'welcome_shown']
+    readonly_fields = ['created_at', 'welcome_shown', 'senescyt_helper']
     filter_horizontal = ['subjects_taught']
     actions = ['approve_tutors']
     fieldsets = (
-        ('Documentos de verificación', {
+        ('Documentos de verificacion', {
             'fields': ('document_file', 'institutional_credential_file', 'is_approved'),
-            'description': 'document_file: CV/títulos/certificados. '
+            'description': 'document_file: CV/titulos/certificados. '
                           'institutional_credential_file: carnet o ID universitario.'
         }),
+        ('Verificacion SENESCYT', {
+            'fields': ('senescyt_helper',),
+            'description': 'Abre el portal SENESCYT para verificar titulos manualmente.'
+        }),
     )
+
+    def senescyt_helper(self, obj):
+        from django.utils.html import format_html
+        if not obj or not obj.user:
+            return '-'
+        nombre = obj.user.get_full_name() or obj.user.username
+        cedula = obj.cedula or '—'
+        senescyt_url = 'https://www.senescyt.gob.ec/consulta-titulos-web/faces/jsp/consulta/consulta.jsf'
+        return format_html(
+            '''
+            <div style="background:#1a1a2e;border:1px solid #444;border-radius:6px;padding:12px;max-width:400px;">
+                <p style="margin:0 0 8px 0;color:#aaa;font-size:12px;">Datos para consulta SENESCYT</p>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <span style="color:#eee;font-size:13px;">Nombre:</span>
+                    <code id="ss_nombre" style="color:#7dd3fc;">{}</code>
+                    <button type="button" onclick="navigator.clipboard.writeText('{}')"
+                        style="background:#2563eb;color:white;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">
+                        Copiar
+                    </button>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <span style="color:#eee;font-size:13px;">Cedula:</span>
+                    <code id="ss_cedula" style="color:#7dd3fc;">{}</code>
+                    <button type="button" onclick="navigator.clipboard.writeText('{}')"
+                        style="background:#2563eb;color:white;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">
+                        Copiar
+                    </button>
+                </div>
+                <a href="{}" target="_blank"
+                   style="display:inline-block;background:#16a34a;color:white;padding:6px 14px;border-radius:4px;text-decoration:none;font-size:12px;">
+                    Abrir SENESCYT
+                </a>
+            </div>
+            ''',
+            nombre, nombre, cedula, cedula, senescyt_url
+        )
+    senescyt_helper.short_description = 'Consulta SENESCYT'
 
     def approve_tutors(self, request, queryset):
         from apps.accounts.models import Notification

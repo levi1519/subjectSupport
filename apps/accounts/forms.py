@@ -319,6 +319,14 @@ class ClientRegistrationForm(UserCreationForm):
         }),
         label='Nombre del padre/tutor legal'
     )
+    parent_email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'correo@ejemplo.com'
+        }),
+        label='Email del tutor legal'
+    )
     cedula = forms.CharField(
         required=False,
         max_length=20,
@@ -483,22 +491,24 @@ class ClientRegistrationForm(UserCreationForm):
         student_type = cleaned_data.get('student_type')
 
         # Validar tutor legal si es menor
-        if is_minor and not parent_name:
-            raise ValidationError({
-                'parent_name': 'Se requiere el nombre del padre o tutor legal para menores de edad.'
-            })
-
-        # Validar cedula para mayores de edad
-        id_doc = cleaned_data.get('id_document_file')
-        if not is_minor and config.require_student_id_document and not id_doc:
-            self.add_error(
-                'id_document_file',
-                'Debes subir tu cedula de identidad.'
-            )
+        if is_minor:
+            if not parent_name:
+                self.add_error('parent_name', 'Se requiere el nombre del padre o tutor legal para menores de edad.')
+            parent_email = cleaned_data.get('parent_email')
+            if not parent_email:
+                self.add_error('parent_email', 'Se requiere el email del padre o tutor legal para menores de edad.')
+        else:
+            # Validar cedula para mayores de edad
+            id_doc = cleaned_data.get('id_document_file')
+            if config.require_student_id_document and not id_doc:
+                self.add_error(
+                    'id_document_file',
+                    'Debes subir tu cedula de identidad.'
+                )
 
         # Validar constancia de matricula si es universitario
         enrollment = cleaned_data.get('enrollment_file')
-        if student_type == 'universitario' and config.require_student_enrollment_certificate and not enrollment:
+        if not is_minor and student_type == 'universitario' and config.require_student_enrollment_certificate and not enrollment:
             self.add_error(
                 'enrollment_file',
                 'Debes subir tu carnet o constancia de matricula como estudiante universitario.'
@@ -517,7 +527,8 @@ class ClientRegistrationForm(UserCreationForm):
             profile = ClientProfile.objects.create(
                 user=user,
                 is_minor=self.cleaned_data.get('is_minor', False),
-                parent_name=self.cleaned_data.get('parent_name', '')
+                parent_name=self.cleaned_data.get('parent_name', ''),
+                parent_email=self.cleaned_data.get('parent_email', '')
             )
             profile.cedula = self.cleaned_data.get('cedula', '')
             if self.cleaned_data.get('avatar'):

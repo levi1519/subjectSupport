@@ -196,11 +196,19 @@
                                     </label>
                                 </div>
 
-                                <div class="mb-3" id="parent_name_field">
+                                <div class="mb-3" id="parent_name_field" style="display:none;">
                                     <label for="{{ form.parent_name.id_for_label }}" class="form-label">{{ form.parent_name.label }}</label>
                                     {{ form.parent_name }}
                                     {% if form.parent_name.errors %}
                                         <div class="text-danger small">{{ form.parent_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3" id="parent_email_field" style="display:none;">
+                                    <label for="{{ form.parent_email.id_for_label }}" class="form-label">{{ form.parent_email.label }}</label>
+                                    {{ form.parent_email }}
+                                    {% if form.parent_email.errors %}
+                                        <div class="text-danger small">{{ form.parent_email.errors }}</div>
                                     {% endif %}
                                 </div>
                             </div>
@@ -290,6 +298,26 @@
         const minorSection = document.getElementById('minor_accounts_section');
         if (minorSection && '{{ enable_minor_accounts }}' === 'True') {
             minorSection.style.display = 'block';
+        }
+
+        // Toggle campos de tutor legal al marcar is_minor
+        const isMinorChk = document.getElementById('id_is_minor');
+        const parentNameField = document.getElementById('parent_name_field');
+        const parentEmailField = document.getElementById('parent_email_field');
+
+        function toggleMinorFields() {
+            if (isMinorChk && isMinorChk.checked) {
+                if (parentNameField) parentNameField.style.display = 'block';
+                if (parentEmailField) parentEmailField.style.display = 'block';
+            } else {
+                if (parentNameField) parentNameField.style.display = 'none';
+                if (parentEmailField) parentEmailField.style.display = 'none';
+            }
+        }
+
+        if (isMinorChk) {
+            isMinorChk.addEventListener('change', toggleMinorFields);
+            toggleMinorFields(); // ejecutar al cargar por si hay errores de form con valor previo
         }
     </script>
 </body>
