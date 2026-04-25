@@ -51,12 +51,12 @@ class RegisterTutorView(FormView):
 
         # Validar documento genérico (CV o credencial)
         if config.require_tutor_document and not form.cleaned_data.get('document_file'):
-            form.add_error('document_file', 'Debes subir un documento (CV o credencial) para registrarte como tutor.')
+            form.add_error('cv_file', 'Debes subir un documento (CV o credencial) para registrarte como tutor.')
             return self.form_invalid(form)
 
         # Validar documento de conocimiento académico
         if config.require_tutor_knowledge_document and not form.cleaned_data.get('document_file'):
-            form.add_error('document_file', 'Debes subir tu CV, título o certificados que validen tu conocimiento.')
+            form.add_error('cv_file', 'Debes subir tu CV, título o certificados que validen tu conocimiento.')
             return self.form_invalid(form)
 
         # Validar credencial institucional si declaró universidad
@@ -112,7 +112,7 @@ class RegisterClientView(FormView):
         from apps.academicTutoring.models import PlatformConfig
         config = PlatformConfig.get_config()
         if config.require_student_document and not form.cleaned_data.get('document_file'):
-            form.add_error('document_file', 'Debes subir un documento institucional para registrarte.')
+            form.add_error('id_document_file', 'Debes subir un documento institucional para registrarte.')
             return self.form_invalid(form)
         country_code = self.request.geo_data.get('country_code', '') if hasattr(self.request, 'geo_data') else ''
         success, user, error = services.register_client(self.request, form, country_code)

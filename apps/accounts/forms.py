@@ -203,8 +203,10 @@ class TutorRegistrationForm(UserCreationForm):
     def clean_subjects_taught(self):
         from apps.academicTutoring.models import PlatformConfig
         subjects = self.cleaned_data.get('subjects_taught')
+        if not subjects or subjects.count() == 0:
+            raise ValidationError('Debes seleccionar al menos una materia.')
         max_subjects = PlatformConfig.get_config().max_subjects_per_tutor
-        if subjects and subjects.count() > max_subjects:
+        if subjects.count() > max_subjects:
             raise ValidationError(
                 f'Solo puedes seleccionar un maximo de {max_subjects} materias.'
             )
