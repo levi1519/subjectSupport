@@ -78,49 +78,49 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(TutorProfile)
 class TutorProfileAdmin(admin.ModelAdmin):
-
     list_display = [
-        'get_nombre', 'get_email', 'is_approved', 'get_employment',
-        'get_cv', 'get_knowledge_doc', 'created_at'
+        'get_full_name', 'get_email', 'is_approved',
+        'get_subjects_display', 'hourly_rate',
+        'employment_status', 'get_location_display',
+        'get_cv_link', 'created_at'
     ]
+    list_display_links = ['get_full_name']
     list_editable = ['is_approved']
-    list_filter = ['is_approved', 'employment_status', 'education_level', 'country', 'created_at']
+    list_filter = ['is_approved', 'employment_status', 'created_at']
     search_fields = ['user__name', 'user__email', 'cedula']
     readonly_fields = [
-        'created_at', 'senescyt_helper',
-        'get_cv_link', 'get_knowledge_link',
-        'get_credential_link', 'get_education_cert_link'
+        'created_at', 'get_cv_link', 'get_knowledge_link',
+        'get_credential_link', 'get_education_cert_link',
+        'get_avatar_preview', 'senescyt_helper'
     ]
     filter_horizontal = ['subjects_taught']
     actions = ['approve_tutors', 'reject_tutors']
 
     fieldsets = (
         ('Usuario', {
-            'fields': ('user',)
+            'fields': ('get_avatar_preview', 'get_full_name_display', 'get_email_display')
         }),
-        ('Aprobacion', {
+        ('Aprobación', {
             'fields': ('is_approved', 'welcome_shown'),
-            'description': 'Aprueba o rechaza al tutor tras revisar sus documentos.',
         }),
-        ('Situacion laboral', {
-            'fields': ('employment_status', 'education_level', 'institution'),
+        ('Perfil Profesional', {
+            'fields': ('bio', 'experience', 'hourly_rate', 'employment_status', 'education_level'),
         }),
-        ('Documentos subidos', {
+        ('Materias', {
+            'fields': ('subjects_taught',),
+        }),
+        ('Documentos', {
             'fields': (
-                'get_cv_link',
-                'get_knowledge_link',
-                'get_credential_link',
-                'get_education_cert_link',
+                'get_cv_link', 'get_knowledge_link',
+                'get_credential_link', 'get_education_cert_link',
+                'senescyt_helper',
             ),
-            'description': 'Haz clic en cada enlace para revisar el documento antes de aprobar.',
         }),
-        ('Verificacion SENESCYT', {
-            'fields': ('senescyt_helper',),
-            'description': 'Abre SENESCYT para verificar titulos manualmente.',
+        ('Datos Personales', {
+            'fields': ('cedula', 'birth_date', 'phone_number'),
         }),
-        ('Materias y datos', {
-            'fields': ('subjects_taught', 'cedula', 'birth_date', 'phone_number',
-                       'hourly_rate', 'bio', 'experience', 'city', 'country'),
+        ('Ubicación', {
+            'fields': ('city', 'country'),
         }),
         ('Metadatos', {
             'fields': ('created_at',),
@@ -128,66 +128,89 @@ class TutorProfileAdmin(admin.ModelAdmin):
         }),
     )
 
-    def get_nombre(self, obj):
-        return obj.user.name if obj.user else '—'
-    get_nombre.short_description = 'Nombre'
+    # --- list_display methods ---
+    def get_full_name(self, obj):
+        return obj.user.name
+    get_full_name.short_description = 'Nombre'
+    get_full_name.admin_order_field = 'user__name'
 
     def get_email(self, obj):
-        return obj.user.email if obj.user else '—'
+        return obj.user.email
     get_email.short_description = 'Email'
 
-    def get_employment(self, obj):
-        return obj.get_employment_status_display() if obj.employment_status else '—'
-    get_employment.short_description = 'Situacion laboral'
+    def get_subjects_display(self, obj):
+        subjects = obj.subjects_taught.all()[:3]
+        return ', '.join(s.name for s in subjects) or '—'
+    get_subjects_display.short_description = 'Materias'
 
-    def get_cv(self, obj):
-        from django.utils.html import format_html
-        if obj.cv_file:
-            return format_html('<a href="{}" target="_blank">Ver CV</a>', obj.cv_file.url)
-        return 'No subido'
-    get_cv.short_description = 'CV'
+    def get_location_display(self, obj):
+        parts = [p for p in [obj.city, obj.country] if p]
+        return ', '.join(parts) or '—'
+    get_location_display.short_description = 'Ubicación'
 
-    def get_knowledge_doc(self, obj):
+    # --- readonly_fields methods ---
+    def get_full_name_display(self, obj):
+        return obj.user.name
+    get_full_name_display.short_description = 'Nombre completo'
+
+    def get_email_display(self, obj):
+        return obj.user.email
+    get_email_display.short_description = 'Email'
+
+    def get_avatar_preview(self, obj):
         from django.utils.html import format_html
-        if obj.knowledge_document_file:
-            return format_html('<a href="{}" target="_blank">Ver</a>', obj.knowledge_document_file.url)
-        return 'No subido'
-    get_knowledge_doc.short_description = 'Just. conocimiento'
+        url = getattr(obj, 'avatar_url', None) or getattr(obj, 'avatar', None)
+        if url:
+            import re
+            match = re.search(r'/file/d/([a-zA-Z0-9_-]+)', str(url))
+            if match:
+                url = f'https://drive.google.com/uc?export=view&id={match.group(1)}'
+            return format_html(
+                '<img src="{}" style="width:80px;height:80px;border-radius:50%;'
+                'object-fit:cover;border:3px solid #6C63FF;" '
+                'onerror="this.style.display=\'none\'" />',
+                url
+            )
+        initials = obj.user.name[:1].upper() if obj.user.name else '?'
+        return format_html(
+            '<div style="width:80px;height:80px;border-radius:50%;background:#6C63FF;'
+            'display:flex;align-items:center;justify-content:center;'
+            'color:white;font-size:2rem;font-weight:700;">{}</div>',
+            initials
+        )
+    get_avatar_preview.short_description = 'Foto de perfil'
 
     def get_cv_link(self, obj):
         from django.utils.html import format_html
-        if obj.cv_file:
-            return format_html(
-                '<a href="{}" target="_blank" style="color:#43D9AD;">Abrir CV</a>', obj.cv_file.url)
-        return 'No subido'
-    get_cv_link.short_description = 'Curriculum Vitae'
+        cv = getattr(obj, 'cv_file', None)
+        if cv:
+            return format_html('<a href="{}" target="_blank">📄 Ver CV</a>', cv.url)
+        return '—'
+    get_cv_link.short_description = 'CV'
 
     def get_knowledge_link(self, obj):
         from django.utils.html import format_html
-        if obj.knowledge_document_file:
-            return format_html(
-                '<a href="{}" target="_blank" style="color:#43D9AD;">Abrir justificacion</a>',
-                obj.knowledge_document_file.url)
-        return 'No subido'
-    get_knowledge_link.short_description = 'Justificacion de conocimientos'
+        doc = getattr(obj, 'knowledge_document_file', None)
+        if doc:
+            return format_html('<a href="{}" target="_blank">📄 Ver doc. conocimiento</a>', doc.url)
+        return '—'
+    get_knowledge_link.short_description = 'Doc. conocimiento'
 
     def get_credential_link(self, obj):
         from django.utils.html import format_html
-        if obj.institutional_credential_file:
-            return format_html(
-                '<a href="{}" target="_blank" style="color:#43D9AD;">Abrir credencial</a>',
-                obj.institutional_credential_file.url)
-        return 'No subido'
+        doc = getattr(obj, 'institutional_credential_file', None)
+        if doc:
+            return format_html('<a href="{}" target="_blank">🏫 Ver credencial</a>', doc.url)
+        return '—'
     get_credential_link.short_description = 'Credencial institucional'
 
     def get_education_cert_link(self, obj):
         from django.utils.html import format_html
-        if obj.education_certificate_file:
-            return format_html(
-                '<a href="{}" target="_blank" style="color:#43D9AD;">Abrir certificado</a>',
-                obj.education_certificate_file.url)
-        return 'No subido'
-    get_education_cert_link.short_description = 'Certificado educativo'
+        doc = getattr(obj, 'education_certificate_file', None)
+        if doc:
+            return format_html('<a href="{}" target="_blank">🎓 Ver cert. educación</a>', doc.url)
+        return '—'
+    get_education_cert_link.short_description = 'Cert. educación'
 
     def senescyt_helper(self, obj):
         from django.utils.html import format_html
@@ -224,21 +247,31 @@ class TutorProfileAdmin(admin.ModelAdmin):
         )
     senescyt_helper.short_description = 'Consulta SENESCYT'
 
+    # --- actions ---
     def approve_tutors(self, request, queryset):
         from apps.accounts.models import Notification
-        updated = queryset.update(is_approved=True, welcome_shown=False)
+        updated = queryset.update(is_approved=True)
         for profile in queryset:
-            Notification.objects.create(
+            Notification.objects.get_or_create(
                 recipient=profile.user,
-                message='Tu cuenta ha sido aprobada. Ya puedes iniciar sesion.'
+                message='Tu cuenta de tutor ha sido aprobada. ¡Ya puedes recibir estudiantes!'
             )
         self.message_user(request, f'{updated} tutor(es) aprobado(s).')
     approve_tutors.short_description = 'Aprobar tutores seleccionados'
 
     def reject_tutors(self, request, queryset):
         updated = queryset.update(is_approved=False)
-        self.message_user(request, f'{updated} tutor(es) marcado(s) como no aprobados.')
+        self.message_user(request, f'{updated} tutor(es) rechazado(s).')
     reject_tutors.short_description = 'Rechazar tutores seleccionados'
+
+    # --- delete override ---
+    def delete_model(self, request, obj):
+        obj.user.delete()
+
+    def delete_queryset(self, request, queryset):
+        from apps.accounts.models import User
+        user_ids = list(queryset.values_list('user_id', flat=True))
+        User.objects.filter(id__in=user_ids).delete()
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user').prefetch_related('subjects_taught')
@@ -247,11 +280,11 @@ class TutorProfileAdmin(admin.ModelAdmin):
 @admin.register(ClientProfile)
 class ClientProfileAdmin(admin.ModelAdmin):
     """Admin configuration for ClientProfile model"""
-    list_display = ['user', 'is_minor', 'parent_name', 'cedula', 'birth_date', 'get_location_display', 'created_at']
+    list_display = ['user', 'get_avatar_preview', 'is_minor', 'parent_name', 'cedula', 'birth_date', 'get_location_display', 'created_at']
     search_fields = ['user__name', 'user__email', 'parent_name', 'city', 'country']
     list_filter = ['is_minor', 'created_at', 'country']
-    readonly_fields = ['created_at']
-    
+    readonly_fields = ['created_at', 'get_avatar_preview']
+
     def get_location_display(self, obj):
         """Muestra ubicación formateada desde geolocalización"""
         if obj.city and obj.country:
@@ -262,3 +295,34 @@ class ClientProfileAdmin(admin.ModelAdmin):
             return obj.city
         return "No disponible"
     get_location_display.short_description = 'Ubicación Actual'
+
+    def get_avatar_preview(self, obj):
+        from django.utils.html import format_html
+        import re
+        url = getattr(obj, 'avatar_url', None) or getattr(obj, 'avatar', None)
+        if url:
+            match = re.search(r'/file/d/([a-zA-Z0-9_-]+)', str(url))
+            if match:
+                url = f'https://drive.google.com/uc?export=view&id={match.group(1)}'
+            return format_html(
+                '<img src="{}" style="width:40px;height:40px;border-radius:50%;'
+                'object-fit:cover;border:2px solid #43D9AD;" '
+                'onerror="this.style.display=\'none\'" />',
+                url
+            )
+        initials = obj.user.name[:1].upper() if obj.user.name else '?'
+        return format_html(
+            '<div style="width:40px;height:40px;border-radius:50%;background:#43D9AD;'
+            'display:inline-flex;align-items:center;justify-content:center;'
+            'color:#1A1A2E;font-weight:700;">{}</div>',
+            initials
+        )
+    get_avatar_preview.short_description = 'Foto'
+
+    def delete_model(self, request, obj):
+        obj.user.delete()
+
+    def delete_queryset(self, request, queryset):
+        from apps.accounts.models import User
+        user_ids = list(queryset.values_list('user_id', flat=True))
+        User.objects.filter(id__in=user_ids).delete()
