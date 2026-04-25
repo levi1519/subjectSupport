@@ -7,10 +7,6 @@ from .models import User, TutorProfile, ClientProfile, Subject, KnowledgeArea
 
 
 def _avatar_html(user, avatar_field, size=40, border_color='#6C63FF'):
-    """
-    Renderiza avatar desde ImageField.
-    avatar_field: objeto ImageField (obj.avatar)
-    """
     url = None
     if avatar_field:
         try:
@@ -19,21 +15,23 @@ def _avatar_html(user, avatar_field, size=40, border_color='#6C63FF'):
             url = None
 
     if url:
-        # Convertir Google Drive share → direct
         match = re.search(r'/file/d/([a-zA-Z0-9_-]+)', url)
         if match:
             url = f'https://drive.google.com/uc?export=view&id={match.group(1)}'
         return format_html(
             '<img src="{}" width="{}" height="{}" '
-            'style="border-radius:50%;object-fit:cover;border:2px solid {};" '
+            'style="border-radius:50%;object-fit:cover;'
+            'border:2px solid {};flex-shrink:0;" '
             'onerror="this.style.display=\'none\'" />',
             url, size, size, border_color
         )
+
     initial = (user.name or '?')[:1].upper()
     return format_html(
-        '<div style="width:{}px;height:{}px;border-radius:50%;background:{};"'
-        'class="avatar-initial">{}</div>',
-        size, size, border_color, initial
+        '<div style="width:{}px;height:{}px;min-width:{}px;border-radius:50%;'
+        'background:{};display:flex;align-items:center;justify-content:center;'
+        'color:white;font-weight:700;font-size:{}px;flex-shrink:0;">{}</div>',
+        size, size, size, border_color, size // 2, initial
     )
 
 
