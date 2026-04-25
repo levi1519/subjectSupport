@@ -18,12 +18,18 @@ def _avatar_html(user, avatar_field, size=40, border_color='#6C63FF'):
         match = re.search(r'/file/d/([a-zA-Z0-9_-]+)', url)
         if match:
             url = f'https://drive.google.com/uc?export=view&id={match.group(1)}'
+
         return format_html(
+            '<a href="{}" target="_blank" title="Ver foto completa">'
             '<img src="{}" width="{}" height="{}" '
             'style="border-radius:50%;object-fit:cover;'
-            'border:2px solid {};flex-shrink:0;" '
-            'onerror="this.style.display=\'none\'" />',
-            url, size, size, border_color
+            'border:2px solid {};flex-shrink:0;cursor:pointer;'
+            'transition:opacity 0.2s;opacity:1;" '
+            'onmouseover="this.style.opacity=\'0.75\'" '
+            'onmouseout="this.style.opacity=\'1\'" '
+            'onerror="this.parentNode.style.display=\'none\'" />'
+            '</a>',
+            url, url, size, size, border_color
         )
 
     initial = (user.name or '?')[:1].upper()
@@ -271,8 +277,41 @@ class TutorProfileAdmin(admin.ModelAdmin):
 
     # --- readonly_fields (detail view) ---
     def get_avatar_preview(self, obj):
-        return _avatar_html(obj.user, obj.avatar, size=80)
-    get_avatar_preview.short_description = 'Foto'
+        url = None
+        if obj.avatar:
+            try:
+                url = obj.avatar.url
+            except ValueError:
+                url = None
+
+        if url:
+            match = re.search(r'/file/d/([a-zA-Z0-9_-]+)', url)
+            if match:
+                url = f'https://drive.google.com/uc?export=view&id={match.group(1)}'
+
+            return format_html(
+                '<a href="{}" target="_blank" title="Ver foto completa">'
+                '<img src="{}" width="120" height="120" '
+                'style="border-radius:50%;object-fit:cover;'
+                'border:3px solid #6C63FF;cursor:pointer;'
+                'box-shadow:0 4px 15px rgba(108,99,255,0.4);" />'
+                '</a>'
+                '<p style="color:#8892A4;font-size:0.8rem;margin-top:6px;">'
+                '🔍 Click para ver tamaño completo</p>',
+                url, url
+            )
+
+        initial = (obj.user.name or '?')[:1].upper()
+        return format_html(
+            '<div style="width:120px;height:120px;border-radius:50%;'
+            'background:#6C63FF;display:flex;align-items:center;'
+            'justify-content:center;color:white;font-size:3rem;font-weight:700;">'
+            '{}</div>'
+            '<p style="color:#8892A4;font-size:0.8rem;margin-top:6px;">'
+            'Sin foto de perfil</p>',
+            initial
+        )
+    get_avatar_preview.short_description = 'Foto de perfil'
 
     def get_user_info(self, obj):
         return format_html(
@@ -421,8 +460,41 @@ class ClientProfileAdmin(admin.ModelAdmin):
     get_location_display.short_description = 'Ubicación'
 
     def get_avatar_preview(self, obj):
-        return _avatar_html(obj.user, obj.avatar, size=80, border_color='#43D9AD')
-    get_avatar_preview.short_description = 'Foto'
+        url = None
+        if obj.avatar:
+            try:
+                url = obj.avatar.url
+            except ValueError:
+                url = None
+
+        if url:
+            match = re.search(r'/file/d/([a-zA-Z0-9_-]+)', url)
+            if match:
+                url = f'https://drive.google.com/uc?export=view&id={match.group(1)}'
+
+            return format_html(
+                '<a href="{}" target="_blank" title="Ver foto completa">'
+                '<img src="{}" width="120" height="120" '
+                'style="border-radius:50%;object-fit:cover;'
+                'border:3px solid #43D9AD;cursor:pointer;'
+                'box-shadow:0 4px 15px rgba(67,217,173,0.4);" />'
+                '</a>'
+                '<p style="color:#8892A4;font-size:0.8rem;margin-top:6px;">'
+                '🔍 Click para ver tamaño completo</p>',
+                url, url
+            )
+
+        initial = (obj.user.name or '?')[:1].upper()
+        return format_html(
+            '<div style="width:120px;height:120px;border-radius:50%;'
+            'background:#43D9AD;display:flex;align-items:center;'
+            'justify-content:center;color:#1A1A2E;font-size:3rem;font-weight:700;">'
+            '{}</div>'
+            '<p style="color:#8892A4;font-size:0.8rem;margin-top:6px;">'
+            'Sin foto de perfil</p>',
+            initial
+        )
+    get_avatar_preview.short_description = 'Foto de perfil'
 
     def get_user_info(self, obj):
         return format_html(
