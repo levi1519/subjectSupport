@@ -34,7 +34,9 @@ def register_tutor(request, form, country_code=''):
             phone_number=form.cleaned_data.get('phone_number', '')
         )
         profile.cedula = form.cleaned_data.get('cedula', '')
-        profile.avatar_url = form.cleaned_data.get('avatar_url', '')
+        avatar = form.cleaned_data.get('avatar')
+        if avatar:
+            profile.avatar = avatar
         geo_data = getattr(request, 'geo_data', {}) or {}
         if geo_data.get('city'):
             profile.city = geo_data['city']
@@ -125,6 +127,9 @@ def register_client(request, form, country_code=''):
 
         from apps.academicTutoring.models import Institution
 
+        avatar = form.cleaned_data.get('avatar')
+        if avatar:
+            profile.avatar = avatar
         if form.cleaned_data.get('student_type'):
             profile.student_type = form.cleaned_data['student_type']
         if form.cleaned_data.get('id_document_file'):

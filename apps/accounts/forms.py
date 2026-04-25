@@ -76,9 +76,12 @@ class TutorRegistrationForm(UserCreationForm):
     )
     avatar = forms.ImageField(
         required=False,
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/jpeg,image/png,image/webp'
+        }),
         label='Foto de Perfil',
-        help_text='Sube una foto (JPG, PNG, máximo 5MB)'
+        help_text='Sube tu foto (JPG, PNG, máximo 5MB). Opcional.'
     )
     cv_file = forms.FileField(
         required=False,
@@ -363,9 +366,12 @@ class ClientRegistrationForm(UserCreationForm):
     )
     avatar = forms.ImageField(
         required=False,
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/jpeg,image/png,image/webp'
+        }),
         label='Foto de Perfil',
-        help_text='Sube una foto (JPG, PNG, maximo 5MB)'
+        help_text='Sube tu foto (JPG, PNG, máximo 5MB). Opcional.'
     )
     student_type = forms.ChoiceField(
         choices=[('', 'Selecciona tu tipo de estudiante')] + [
@@ -673,14 +679,14 @@ class ClientProfileEditForm(forms.ModelForm):
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         label='Fecha de nacimiento',
     )
-    avatar_url = forms.URLField(
+    avatar = forms.ImageField(
         required=False,
-        widget=forms.URLInput(attrs={
+        widget=forms.FileInput(attrs={
             'class': 'form-control',
-            'placeholder': 'https://ejemplo.com/mi-foto.jpg'
+            'accept': 'image/jpeg,image/png,image/webp'
         }),
-        label='URL de Foto de Perfil',
-        help_text='Pega el enlace directo a tu foto'
+        label='Foto de Perfil',
+        help_text='Sube tu foto (JPG, PNG, máximo 5MB). Opcional.'
     )
     document_file = forms.FileField(
         required=False,
@@ -692,6 +698,7 @@ class ClientProfileEditForm(forms.ModelForm):
     class Meta:
         model = ClientProfile
         fields = ['phone_number', 'bio', 'cedula', 'birth_date', 'avatar', 'university_name', 'document_file']
+        # Note: 'avatar' is an ImageField on ClientProfile model
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
