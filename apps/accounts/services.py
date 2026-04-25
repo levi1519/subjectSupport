@@ -3,9 +3,28 @@ Service functions for accounts app.
 Handles business logic for profile management and user operations.
 """
 
+import re
+import uuid
+import os
+
 from django.db import transaction
 from django.contrib.auth import login
 from .models import TutorProfile, ClientProfile, User
+
+
+def sanitize_filename(filename):
+    """
+    Sanitiza el nombre de archivo para compatibilidad con S3.
+    Reemplaza espacios y caracteres especiales, conserva la extensión.
+    """
+    name, ext = os.path.splitext(filename)
+    # Eliminar tildes y caracteres especiales
+    name = name.encode('ascii', 'ignore').decode('ascii')
+    # Reemplazar cualquier caracter no alfanumérico por guión
+    name = re.sub(r'[^a-zA-Z0-9_-]', '_', name)
+    # Limitar longitud + añadir UUID corto para evitar colisiones
+    name = name[:40] + '_' + uuid.uuid4().hex[:8]
+    return f"{name}{ext.lower()}"
 
 
 @transaction.atomic
@@ -36,6 +55,7 @@ def register_tutor(request, form, country_code=''):
         profile.cedula = form.cleaned_data.get('cedula', '')
         avatar = form.cleaned_data.get('avatar')
         if avatar:
+            avatar.name = sanitize_filename(avatar.name)
             profile.avatar = avatar
         geo_data = getattr(request, 'geo_data', {}) or {}
         if geo_data.get('city'):
@@ -57,18 +77,25 @@ def register_tutor(request, form, country_code=''):
         from apps.academicTutoring.models import Institution
 
         # Guardar campos nuevos
-        if form.cleaned_data.get('cv_file'):
-            profile.cv_file = form.cleaned_data['cv_file']
+        cv = form.cleaned_data.get('cv_file')
+        if cv:
+            cv.name = sanitize_filename(cv.name)
+            profile.cv_file = cv
         if form.cleaned_data.get('employment_status'):
             profile.employment_status = form.cleaned_data['employment_status']
         if form.cleaned_data.get('education_level'):
             profile.education_level = form.cleaned_data['education_level']
-        if form.cleaned_data.get('education_certificate_file'):
-            profile.education_certificate_file = form.cleaned_data['education_certificate_file']
-        if form.cleaned_data.get('institutional_credential_file'):
-            profile.institutional_credential_file = form.cleaned_data['institutional_credential_file']
+        education_cert = form.cleaned_data.get('education_certificate_file')
+        if education_cert:
+            education_cert.name = sanitize_filename(education_cert.name)
+            profile.education_certificate_file = education_cert
+        institutional_cred = form.cleaned_data.get('institutional_credential_file')
+        if institutional_cred:
+            institutional_cred.name = sanitize_filename(institutional_cred.name)
+            profile.institutional_credential_file = institutional_cred
         knowledge_doc = form.cleaned_data.get('knowledge_document_file')
         if knowledge_doc:
+            knowledge_doc.name = sanitize_filename(knowledge_doc.name)
             profile.knowledge_document_file = knowledge_doc
 
         # Manejar institucion
@@ -129,13 +156,18 @@ def register_client(request, form, country_code=''):
 
         avatar = form.cleaned_data.get('avatar')
         if avatar:
+            avatar.name = sanitize_filename(avatar.name)
             profile.avatar = avatar
         if form.cleaned_data.get('student_type'):
             profile.student_type = form.cleaned_data['student_type']
-        if form.cleaned_data.get('id_document_file'):
-            profile.id_document_file = form.cleaned_data['id_document_file']
-        if form.cleaned_data.get('enrollment_file'):
-            profile.enrollment_file = form.cleaned_data['enrollment_file']
+        id_doc = form.cleaned_data.get('id_document_file')
+        if id_doc:
+            id_doc.name = sanitize_filename(id_doc.name)
+            profile.id_document_file = id_doc
+        enrollment = form.cleaned_data.get('enrollment_file')
+        if enrollment:
+            enrollment.name = sanitize_filename(enrollment.name)
+            profile.enrollment_file = enrollment
 
         institution_id = form.cleaned_data.get('institution_id')
         institution_manual = form.cleaned_data.get('institution_manual', '').strip()
