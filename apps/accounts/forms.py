@@ -307,8 +307,8 @@ class TutorRegistrationForm(UserCreationForm):
             profile.is_foreign_institution = self.cleaned_data.get('is_foreign_institution', False)
             if self.cleaned_data.get('university_name'):
                 profile.university_name = self.cleaned_data['university_name']
-            if self.cleaned_data.get('document_file'):
-                profile.document_file = self.cleaned_data['document_file']
+            if self.cleaned_data.get('cv_file'):
+                profile.cv_file = self.cleaned_data['cv_file']
             if self.cleaned_data.get('institutional_credential_file'):
                 profile.institutional_credential_file = self.cleaned_data['institutional_credential_file']
             profile.save()
@@ -555,8 +555,8 @@ class ClientRegistrationForm(UserCreationForm):
             profile.phone_number = self.cleaned_data.get('phone_number', '')
             if self.cleaned_data.get('university_name'):
                 profile.university_name = self.cleaned_data['university_name']
-            if self.cleaned_data.get('document_file'):
-                profile.document_file = self.cleaned_data['document_file']
+            if self.cleaned_data.get('id_document_file'):
+                profile.id_document_file = self.cleaned_data['id_document_file']
             profile.save()
         return user
 

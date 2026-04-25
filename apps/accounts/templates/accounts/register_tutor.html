@@ -179,6 +179,7 @@
                                     {% endif %}
                                 </label>
                                 {{ form.education_certificate_file }}
+                                <small class="text-muted">PDF, JPG, PNG · Max {{ config.max_file_size_mb }}MB</small>
                                 <div class="form-text">{{ form.education_certificate_file.help_text }}</div>
                                 {% if form.education_certificate_file.errors %}<div class="text-danger small">{{ form.education_certificate_file.errors }}</div>{% endif %}
                             </div>
@@ -208,6 +209,7 @@
                                     {% endif %}
                                 </label>
                                 {{ form.institutional_credential_file }}
+                                <small class="text-muted">PDF, JPG, PNG · Max {{ config.max_file_size_mb }}MB</small>
                                 <div class="form-text">{{ form.institutional_credential_file.help_text }}</div>
                                 {% if form.institutional_credential_file.errors %}<div class="text-danger small">{{ form.institutional_credential_file.errors }}</div>{% endif %}
                             </div>
@@ -223,6 +225,7 @@
                                     {% endif %}
                                 </label>
                                 {{ form.knowledge_document_file }}
+                                <small class="text-muted">Solo PDF · Max {{ config.max_file_size_mb }}MB</small>
                                 {% if form.knowledge_document_file.help_text %}
                                     <div class="form-text">{{ form.knowledge_document_file.help_text }}</div>
                                 {% endif %}
@@ -242,6 +245,7 @@
                                     {% endif %}
                                 </label>
                                 {{ form.cv_file }}
+                                <small class="text-muted">Solo PDF · Max {{ config.max_file_size_mb }}MB</small>
                                 <div class="form-text">{{ form.cv_file.help_text }}</div>
                                 {% if form.cv_file.errors %}<div class="text-danger small">{{ form.cv_file.errors }}</div>{% endif %}
                             </div>
