@@ -154,6 +154,16 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         # Filtro por búsqueda libre
         tutors_qs = TutorProfile.objects.filter_by_search(tutors_qs, search_query)
 
+        # REGLA DE NEGOCIO: tutor visible SOLO si tiene tarifa Y materias configuradas
+        tutors_qs = tutors_qs.filter(
+            hourly_rate__isnull=False,
+            hourly_rate__gt=0,
+        ).exclude(subjects_taught=None)
+        from django.db.models import Count
+        tutors_qs = tutors_qs.annotate(
+            num_subjects=Count('subjects_taught')
+        ).filter(num_subjects__gt=0)
+
         context.update({
             'tutors':            tutors_qs,
             'client_country':    client_country,
@@ -220,11 +230,14 @@ class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         from .forms import SessionMaterialForm
+        from .models import PlatformConfig
+        config = PlatformConfig.get_config()
         context.update({
             'tutor': self.tutor,
             'tutor_profile': getattr(self.tutor, 'tutor_profile', None),
             'tutor_subjects': getattr(self.tutor, 'tutor_profile', None).subjects_taught.all() if getattr(self.tutor, 'tutor_profile', None) else [],
             'material_form': SessionMaterialForm(),
+            'config': config,
         })
         return context
     
@@ -236,6 +249,18 @@ class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     
     def form_valid(self, form):
         """Use academic_services to create session"""
+        from .models import PlatformConfig
+        config = PlatformConfig.get_config()
+        if config:
+            if config.require_session_material_url:
+                if not self.request.POST.get('material_url', '').strip():
+                    form.add_error('material_url', 'La URL del material es obligatoria.')
+                    return self.form_invalid(form)
+            if config.require_session_material_file:
+                if not self.request.FILES.get('material_file'):
+                    messages.error(self.request, 'Debes subir un archivo de material para solicitar la clase.')
+                    return self.form_invalid(form)
+
         success, session, error = academic_services.create_session(
             self.tutor,
             self.request.user,
@@ -247,8 +272,7 @@ class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             return self.form_invalid(form)
 
         # Guardar materiales adjuntos
-        from .models import SessionMaterial, PlatformConfig
-        config = PlatformConfig.get_config()
+        from .models import SessionMaterial
         material_count = 0
 
         url = self.request.POST.get('material_url', '').strip()

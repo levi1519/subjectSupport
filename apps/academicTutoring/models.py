@@ -535,6 +535,16 @@ class PlatformConfig(models.Model):
         verbose_name='Máximo de archivos por sesión',
         help_text='Cantidad máxima de materiales que se pueden adjuntar a una sesión'
     )
+    require_session_material_file = models.BooleanField(
+        default=False,
+        verbose_name='Exigir archivo en solicitud de sesión',
+        help_text='Si está marcado, el estudiante DEBE subir un archivo al solicitar una clase'
+    )
+    require_session_material_url = models.BooleanField(
+        default=False,
+        verbose_name='Exigir URL de material en solicitud de sesión',
+        help_text='Si está marcado, el estudiante DEBE ingresar una URL al solicitar una clase'
+    )
     allowed_file_types = models.CharField(
         max_length=200,
         default='pdf,jpg,jpeg,png,doc,docx,ppt,pptx,xlsx',

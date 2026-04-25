@@ -156,34 +156,52 @@
                                 {% endif %}
                             </div>
 
+                            <!-- Material URL -->
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Material de clase</label>
-                                <p class="text-muted small mb-2">Puedes adjuntar un enlace Y/O un archivo. Ambos son opcionales.</p>
-
-                                <div class="mb-2">
-                                    <label for="{{ material_form.material_url.id_for_label }}" class="form-label">
-                                        {{ material_form.material_url.label }}
-                                        <span class="text-muted small">(Opcional)</span>
-                                    </label>
-                                    {{ material_form.material_url }}
-                                    <div class="form-text">{{ material_form.material_url.help_text }}</div>
-                                    {% if material_form.material_url.errors %}
-                                        <div class="text-danger small">{{ material_form.material_url.errors }}</div>
+                                <label for="{{ material_form.material_url.id_for_label }}" class="form-label">
+                                    {{ material_form.material_url.label }}
+                                    {% if config.require_session_material_url %}
+                                        <span class="text-danger">* Obligatorio</span>
+                                    {% else %}
+                                        <span class="text-muted">(Opcional)</span>
                                     {% endif %}
-                                </div>
-
-                                <div class="mb-2">
-                                    <label for="{{ material_form.material_file.id_for_label }}" class="form-label">
-                                        {{ material_form.material_file.label }}
-                                        <span class="text-muted small">(Opcional)</span>
-                                    </label>
-                                    {{ material_form.material_file }}
-                                    <div class="form-text">{{ material_form.material_file.help_text }}</div>
-                                    {% if material_form.material_file.errors %}
-                                        <div class="text-danger small">{{ material_form.material_file.errors }}</div>
+                                </label>
+                                {{ material_form.material_url }}
+                                {% if material_form.material_url.errors %}
+                                    <div class="text-danger small">{{ material_form.material_url.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">
+                                    {% if config.require_session_material_url %}
+                                        Debes ingresar un enlace al material de la clase.
+                                    {% else %}
+                                        Opcional: enlace a material de estudio, documentos o recursos para la clase.
                                     {% endif %}
-                                </div>
+                                </small>
                             </div>
+
+                            <!-- Material File (si existe el campo en el form) -->
+                            {% if material_form.material_file %}
+                            <div class="mb-3">
+                                <label for="{{ material_form.material_file.id_for_label }}" class="form-label">
+                                    Archivo de material
+                                    {% if config.require_session_material_file %}
+                                        <span class="text-danger">* Obligatorio</span>
+                                    {% else %}
+                                        <span class="text-muted">(Opcional)</span>
+                                    {% endif %}
+                                </label>
+                                {{ material_form.material_file }}
+                                {% if material_form.material_file.errors %}
+                                    <div class="text-danger small">{{ material_form.material_file.errors }}</div>
+                                {% endif %}
+                                <small class="text-muted">
+                                    Máximo {{ config.max_file_size_mb }} MB. Hasta {{ config.max_session_materials }} materiales por sesión.
+                                    {% if config.require_session_material_file %}
+                                        Archivo obligatorio para solicitar esta clase.
+                                    {% endif %}
+                                </small>
+                            </div>
+                            {% endif %}
 
                             <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">Enviar Solicitud</button>
 

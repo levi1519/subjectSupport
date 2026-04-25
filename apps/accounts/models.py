@@ -151,7 +151,9 @@ class TutorProfileManager(models.Manager):
         ).filter(
             subjects_taught__knowledge_area__slug=knowledge_area_slug,
             user__user_type='tutor',
-            user__is_active=True
+            user__is_active=True,
+            hourly_rate__isnull=False,
+            hourly_rate__gt=0,
         ).distinct()
         if active_codes is not None:
             queryset = queryset.filter(user__country_code__in=active_codes)
@@ -161,7 +163,9 @@ class TutorProfileManager(models.Manager):
         """Fallback queryset returning all active tutors ordered by name."""
         queryset = self.select_related('user').prefetch_related('subjects_taught').filter(
             user__user_type='tutor',
-            user__is_active=True
+            user__is_active=True,
+            hourly_rate__isnull=False,
+            hourly_rate__gt=0,
         )
         if active_codes is not None:
             queryset = queryset.filter(user__country_code__in=active_codes)
@@ -186,7 +190,9 @@ class TutorProfileManager(models.Manager):
             'subjects_taught', 'subjects_taught__knowledge_area'
         ).filter(
             user__user_type='tutor',
-            user__is_active=True
+            user__is_active=True,
+            hourly_rate__isnull=False,
+            hourly_rate__gt=0,
         )
         if active_codes is not None:
             queryset = queryset.filter(user__country_code__in=active_codes)
@@ -208,7 +214,9 @@ class TutorProfileManager(models.Manager):
         ).filter(
             user__user_type='tutor',
             user__is_active=True,
-            user__country_code__iexact=country_code
+            user__country_code__iexact=country_code,
+            hourly_rate__isnull=False,
+            hourly_rate__gt=0,
         )
         if active_codes is not None:
             queryset = queryset.filter(user__country_code__in=active_codes)

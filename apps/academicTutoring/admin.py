@@ -298,8 +298,15 @@ class PlatformConfigAdmin(admin.ModelAdmin):
             'fields': ('max_subjects_per_tutor', 'session_cancellation_hours'),
             'description': 'session_cancellation_hours aplica cuando los pagos esten activos (Fase 3).',
         }),
-        ('Archivos', {
-            'fields': ('max_file_size_mb', 'max_session_materials', 'allowed_file_types'),
+        ('Materiales de Sesión', {
+            'fields': (
+                'max_session_materials',
+                'max_file_size_mb',
+                'require_session_material_file',
+                'require_session_material_url',
+                'allowed_file_types',
+            ),
+            'description': 'Configura límites y obligatoriedad de materiales en solicitudes de sesión.'
         }),
         ('Pagos — Fase 3 (no modificar hasta implementacion)', {
             'fields': (
