@@ -210,32 +210,20 @@
                         </div>
 
                         <div class="mb-4">
-                            <label for="{{ form.university_name.id_for_label }}" class="form-label fw-bold">{{ form.university_name.label }}</label>
-                            {{ form.university_name }}
-                            {% if form.university_name.help_text %}
-                                <div class="form-text">{{ form.university_name.help_text }}</div>
+                            <label class="form-label fw-bold">Universidad / Institucion</label>
+                            {% if profile.institution %}
+                                <p class="text-muted small mb-1">Actual: {{ profile.institution.name }}</p>
                             {% endif %}
-                            {% if form.university_name.errors %}
-                                <div class="text-danger small mt-1">{{ form.university_name.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="{{ form.document_file.id_for_label }}" class="form-label fw-bold">{{ form.document_file.label }}</label>
-                            {{ form.document_file }}
-                            {% if form.document_file.help_text %}
-                                <div class="form-text">{{ form.document_file.help_text }}</div>
-                            {% endif %}
-                            {% if form.document_file.errors %}
-                                <div class="text-danger small mt-1">{{ form.document_file.errors }}</div>
-                            {% endif %}
-                            {% if profile.document_file %}
-                                <div class="mt-2">
-                                    <a href="{{ profile.document_file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                        📄 Ver documento actual
-                                    </a>
-                                </div>
-                            {% endif %}
+                            {{ form.institution_id }}
+                            <input type="text" id="edit_institution_search" class="form-control mb-2"
+                                   placeholder="Busca tu universidad o institucion..."
+                                   autocomplete="off"
+                                   value="{% if profile.institution %}{{ profile.institution.name }}{% endif %}">
+                            <div id="edit_institution_results" class="list-group" style="max-height:200px;overflow-y:auto;"></div>
+                            <div id="edit_manual_section" style="display:none;" class="mt-2">
+                                {{ form.institution_manual }}
+                                <small class="text-muted">Si no aparece en la lista, ingresala manualmente.</small>
+                            </div>
                         </div>
 
                         <hr class="my-4">
@@ -255,5 +243,43 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Buscador institucion en edicion de perfil
+        const editSearch = document.getElementById('edit_institution_search');
+        const editResults = document.getElementById('edit_institution_results');
+        const editInstId = document.querySelector('input[name="institution_id"]');
+        const editManual = document.getElementById('edit_manual_section');
+
+        if (editSearch) {
+            editSearch.addEventListener('input', function() {
+                const q = this.value.trim();
+                if (q.length < 2) { editResults.innerHTML = ''; return; }
+                fetch(`/api/institutions/?q=${encodeURIComponent(q)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        editResults.innerHTML = '';
+                        if (data.results.length === 0) {
+                            editManual.style.display = 'block';
+                        } else {
+                            editManual.style.display = 'none';
+                            data.results.forEach(inst => {
+                                const item = document.createElement('button');
+                                item.type = 'button';
+                                item.className = 'list-group-item list-group-item-action';
+                                item.style.background = 'var(--surface)';
+                                item.style.color = 'var(--text)';
+                                item.textContent = `${inst.name} - ${inst.city}`;
+                                item.addEventListener('click', () => {
+                                    editSearch.value = inst.name;
+                                    if (editInstId) editInstId.value = inst.id;
+                                    editResults.innerHTML = '';
+                                });
+                                editResults.appendChild(item);
+                            });
+                        }
+                    });
+            });
+        }
+    </script>
 </body>
 </html>

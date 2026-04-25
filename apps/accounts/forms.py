@@ -715,6 +715,23 @@ class ClientProfileEditForm(forms.ModelForm):
                 self.user.save()
         if commit:
             profile.save()
+
+        from apps.academicTutoring.models import Institution
+        institution_id = self.cleaned_data.get('institution_id')
+        institution_manual = self.cleaned_data.get('institution_manual', '').strip()
+        if institution_id:
+            try:
+                profile.institution = Institution.objects.get(pk=institution_id, active=True)
+            except Institution.DoesNotExist:
+                pass
+        elif institution_manual:
+            inst, _ = Institution.objects.get_or_create(
+                name=institution_manual,
+                defaults={'type': 'universidad', 'is_manual': True, 'needs_review': True, 'active': True}
+            )
+            profile.institution = inst
+        profile.save()
+
         return profile
 
 
