@@ -170,7 +170,14 @@
 
                             <!-- Certificado educativo -->
                             <div class="mb-3">
-                                <label for="{{ form.education_certificate_file.id_for_label }}" class="form-label">{{ form.education_certificate_file.label }}</label>
+                                <label for="{{ form.education_certificate_file.id_for_label }}" class="form-label">
+                                    {{ form.education_certificate_file.label }}
+                                    {% if config.require_tutor_education_certificate %}
+                                        <span class="text-danger fw-bold">* Obligatorio</span>
+                                    {% else %}
+                                        <span class="text-muted small">(Opcional)</span>
+                                    {% endif %}
+                                </label>
                                 {{ form.education_certificate_file }}
                                 <div class="form-text">{{ form.education_certificate_file.help_text }}</div>
                                 {% if form.education_certificate_file.errors %}<div class="text-danger small">{{ form.education_certificate_file.errors }}</div>{% endif %}
@@ -193,7 +200,12 @@
                             <!-- Credencial institucional -->
                             <div class="mb-3" id="institutional_credential_section" style="display:none;">
                                 <label for="{{ form.institutional_credential_file.id_for_label }}" class="form-label">
-                                    {{ form.institutional_credential_file.label }} <span class="text-danger">*</span>
+                                    {{ form.institutional_credential_file.label }}
+                                    {% if config.require_tutor_institutional_credential %}
+                                        <span class="text-danger fw-bold">* Obligatorio</span>
+                                    {% else %}
+                                        <span class="text-muted small">(Opcional)</span>
+                                    {% endif %}
                                 </label>
                                 {{ form.institutional_credential_file }}
                                 <div class="form-text">{{ form.institutional_credential_file.help_text }}</div>
@@ -204,7 +216,11 @@
                             <div class="mb-3" id="knowledge_document_section">
                                 <label for="{{ form.knowledge_document_file.id_for_label }}" class="form-label">
                                     {{ form.knowledge_document_file.label }}
-                                    {% if config.require_tutor_knowledge_document %}<span class="text-danger">*</span>{% endif %}
+                                    {% if config.require_tutor_knowledge_document %}
+                                        <span class="text-danger fw-bold">* Obligatorio</span>
+                                    {% else %}
+                                        <span class="text-muted small">(Opcional)</span>
+                                    {% endif %}
                                 </label>
                                 {{ form.knowledge_document_file }}
                                 {% if form.knowledge_document_file.help_text %}
@@ -218,7 +234,12 @@
                             <!-- CV -->
                             <div class="mb-3">
                                 <label for="{{ form.cv_file.id_for_label }}" class="form-label">
-                                    {{ form.cv_file.label }} <span class="text-danger">*</span>
+                                    {{ form.cv_file.label }}
+                                    {% if config.require_tutor_cv %}
+                                        <span class="text-danger fw-bold">* Obligatorio</span>
+                                    {% else %}
+                                        <span class="text-muted small">(Opcional)</span>
+                                    {% endif %}
                                 </label>
                                 {{ form.cv_file }}
                                 <div class="form-text">{{ form.cv_file.help_text }}</div>

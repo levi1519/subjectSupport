@@ -32,6 +32,12 @@ class RegisterTutorView(FormView):
     template_name = 'accounts/register_tutor.html'
     form_class = TutorRegistrationForm
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from apps.academicTutoring.models import PlatformConfig
+        context['config'] = PlatformConfig.get_config()
+        return context
+
     def form_valid(self, form):
         # DEBUG: print(f"DEBUG TUTOR: Form validado OK. Datos: {form.cleaned_data.get('email')}")
         from apps.academicTutoring.models import PlatformConfig

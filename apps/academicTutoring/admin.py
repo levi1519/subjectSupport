@@ -272,7 +272,11 @@ class PlatformConfigAdmin(admin.ModelAdmin):
                 'require_tutor_education_certificate',
                 'require_tutor_institutional_credential',
             ),
-            'description': 'Los campos marcados activan el flujo de aprobacion manual del admin.',
+            'description': (
+                'Marca como requerido para que el campo sea OBLIGATORIO en el registro. '
+                'Si esta desmarcado, el campo aparece en el formulario pero el tutor puede omitirlo. '
+                'require_tutor_knowledge_document ademas activa el flujo de aprobacion manual.'
+            ),
         }),
         ('Documentos del estudiante', {
             'fields': (
@@ -280,6 +284,10 @@ class PlatformConfigAdmin(admin.ModelAdmin):
                 'require_student_id_document',
                 'require_student_enrollment_certificate',
                 'require_student_document',
+            ),
+            'description': (
+                'Marca como requerido para que el campo sea OBLIGATORIO en el registro de estudiantes. '
+                'Si esta desmarcado, el campo aparece pero no bloquea el registro.'
             ),
         }),
         ('Instituciones', {
