@@ -172,6 +172,7 @@ if GIS_AVAILABLE:
 INSTALLED_APPS += [
     'apps.accounts',
     'apps.academicTutoring',
+    'apps.simulators',
 ]
 
 MIDDLEWARE = [

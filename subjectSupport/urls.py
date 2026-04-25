@@ -41,4 +41,5 @@ urlpatterns = [
 
     # Core URLs (sesiones, etc.)
     path('', include('apps.academicTutoring.urls')),
+    path('simulators/', include('apps.simulators.urls')),
 ]
