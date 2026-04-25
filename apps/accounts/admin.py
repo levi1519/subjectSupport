@@ -1,6 +1,40 @@
+import re
+from django.utils.html import format_html
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, TutorProfile, ClientProfile, Subject, KnowledgeArea
+
+
+def _avatar_html(user, avatar_field, size=40, border_color='#6C63FF'):
+    """
+    Renderiza avatar desde ImageField.
+    avatar_field: objeto ImageField (obj.avatar)
+    """
+    url = None
+    if avatar_field:
+        try:
+            url = avatar_field.url
+        except ValueError:
+            url = None
+
+    if url:
+        # Convertir Google Drive share → direct
+        match = re.search(r'/file/d/([a-zA-Z0-9_-]+)', url)
+        if match:
+            url = f'https://drive.google.com/uc?export=view&id={match.group(1)}'
+        return format_html(
+            '<img src="{}" width="{}" height="{}" '
+            'style="border-radius:50%;object-fit:cover;border:2px solid {};" '
+            'onerror="this.style.display=\'none\'" />',
+            url, size, size, border_color
+        )
+    initial = (user.name or '?')[:1].upper()
+    return format_html(
+        '<div style="width:{}px;height:{}px;border-radius:50%;background:{};"'
+        'class="avatar-initial">{}</div>',
+        size, size, border_color, initial
+    )
 
 
 @admin.register(KnowledgeArea)
@@ -45,8 +79,10 @@ class ClientProfileInline(admin.StackedInline):
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    """Admin configuration for custom User model"""
-    list_display = ['email', 'name', 'user_type', 'is_active', 'date_joined']
+    list_display = [
+        'get_avatar_small', 'email', 'name',
+        'get_role_badge', 'is_active', 'date_joined'
+    ]
     list_filter = ['user_type', 'is_active', 'is_staff', 'date_joined']
     search_fields = ['email', 'name', 'username']
     ordering = ['-date_joined']
@@ -55,9 +91,8 @@ class UserAdmin(BaseUserAdmin):
         (None, {'fields': ('username', 'email', 'password')}),
         ('Información Personal', {'fields': ('name', 'user_type', 'country_code')}),
         ('Permisos', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        ('Fechas Importantes', {'fields': ('last_login', 'date_joined')}),
+        ('Fechas', {'fields': ('last_login', 'date_joined')}),
     )
-
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
@@ -65,9 +100,34 @@ class UserAdmin(BaseUserAdmin):
         }),
     )
 
+    def get_avatar_small(self, obj):
+        # Intentar obtener avatar del perfil asociado
+        avatar_field = None
+        try:
+            if obj.user_type == 'tutor':
+                avatar_field = obj.tutor_profile.avatar
+            elif obj.user_type == 'client':
+                avatar_field = obj.client_profile.avatar
+        except Exception:
+            pass
+        return _avatar_html(obj, avatar_field, size=36, border_color='#6C63FF')
+    get_avatar_small.short_description = ''
+
+    def get_role_badge(self, obj):
+        colors = {'tutor': '#6C63FF', 'client': '#43D9AD'}
+        labels = {'tutor': '👨‍🏫 Tutor', 'client': '🎓 Estudiante'}
+        color = colors.get(obj.user_type, '#8892A4')
+        label = labels.get(obj.user_type, obj.user_type or 'Admin')
+        return format_html(
+            '<span style="background:{};color:white;padding:3px 10px;'
+            'border-radius:12px;font-size:0.8rem;font-weight:600;">{}</span>',
+            color, label
+        )
+    get_role_badge.short_description = 'Rol'
+
     def get_inline_instances(self, request, obj=None):
         if not obj:
-            return list()
+            return []
         inlines = []
         if obj.user_type == 'tutor':
             inlines.append(TutorProfileInline(self.model, self.admin_site))
@@ -79,20 +139,32 @@ class UserAdmin(BaseUserAdmin):
 @admin.register(TutorProfile)
 class TutorProfileAdmin(admin.ModelAdmin):
     list_display = [
-        'get_full_name', 'get_email', 'is_approved',
-        'get_subjects_display', 'hourly_rate',
-        'employment_status', 'get_location_display',
-        'get_cv_link', 'created_at'
+        'get_avatar_small',
+        'get_full_name',
+        'get_email',
+        'is_approved',
+        'employment_status',
+        'education_level',
+        'get_subjects_display',
+        'hourly_rate',
+        'get_location_display',
+        'get_docs_status',
+        'created_at',
     ]
     list_display_links = ['get_full_name']
     list_editable = ['is_approved']
-    list_filter = ['is_approved', 'employment_status', 'created_at']
+    list_filter = ['is_approved', 'employment_status', 'education_level', 'created_at']
     search_fields = ['user__name', 'user__email', 'cedula']
     readonly_fields = [
-        'created_at', 'get_cv_link', 'get_knowledge_link',
-        'get_credential_link', 'get_education_cert_link',
-        'get_avatar_preview', 'senescyt_helper',
+        'created_at',
+        'get_avatar_preview',
         'get_user_info',
+        'get_cv_link',
+        'get_knowledge_link',
+        'get_credential_link',
+        'get_education_cert_link',
+        'senescyt_helper',
+        'get_docs_status',
     ]
     filter_horizontal = ['subjects_taught']
     actions = ['approve_tutors', 'reject_tutors']
@@ -105,15 +177,20 @@ class TutorProfileAdmin(admin.ModelAdmin):
             'fields': ('is_approved', 'welcome_shown'),
         }),
         ('Perfil Profesional', {
-            'fields': ('bio', 'experience', 'hourly_rate', 'employment_status', 'education_level'),
+            'fields': (
+                'bio', 'experience', 'hourly_rate',
+                'employment_status', 'education_level',
+            ),
         }),
         ('Materias', {
             'fields': ('subjects_taught',),
         }),
         ('Documentos', {
             'fields': (
-                'get_cv_link', 'get_knowledge_link',
-                'get_credential_link', 'get_education_cert_link',
+                'get_cv_link',
+                'get_knowledge_link',
+                'get_credential_link',
+                'get_education_cert_link',
                 'senescyt_helper',
             ),
         }),
@@ -122,7 +199,7 @@ class TutorProfileAdmin(admin.ModelAdmin):
         }),
         ('Ubicación', {
             'fields': ('city', 'country'),
-            'description': 'Detectada por IP al registro. Corregir manualmente si es incorrecta.'
+            'description': 'Detectada por IP al registro. Corregir si es incorrecta.'
         }),
         ('Metadatos', {
             'fields': ('created_at',),
@@ -130,7 +207,11 @@ class TutorProfileAdmin(admin.ModelAdmin):
         }),
     )
 
-    # --- list_display methods ---
+    # --- list_display ---
+    def get_avatar_small(self, obj):
+        return _avatar_html(obj.user, obj.avatar, size=36)
+    get_avatar_small.short_description = ''
+
     def get_full_name(self, obj):
         return obj.user.name
     get_full_name.short_description = 'Nombre'
@@ -139,9 +220,10 @@ class TutorProfileAdmin(admin.ModelAdmin):
     def get_email(self, obj):
         return obj.user.email
     get_email.short_description = 'Email'
+    get_email.admin_order_field = 'user__email'
 
     def get_subjects_display(self, obj):
-        subjects = obj.subjects_taught.all()[:3]
+        subjects = list(obj.subjects_taught.all()[:3])
         return ', '.join(s.name for s in subjects) or '—'
     get_subjects_display.short_description = 'Materias'
 
@@ -150,145 +232,87 @@ class TutorProfileAdmin(admin.ModelAdmin):
         return ', '.join(parts) or '—'
     get_location_display.short_description = 'Ubicación'
 
-    # --- readonly_fields methods ---
+    def get_docs_status(self, obj):
+        """Semáforo rápido de documentos subidos."""
+        docs = {
+            'CV': obj.cv_file,
+            'Conoc.': obj.knowledge_document_file,
+            'Cert.': obj.education_certificate_file,
+            'Cred.': obj.institutional_credential_file,
+        }
+        parts = []
+        for label, field in docs.items():
+            has_doc = bool(field and field.name)
+            color = '#43D9AD' if has_doc else '#8892A4'
+            parts.append(f'<span style="color:{color};font-size:0.75rem;">{label}</span>')
+        return format_html(' '.join(parts))
+    get_docs_status.short_description = 'Docs'
+
+    # --- readonly_fields (detail view) ---
+    def get_avatar_preview(self, obj):
+        return _avatar_html(obj.user, obj.avatar, size=80)
+    get_avatar_preview.short_description = 'Foto'
+
     def get_user_info(self, obj):
-        from django.utils.html import format_html
         return format_html(
-            '<strong>{}</strong><br><span style="color:#8892A4">{}</span>',
-            obj.user.name,
-            obj.user.email,
+            '<strong style="font-size:1.1rem">{}</strong><br>'
+            '<span style="color:#8892A4">{}</span>',
+            obj.user.name, obj.user.email
         )
     get_user_info.short_description = 'Usuario'
 
-    def get_avatar_preview(self, obj):
-        from django.utils.html import format_html
-        import re
-
-        url = None
-
-        # Intentar ImageField primero
-        avatar_field = getattr(obj, 'avatar', None)
-        if avatar_field and hasattr(avatar_field, 'url'):
-            try:
-                url = avatar_field.url
-            except ValueError:
-                url = None
-
-        # Fallback a URLField
-        if not url:
-            url = getattr(obj, 'avatar_url', None) or ''
-
-        # Convertir Google Drive share URL → direct URL
-        if url:
-            match = re.search(r'/file/d/([a-zA-Z0-9_-]+)', str(url))
-            if match:
-                url = f'https://drive.google.com/uc?export=view&id={match.group(1)}'
-
-        if url:
-            return format_html(
-                '<img src="{}" style="width:80px;height:80px;border-radius:50%;'
-                'object-fit:cover;border:3px solid #6C63FF;background:#16213E;" '
-                'onerror="this.parentNode.innerHTML=\'<div style=&quot;'
-                'width:80px;height:80px;border-radius:50%;background:#6C63FF;'
-                'display:flex;align-items:center;justify-content:center;'
-                'color:white;font-size:2rem;font-weight:700;&quot;>{}</div>\'" />',
-                url,
-                obj.user.name[:1].upper() if obj.user.name else '?'
-            )
-
-        # Sin avatar — iniciales
-        initials = obj.user.name[:1].upper() if obj.user.name else '?'
-        return format_html(
-            '<div style="width:80px;height:80px;border-radius:50%;background:#6C63FF;'
-            'display:flex;align-items:center;justify-content:center;'
-            'color:white;font-size:2rem;font-weight:700;">{}</div>',
-            initials
-        )
-    get_avatar_preview.short_description = 'Foto de perfil'
-
     def get_cv_link(self, obj):
-        from django.utils.html import format_html
-        cv = getattr(obj, 'cv_file', None)
-        if cv:
-            return format_html('<a href="{}" target="_blank">📄 Ver CV</a>', cv.url)
+        if obj.cv_file and obj.cv_file.name:
+            return format_html('<a href="{}" target="_blank">📄 Ver CV</a>', obj.cv_file.url)
         return '—'
     get_cv_link.short_description = 'CV'
 
     def get_knowledge_link(self, obj):
-        from django.utils.html import format_html
-        doc = getattr(obj, 'knowledge_document_file', None)
-        if doc:
-            return format_html('<a href="{}" target="_blank">📄 Ver doc. conocimiento</a>', doc.url)
+        if obj.knowledge_document_file and obj.knowledge_document_file.name:
+            return format_html('<a href="{}" target="_blank">📄 Justificación</a>',
+                             obj.knowledge_document_file.url)
         return '—'
     get_knowledge_link.short_description = 'Doc. conocimiento'
 
     def get_credential_link(self, obj):
-        from django.utils.html import format_html
-        doc = getattr(obj, 'institutional_credential_file', None)
-        if doc:
-            return format_html('<a href="{}" target="_blank">🏫 Ver credencial</a>', doc.url)
+        if obj.institutional_credential_file and obj.institutional_credential_file.name:
+            return format_html('<a href="{}" target="_blank">🏫 Credencial</a>',
+                             obj.institutional_credential_file.url)
         return '—'
-    get_credential_link.short_description = 'Credencial institucional'
+    get_credential_link.short_description = 'Credencial'
 
     def get_education_cert_link(self, obj):
-        from django.utils.html import format_html
-        doc = getattr(obj, 'education_certificate_file', None)
-        if doc:
-            return format_html('<a href="{}" target="_blank">🎓 Ver cert. educación</a>', doc.url)
+        if obj.education_certificate_file and obj.education_certificate_file.name:
+            return format_html('<a href="{}" target="_blank">🎓 Certificado</a>',
+                             obj.education_certificate_file.url)
         return '—'
     get_education_cert_link.short_description = 'Cert. educación'
 
     def senescyt_helper(self, obj):
-        from django.utils.html import format_html
-        if not obj or not obj.user:
-            return '—'
-        nombre = obj.user.get_full_name() or obj.user.name or obj.user.username
-        cedula = obj.cedula or '—'
-        url = 'https://senescyt.info/'
-        return format_html(
-            '''<div style="background:#1a1a2e;border:1px solid #444;border-radius:6px;padding:12px;max-width:420px;">
-                <p style="margin:0 0 8px;color:#aaa;font-size:12px;">Datos para consulta SENESCYT</p>
-                <div style="margin-bottom:6px;">
-                    <span style="color:#eee;font-size:13px;">Nombre: </span>
-                    <code style="color:#7dd3fc;">{}</code>
-                    <button type="button" onclick="navigator.clipboard.writeText('{}')"
-                        style="background:#2563eb;color:white;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;margin-left:6px;">
-                        Copiar
-                    </button>
-                </div>
-                <div style="margin-bottom:10px;">
-                    <span style="color:#eee;font-size:13px;">Cedula: </span>
-                    <code style="color:#7dd3fc;">{}</code>
-                    <button type="button" onclick="navigator.clipboard.writeText('{}')"
-                        style="background:#2563eb;color:white;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;margin-left:6px;">
-                        Copiar
-                    </button>
-                </div>
-                <a href="{}" target="_blank"
-                   style="background:#16a34a;color:white;padding:6px 14px;border-radius:4px;text-decoration:none;font-size:12px;">
-                    Abrir SENESCYT
-                </a>
-            </div>''',
-            nombre, nombre, cedula, cedula, url
-        )
-    senescyt_helper.short_description = 'Consulta SENESCYT'
+        if obj.cedula:
+            return format_html(
+                '<a href="https://senescyt.info/" target="_blank">'
+                '🔍 Verificar cédula {} en SENESCYT</a>', obj.cedula)
+        return format_html('<a href="https://senescyt.info/" target="_blank">'
+                          '🔍 Verificar en SENESCYT</a>')
+    senescyt_helper.short_description = 'SENESCYT'
 
     # --- actions ---
     def approve_tutors(self, request, queryset):
         from apps.accounts.models import Notification
-        updated = queryset.update(is_approved=True)
+        count = queryset.update(is_approved=True)
         for profile in queryset:
             Notification.objects.get_or_create(
                 recipient=profile.user,
                 message='Tu cuenta de tutor ha sido aprobada. ¡Ya puedes recibir estudiantes!'
             )
-        self.message_user(request, f'{updated} tutor(es) aprobado(s).')
-    approve_tutors.short_description = 'Aprobar tutores seleccionados'
+        self.message_user(request, f'{count} tutor(es) aprobado(s).')
+    approve_tutors.short_description = 'Aprobar seleccionados'
 
     def reject_tutors(self, request, queryset):
-        updated = queryset.update(is_approved=False)
-        self.message_user(request, f'{updated} tutor(es) rechazado(s).')
-    reject_tutors.short_description = 'Rechazar tutores seleccionados'
+        count = queryset.update(is_approved=False)
+        self.message_user(request, f'{count} tutor(es) rechazado(s).')
+    reject_tutors.short_description = 'Rechazar seleccionados'
 
     # --- delete override ---
     def delete_model(self, request, obj):
@@ -299,74 +323,107 @@ class TutorProfileAdmin(admin.ModelAdmin):
         user_ids = list(queryset.values_list('user_id', flat=True))
         User.objects.filter(id__in=user_ids).delete()
 
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related('user').prefetch_related('subjects_taught')
-
 
 @admin.register(ClientProfile)
 class ClientProfileAdmin(admin.ModelAdmin):
-    """Admin configuration for ClientProfile model"""
-    list_display = ['user', 'get_avatar_preview', 'is_minor', 'parent_name', 'cedula', 'birth_date', 'get_location_display', 'created_at']
-    search_fields = ['user__name', 'user__email', 'parent_name', 'city', 'country']
-    list_filter = ['is_minor', 'created_at', 'country']
-    readonly_fields = ['created_at', 'get_avatar_preview']
+    list_display = [
+        'get_avatar_small',
+        'get_full_name',
+        'get_email',
+        'get_student_type_badge',
+        'is_minor',
+        'cedula',
+        'birth_date',
+        'get_location_display',
+        'created_at',
+    ]
+    list_display_links = ['get_full_name']
+    list_filter = ['is_minor', 'student_type', 'created_at']
+    search_fields = ['user__name', 'user__email', 'cedula', 'parent_name']
+    readonly_fields = [
+        'created_at',
+        'get_avatar_preview',
+        'get_user_info',
+        'get_id_doc_link',
+        'get_enrollment_link',
+    ]
+
+    fieldsets = (
+        ('Usuario', {
+            'fields': ('get_avatar_preview', 'get_user_info')
+        }),
+        ('Datos del Estudiante', {
+            'fields': ('student_type', 'is_minor', 'parent_name', 'parent_email'),
+        }),
+        ('Documentos', {
+            'fields': ('get_id_doc_link', 'get_enrollment_link'),
+        }),
+        ('Datos Personales', {
+            'fields': ('cedula', 'birth_date', 'phone_number', 'bio'),
+        }),
+        ('Ubicación', {
+            'fields': ('city', 'country'),
+        }),
+        ('Metadatos', {
+            'fields': ('created_at',),
+            'classes': ('collapse',),
+        }),
+    )
+
+    def get_avatar_small(self, obj):
+        return _avatar_html(obj.user, obj.avatar, size=36, border_color='#43D9AD')
+    get_avatar_small.short_description = ''
+
+    def get_full_name(self, obj):
+        return obj.user.name
+    get_full_name.short_description = 'Nombre'
+    get_full_name.admin_order_field = 'user__name'
+
+    def get_email(self, obj):
+        return obj.user.email
+    get_email.short_description = 'Email'
+
+    def get_student_type_badge(self, obj):
+        val = getattr(obj, 'student_type', '') or ''
+        labels = {
+            'university': '🎓 Universitario',
+            'highschool': '📚 Secundaria',
+            'primary': '📖 Primaria',
+            'other': '📝 Otro',
+        }
+        return labels.get(val, val or '—')
+    get_student_type_badge.short_description = 'Tipo'
 
     def get_location_display(self, obj):
-        """Muestra ubicación formateada desde geolocalización"""
-        if obj.city and obj.country:
-            return f"{obj.city}, {obj.country}"
-        elif obj.country:
-            return obj.country
-        elif obj.city:
-            return obj.city
-        return "No disponible"
-    get_location_display.short_description = 'Ubicación Actual'
+        parts = [p for p in [obj.city, obj.country] if p]
+        return ', '.join(parts) or '—'
+    get_location_display.short_description = 'Ubicación'
 
     def get_avatar_preview(self, obj):
-        from django.utils.html import format_html
-        import re
-
-        url = None
-
-        # Intentar ImageField primero
-        avatar_field = getattr(obj, 'avatar', None)
-        if avatar_field and hasattr(avatar_field, 'url'):
-            try:
-                url = avatar_field.url
-            except ValueError:
-                url = None
-
-        # Fallback a URLField
-        if not url:
-            url = getattr(obj, 'avatar_url', None) or ''
-
-        # Convertir Google Drive share URL → direct URL
-        if url:
-            match = re.search(r'/file/d/([a-zA-Z0-9_-]+)', str(url))
-            if match:
-                url = f'https://drive.google.com/uc?export=view&id={match.group(1)}'
-
-        if url:
-            return format_html(
-                '<img src="{}" style="width:40px;height:40px;border-radius:50%;'
-                'object-fit:cover;border:2px solid #43D9AD;background:#16213E;" '
-                'onerror="this.parentNode.innerHTML=\'<div style=&quot;'
-                'width:40px;height:40px;border-radius:50%;background:#43D9AD;'
-                'display:inline-flex;align-items:center;justify-content:center;'
-                'color:#1A1A2E;font-weight:700;&quot;>{}</div>\'" />',
-                url,
-                obj.user.name[:1].upper() if obj.user.name else '?'
-            )
-
-        # Sin avatar — iniciales
-        initials = obj.user.name[:1].upper() if obj.user.name else '?'
-        return format_html(
-            '<div style="width:40px;height:40px;border-radius:50%;background:#43D9AD;'
-            'display:inline-flex;align-items:center;justify-content:center;'
-            'color:#1A1A2E;font-weight:700;">{}</div>',
-            initials
-        )
+        return _avatar_html(obj.user, obj.avatar, size=80, border_color='#43D9AD')
     get_avatar_preview.short_description = 'Foto'
+
+    def get_user_info(self, obj):
+        return format_html(
+            '<strong style="font-size:1.1rem">{}</strong><br>'
+            '<span style="color:#8892A4">{}</span>',
+            obj.user.name, obj.user.email
+        )
+    get_user_info.short_description = 'Usuario'
+
+    def get_id_doc_link(self, obj):
+        doc = getattr(obj, 'id_document_file', None)
+        if doc and doc.name:
+            return format_html('<a href="{}" target="_blank">🪪 Ver documento ID</a>', doc.url)
+        return '—'
+    get_id_doc_link.short_description = 'Doc. identidad'
+
+    def get_enrollment_link(self, obj):
+        doc = getattr(obj, 'enrollment_file', None)
+        if doc and doc.name:
+            return format_html('<a href="{}" target="_blank">📋 Ver matrícula</a>', doc.url)
+        return '—'
+    get_enrollment_link.short_description = 'Matrícula'
 
     def delete_model(self, request, obj):
         obj.user.delete()
