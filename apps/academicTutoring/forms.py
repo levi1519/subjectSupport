@@ -194,3 +194,49 @@ class NotificacionExpansionForm(forms.ModelForm):
                 'max_length': 'El nombre de la ciudad es demasiado largo.',
             },
         }
+
+
+class SessionMaterialForm(forms.Form):
+    """
+    Formulario para adjuntar materiales a una sesión.
+    Soporta URL, archivo, o ambos en la misma solicitud.
+    """
+    material_url = forms.URLField(
+        required=False,
+        label='Enlace (URL)',
+        widget=forms.URLInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'https://youtube.com/... o https://drive.google.com/...'
+        }),
+        help_text='Enlace a material de estudio, video o documento en la nube'
+    )
+    material_file = forms.FileField(
+        required=False,
+        label='Archivo adjunto',
+        widget=forms.ClearableFileInput(attrs={
+            'class': 'form-control',
+            'accept': '.pdf,.jpg,.jpeg,.png,.doc,.docx,.ppt,.pptx,.xlsx'
+        }),
+        help_text='PDF, imagen o documento de Office (max. 5MB)'
+    )
+
+    def clean(self):
+        from apps.academicTutoring.models import PlatformConfig
+        cleaned = super().clean()
+        config = PlatformConfig.get_config()
+
+        material_file = cleaned.get('material_file')
+        if material_file:
+            max_bytes = config.max_file_size_mb * 1024 * 1024
+            if material_file.size > max_bytes:
+                self.add_error('material_file',
+                    f'El archivo supera el limite de {config.max_file_size_mb}MB.')
+
+            allowed = [f'.{ext.strip()}' for ext in config.allowed_file_types.split(',')]
+            import os
+            ext = os.path.splitext(material_file.name)[1].lower()
+            if ext not in allowed:
+                self.add_error('material_file',
+                    f'Tipo de archivo no permitido. Permitidos: {config.allowed_file_types}')
+
+        return cleaned

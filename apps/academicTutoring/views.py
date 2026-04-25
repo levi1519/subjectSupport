@@ -219,10 +219,12 @@ class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from .forms import SessionMaterialForm
         context.update({
             'tutor': self.tutor,
             'tutor_profile': getattr(self.tutor, 'tutor_profile', None),
-            'tutor_subjects': getattr(self.tutor, 'tutor_profile', None).subjects_taught.all() if getattr(self.tutor, 'tutor_profile', None) else []
+            'tutor_subjects': getattr(self.tutor, 'tutor_profile', None).subjects_taught.all() if getattr(self.tutor, 'tutor_profile', None) else [],
+            'material_form': SessionMaterialForm(),
         })
         return context
     
@@ -240,15 +242,40 @@ class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             form  # ← form object, NOT form.cleaned_data
         )
         
-        if success:
-            messages.success(
-                self.request,
-                f'¡Solicitud enviada! El tutor {session.tutor.name} revisará tu solicitud pronto.'
-            )
-            return redirect('client_dashboard')
-        else:
-            messages.error(self.request, f'Error al crear sesión: {error}')
+        if not success:
+            messages.error(self.request, f'Error al crear sesion: {error}')
             return self.form_invalid(form)
+
+        # Guardar materiales adjuntos
+        from .models import SessionMaterial, PlatformConfig
+        config = PlatformConfig.get_config()
+        material_count = 0
+
+        url = self.request.POST.get('material_url', '').strip()
+        if url:
+            SessionMaterial.objects.create(
+                session=session,
+                type='url',
+                url=url,
+                uploaded_by=self.request.user
+            )
+            material_count += 1
+
+        material_file = self.request.FILES.get('material_file')
+        if material_file and material_count < config.max_session_materials:
+            SessionMaterial.objects.create(
+                session=session,
+                type='file',
+                file=material_file,
+                filename=material_file.name,
+                uploaded_by=self.request.user
+            )
+
+        messages.success(
+            self.request,
+            f'Solicitud enviada! El tutor {session.tutor.name} revisara tu solicitud pronto.'
+        )
+        return redirect('client_dashboard')
 
 
 class ConfirmSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
@@ -277,7 +304,11 @@ class ConfirmSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from .forms import SessionMaterialForm
+        from .models import SessionMaterial
         context['session'] = self.session
+        context['material_form'] = SessionMaterialForm()
+        context['existing_materials'] = SessionMaterial.objects.filter(session=self.session)
         return context
     
     def get_form_kwargs(self):
@@ -293,17 +324,42 @@ class ConfirmSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             self.session, self.request.user, form
         )
         
-        if success:
-            # Show platform-specific success message
-            platform_name = session.get_meeting_platform_display()
-            messages.success(
-                self.request,
-                f'¡Sesión confirmada! Se ha generado el enlace de {platform_name}.'
-            )
-            return redirect('tutor_dashboard')
-        else:
-            messages.error(self.request, f'Error al confirmar sesión: {error}')
+        if not success:
+            messages.error(self.request, f'Error al confirmar sesion: {error}')
             return self.form_invalid(form)
+
+        # Guardar materiales del tutor
+        from .models import SessionMaterial, PlatformConfig
+        config = PlatformConfig.get_config()
+        existing_count = SessionMaterial.objects.filter(session=session).count()
+
+        url = self.request.POST.get('material_url', '').strip()
+        if url and existing_count < config.max_session_materials:
+            SessionMaterial.objects.create(
+                session=session,
+                type='url',
+                url=url,
+                uploaded_by=self.request.user
+            )
+            existing_count += 1
+
+        material_file = self.request.FILES.get('material_file')
+        if material_file and existing_count < config.max_session_materials:
+            SessionMaterial.objects.create(
+                session=session,
+                type='file',
+                file=material_file,
+                filename=material_file.name,
+                uploaded_by=self.request.user
+            )
+
+        # Show platform-specific success message
+        platform_name = session.get_meeting_platform_display()
+        messages.success(
+            self.request,
+            f'Sesion confirmada! Se ha generado el enlace de {platform_name}.'
+        )
+        return redirect('tutor_dashboard')
 
 
 class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):

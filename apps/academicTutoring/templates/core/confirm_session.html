@@ -131,8 +131,26 @@
                             {% endif %}
                         </div>
 
-                        <form method="post" novalidate>
+                        <form method="post" enctype="multipart/form-data" novalidate>
                             {% csrf_token %}
+
+                            <!-- Materiales del estudiante -->
+                            {% if existing_materials %}
+                            <div class="mb-3">
+                                <h6 class="fw-bold" style="color: var(--primary);">Materiales del estudiante</h6>
+                                {% for mat in existing_materials %}
+                                    {% if mat.type == 'url' %}
+                                        <div class="mb-1">
+                                            <a href="{{ mat.url }}" target="_blank" class="text-info">{{ mat.url|truncatechars:60 }}</a>
+                                        </div>
+                                    {% else %}
+                                        <div class="mb-1">
+                                            <a href="{{ mat.file.url }}" target="_blank" class="text-info">{{ mat.filename|default:mat.file.name }}</a>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
 
                             <div class="mb-3">
                                 <label for="{{ form.meeting_platform.id_for_label }}" class="form-label">{{ form.meeting_platform.label }}</label>
@@ -159,6 +177,27 @@
                                     <div class="text-danger small">{{ form.meeting_url.errors }}</div>
                                 {% endif %}
                                 <small class="text-muted">Pega aquí el link de Google Meet, Zoom u otra plataforma que uses para la clase</small>
+                            </div>
+
+                            <!-- Agregar material del tutor -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Agregar material para el estudiante</label>
+                                <p class="text-muted small mb-2">Opcional: comparte recursos adicionales para la sesión.</p>
+
+                                <div class="mb-2">
+                                    <label for="{{ material_form.material_url.id_for_label }}" class="form-label">
+                                        Enlace (URL) <span class="text-muted small">(Opcional)</span>
+                                    </label>
+                                    {{ material_form.material_url }}
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="{{ material_form.material_file.id_for_label }}" class="form-label">
+                                        Archivo adjunto <span class="text-muted small">(Opcional)</span>
+                                    </label>
+                                    {{ material_form.material_file }}
+                                    <div class="form-text">{{ material_form.material_file.help_text }}</div>
+                                </div>
                             </div>
 
                             <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">Confirmar Sesión y Generar Enlace</button>

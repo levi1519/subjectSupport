@@ -106,7 +106,7 @@
                             {% endfor %}
                         {% endif %}
 
-                        <form method="post" novalidate>
+                        <form method="post" enctype="multipart/form-data" novalidate>
                             {% csrf_token %}
 
                             <div class="mb-3">
@@ -157,12 +157,32 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="{{ form.material_url.id_for_label }}" class="form-label">{{ form.material_url.label }}</label>
-                                {{ form.material_url }}
-                                {% if form.material_url.errors %}
-                                    <div class="text-danger small">{{ form.material_url.errors }}</div>
-                                {% endif %}
-                                <small class="text-muted">Opcional: enlace a material de estudio, documentos o recursos para la clase</small>
+                                <label class="form-label fw-semibold">Material de clase</label>
+                                <p class="text-muted small mb-2">Puedes adjuntar un enlace Y/O un archivo. Ambos son opcionales.</p>
+
+                                <div class="mb-2">
+                                    <label for="{{ material_form.material_url.id_for_label }}" class="form-label">
+                                        {{ material_form.material_url.label }}
+                                        <span class="text-muted small">(Opcional)</span>
+                                    </label>
+                                    {{ material_form.material_url }}
+                                    <div class="form-text">{{ material_form.material_url.help_text }}</div>
+                                    {% if material_form.material_url.errors %}
+                                        <div class="text-danger small">{{ material_form.material_url.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="{{ material_form.material_file.id_for_label }}" class="form-label">
+                                        {{ material_form.material_file.label }}
+                                        <span class="text-muted small">(Opcional)</span>
+                                    </label>
+                                    {{ material_form.material_file }}
+                                    <div class="form-text">{{ material_form.material_file.help_text }}</div>
+                                    {% if material_form.material_file.errors %}
+                                        <div class="text-danger small">{{ material_form.material_file.errors }}</div>
+                                    {% endif %}
+                                </div>
                             </div>
 
                             <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">Enviar Solicitud</button>
