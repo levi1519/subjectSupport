@@ -83,6 +83,7 @@ class TutorProfileAdmin(admin.ModelAdmin):
         'get_nombre', 'get_email', 'is_approved', 'get_employment',
         'get_cv', 'get_knowledge_doc', 'created_at'
     ]
+    list_editable = ['is_approved']
     list_filter = ['is_approved', 'employment_status', 'education_level', 'country', 'created_at']
     search_fields = ['user__name', 'user__email', 'cedula']
     readonly_fields = [
@@ -194,7 +195,7 @@ class TutorProfileAdmin(admin.ModelAdmin):
             return '—'
         nombre = obj.user.get_full_name() or obj.user.name or obj.user.username
         cedula = obj.cedula or '—'
-        url = 'https://www.senescyt.gob.ec/consulta-titulos-web/faces/jsp/consulta/consulta.jsf'
+        url = 'https://senescyt.info/'
         return format_html(
             '''<div style="background:#1a1a2e;border:1px solid #444;border-radius:6px;padding:12px;max-width:420px;">
                 <p style="margin:0 0 8px;color:#aaa;font-size:12px;">Datos para consulta SENESCYT</p>
