@@ -52,11 +52,23 @@ def register_tutor(request, form, country_code=''):
             experience=form.cleaned_data.get('experience', ''),
             phone_number=form.cleaned_data.get('phone_number', '')
         )
-        profile.cedula = form.cleaned_data.get('cedula', '')
-        avatar = form.cleaned_data.get('avatar')
+
+        # Avatar: puede ser ImageField (archivo) o URLField según migración activa
+        avatar = form.cleaned_data.get('avatar') or form.cleaned_data.get('avatar_url')
         if avatar:
-            avatar.name = sanitize_filename(avatar.name)
-            profile.avatar = avatar
+            if hasattr(profile, 'avatar') and not isinstance(avatar, str):
+                avatar.name = sanitize_filename(avatar.name)
+                profile.avatar = avatar
+            elif hasattr(profile, 'avatar_url'):
+                profile.avatar_url = str(avatar)
+
+        # Cedula y birth_date
+        cedula = form.cleaned_data.get('cedula', '')
+        if cedula:
+            profile.cedula = cedula
+        birth_date = form.cleaned_data.get('birth_date')
+        if birth_date:
+            profile.birth_date = birth_date
         geo_data = getattr(request, 'geo_data', {}) or {}
         profile.city = geo_data.get('city', '') or ''
         # País: priorizar lo que el usuario declaró en el form
@@ -162,12 +174,24 @@ def register_client(request, form, country_code=''):
             profile.country = geo_data.get('country', '')
         profile.save()
 
-        from apps.academicTutoring.models import Institution
-
-        avatar = form.cleaned_data.get('avatar')
+        # Avatar: puede ser ImageField (archivo) o URLField según migración activa
+        avatar = form.cleaned_data.get('avatar') or form.cleaned_data.get('avatar_url')
         if avatar:
-            avatar.name = sanitize_filename(avatar.name)
-            profile.avatar = avatar
+            if hasattr(profile, 'avatar') and not isinstance(avatar, str):
+                avatar.name = sanitize_filename(avatar.name)
+                profile.avatar = avatar
+            elif hasattr(profile, 'avatar_url'):
+                profile.avatar_url = str(avatar)
+
+        # Cedula y birth_date
+        cedula = form.cleaned_data.get('cedula', '')
+        if cedula:
+            profile.cedula = cedula
+        birth_date = form.cleaned_data.get('birth_date')
+        if birth_date:
+            profile.birth_date = birth_date
+
+        from apps.academicTutoring.models import Institution
         if form.cleaned_data.get('student_type'):
             profile.student_type = form.cleaned_data['student_type']
         id_doc = form.cleaned_data.get('id_document_file')

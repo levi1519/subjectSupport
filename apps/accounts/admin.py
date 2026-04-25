@@ -162,18 +162,41 @@ class TutorProfileAdmin(admin.ModelAdmin):
 
     def get_avatar_preview(self, obj):
         from django.utils.html import format_html
-        url = getattr(obj, 'avatar_url', None) or getattr(obj, 'avatar', None)
+        import re
+
+        url = None
+
+        # Intentar ImageField primero
+        avatar_field = getattr(obj, 'avatar', None)
+        if avatar_field and hasattr(avatar_field, 'url'):
+            try:
+                url = avatar_field.url
+            except ValueError:
+                url = None
+
+        # Fallback a URLField
+        if not url:
+            url = getattr(obj, 'avatar_url', None) or ''
+
+        # Convertir Google Drive share URL → direct URL
         if url:
-            import re
             match = re.search(r'/file/d/([a-zA-Z0-9_-]+)', str(url))
             if match:
                 url = f'https://drive.google.com/uc?export=view&id={match.group(1)}'
+
+        if url:
             return format_html(
                 '<img src="{}" style="width:80px;height:80px;border-radius:50%;'
-                'object-fit:cover;border:3px solid #6C63FF;" '
-                'onerror="this.style.display=\'none\'" />',
-                url
+                'object-fit:cover;border:3px solid #6C63FF;background:#16213E;" '
+                'onerror="this.parentNode.innerHTML=\'<div style=&quot;'
+                'width:80px;height:80px;border-radius:50%;background:#6C63FF;'
+                'display:flex;align-items:center;justify-content:center;'
+                'color:white;font-size:2rem;font-weight:700;&quot;>{}</div>\'" />',
+                url,
+                obj.user.name[:1].upper() if obj.user.name else '?'
             )
+
+        # Sin avatar — iniciales
         initials = obj.user.name[:1].upper() if obj.user.name else '?'
         return format_html(
             '<div style="width:80px;height:80px;border-radius:50%;background:#6C63FF;'
@@ -302,17 +325,40 @@ class ClientProfileAdmin(admin.ModelAdmin):
     def get_avatar_preview(self, obj):
         from django.utils.html import format_html
         import re
-        url = getattr(obj, 'avatar_url', None) or getattr(obj, 'avatar', None)
+
+        url = None
+
+        # Intentar ImageField primero
+        avatar_field = getattr(obj, 'avatar', None)
+        if avatar_field and hasattr(avatar_field, 'url'):
+            try:
+                url = avatar_field.url
+            except ValueError:
+                url = None
+
+        # Fallback a URLField
+        if not url:
+            url = getattr(obj, 'avatar_url', None) or ''
+
+        # Convertir Google Drive share URL → direct URL
         if url:
             match = re.search(r'/file/d/([a-zA-Z0-9_-]+)', str(url))
             if match:
                 url = f'https://drive.google.com/uc?export=view&id={match.group(1)}'
+
+        if url:
             return format_html(
                 '<img src="{}" style="width:40px;height:40px;border-radius:50%;'
-                'object-fit:cover;border:2px solid #43D9AD;" '
-                'onerror="this.style.display=\'none\'" />',
-                url
+                'object-fit:cover;border:2px solid #43D9AD;background:#16213E;" '
+                'onerror="this.parentNode.innerHTML=\'<div style=&quot;'
+                'width:40px;height:40px;border-radius:50%;background:#43D9AD;'
+                'display:inline-flex;align-items:center;justify-content:center;'
+                'color:#1A1A2E;font-weight:700;&quot;>{}</div>\'" />',
+                url,
+                obj.user.name[:1].upper() if obj.user.name else '?'
             )
+
+        # Sin avatar — iniciales
         initials = obj.user.name[:1].upper() if obj.user.name else '?'
         return format_html(
             '<div style="width:40px;height:40px;border-radius:50%;background:#43D9AD;'
