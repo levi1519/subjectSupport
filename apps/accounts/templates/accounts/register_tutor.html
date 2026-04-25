@@ -261,12 +261,12 @@
                                 <label class="form-label fw-bold">Materias que enseñas <span style="color: #ef4444;">*</span></label>
                                 <div class="form-text mb-3" style="color: rgba(255,255,255,0.6);">Selecciona hasta 5 materias de las categorías disponibles</div>
                                 
-                                {% if form.subjects.errors %}
-                                    <div class="alert alert-danger mb-3">{{ form.subjects.errors }}</div>
+                                {% if form.subjects_taught.errors %}
+                                    <div class="alert alert-danger mb-3">{{ form.subjects_taught.errors }}</div>
                                 {% endif %}
                                 
                                 <div class="accordion" id="subjectsAccordion" style="background: transparent;">
-                                    {% regroup form.subjects.field.queryset by knowledge_area as area_list %}
+                                    {% regroup form.subjects_taught.field.queryset by knowledge_area as area_list %}
                                     {% for area in area_list %}
                                     <div class="accordion-item" style="background: var(--surface, #1f2937); border: 1px solid rgba(108, 99, 255, 0.2); border-radius: 12px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
                                         <h2 class="accordion-header" id="heading{{ forloop.counter }}">
@@ -299,7 +299,7 @@
                                                                     cursor: pointer;"
                                                              onmouseover="this.style.background='rgba(108,99,255,0.1)'; this.style.borderColor='var(--primary)';"
                                                              onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(255,255,255,0.1)';">
-                                                            <input class="form-check-input subject-checkbox" type="checkbox" name="subjects" 
+                                                            <input class="form-check-input subject-checkbox" type="checkbox" name="subjects_taught" 
                                                                    value="{{ subject.id }}" id="subject_{{ subject.id }}"
                                                                    style="width: 20px; height: 20px; margin-right: 12px; cursor: pointer;">
                                                             <label class="form-check-label w-100" for="subject_{{ subject.id }}" 
@@ -379,12 +379,12 @@
     <script>
         // Contador y validación de materias (máximo 5)
         document.addEventListener('DOMContentLoaded', function() {
-            const checkboxes = document.querySelectorAll('input[name="subjects"]');
+            const checkboxes = document.querySelectorAll('input[name="subjects_taught"]');
             const counter = document.getElementById('count');
             const MAX_SUBJECTS = 5;
             
             function updateCount() {
-                const selected = document.querySelectorAll('input[name="subjects"]:checked').length;
+                const selected = document.querySelectorAll('input[name="subjects_taught"]:checked').length;
                 counter.textContent = selected;
                 
                 // Actualizar estilo del contador
@@ -400,7 +400,7 @@
             
             checkboxes.forEach(function(checkbox) {
                 checkbox.addEventListener('change', function() {
-                    const selected = document.querySelectorAll('input[name="subjects"]:checked').length;
+                    const selected = document.querySelectorAll('input[name="subjects_taught"]:checked').length;
                     
                     if (selected > MAX_SUBJECTS) {
                         this.checked = false;
