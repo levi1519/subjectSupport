@@ -88,6 +88,13 @@ class RegisterClientView(FormView):
             return redirect('client_dashboard')
         return super().dispatch(request, *args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        context['enable_minor_accounts'] = config.enable_minor_accounts
+        return context
+
     def form_valid(self, form):
         # DEBUG: print(f"DEBUG CLIENT: Form validado OK. Datos: {form.cleaned_data.get('email')}")
         from apps.academicTutoring.models import PlatformConfig
