@@ -91,14 +91,15 @@ class TutorProfileAdmin(admin.ModelAdmin):
     readonly_fields = [
         'created_at', 'get_cv_link', 'get_knowledge_link',
         'get_credential_link', 'get_education_cert_link',
-        'get_avatar_preview', 'senescyt_helper'
+        'get_avatar_preview', 'senescyt_helper',
+        'get_user_info',
     ]
     filter_horizontal = ['subjects_taught']
     actions = ['approve_tutors', 'reject_tutors']
 
     fieldsets = (
         ('Usuario', {
-            'fields': ('get_avatar_preview', 'get_full_name_display', 'get_email_display')
+            'fields': ('get_avatar_preview', 'get_user_info')
         }),
         ('Aprobación', {
             'fields': ('is_approved', 'welcome_shown'),
@@ -121,6 +122,7 @@ class TutorProfileAdmin(admin.ModelAdmin):
         }),
         ('Ubicación', {
             'fields': ('city', 'country'),
+            'description': 'Detectada por IP al registro. Corregir manualmente si es incorrecta.'
         }),
         ('Metadatos', {
             'fields': ('created_at',),
@@ -149,13 +151,14 @@ class TutorProfileAdmin(admin.ModelAdmin):
     get_location_display.short_description = 'Ubicación'
 
     # --- readonly_fields methods ---
-    def get_full_name_display(self, obj):
-        return obj.user.name
-    get_full_name_display.short_description = 'Nombre completo'
-
-    def get_email_display(self, obj):
-        return obj.user.email
-    get_email_display.short_description = 'Email'
+    def get_user_info(self, obj):
+        from django.utils.html import format_html
+        return format_html(
+            '<strong>{}</strong><br><span style="color:#8892A4">{}</span>',
+            obj.user.name,
+            obj.user.email,
+        )
+    get_user_info.short_description = 'Usuario'
 
     def get_avatar_preview(self, obj):
         from django.utils.html import format_html

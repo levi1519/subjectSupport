@@ -58,10 +58,15 @@ def register_tutor(request, form, country_code=''):
             avatar.name = sanitize_filename(avatar.name)
             profile.avatar = avatar
         geo_data = getattr(request, 'geo_data', {}) or {}
-        if geo_data.get('city'):
-            profile.city = geo_data['city']
-        if geo_data.get('country'):
-            profile.country = geo_data['country']
+        profile.city = geo_data.get('city', '') or ''
+        # País: priorizar lo que el usuario declaró en el form
+        chosen_country_code = form.cleaned_data.get('country_code', '')
+        if chosen_country_code:
+            from apps.academicTutoring.models import CountryConfig
+            cc = CountryConfig.objects.filter(country_code=chosen_country_code).first()
+            profile.country = cc.country_name if cc else geo_data.get('country', '')
+        else:
+            profile.country = geo_data.get('country', '')
         from apps.academicTutoring.models import PlatformConfig
         config = PlatformConfig.get_config()
         needs_approval = (
@@ -146,10 +151,15 @@ def register_client(request, form, country_code=''):
         user = form.save(country_code=country_code)
         profile = user.client_profile
         geo_data = getattr(request, 'geo_data', {}) or {}
-        if geo_data.get('city'):
-            profile.city = geo_data['city']
-        if geo_data.get('country'):
-            profile.country = geo_data['country']
+        profile.city = geo_data.get('city', '') or ''
+        # País: priorizar lo que el usuario declaró en el form
+        chosen_country_code = form.cleaned_data.get('country_code', '')
+        if chosen_country_code:
+            from apps.academicTutoring.models import CountryConfig
+            cc = CountryConfig.objects.filter(country_code=chosen_country_code).first()
+            profile.country = cc.country_name if cc else geo_data.get('country', '')
+        else:
+            profile.country = geo_data.get('country', '')
         profile.save()
 
         from apps.academicTutoring.models import Institution
