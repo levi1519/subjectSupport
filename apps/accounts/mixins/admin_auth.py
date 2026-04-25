@@ -1,6 +1,6 @@
 from django.contrib.auth.mixins import AccessMixin
 from django.contrib import messages
-from django.shortcut import redirect
+from django.shortcuts import redirect
 
 class AdminRequiredMixin(AccessMixin):
     """Verify that the current user is authenticated and is an admin."""
