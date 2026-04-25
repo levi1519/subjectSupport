@@ -62,6 +62,9 @@ def register_tutor(request, form, country_code=''):
             profile.education_certificate_file = form.cleaned_data['education_certificate_file']
         if form.cleaned_data.get('institutional_credential_file'):
             profile.institutional_credential_file = form.cleaned_data['institutional_credential_file']
+        knowledge_doc = form.cleaned_data.get('knowledge_document_file')
+        if knowledge_doc:
+            profile.knowledge_document_file = knowledge_doc
 
         # Manejar institucion
         institution_id = form.cleaned_data.get('institution_id')

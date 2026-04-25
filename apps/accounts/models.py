@@ -383,6 +383,12 @@ class TutorProfile(models.Model):
         verbose_name='Credencial institucional',
         help_text='Carnet o ID de la universidad/institución donde enseñas actualmente'
     )
+    knowledge_document_file = models.FileField(
+        upload_to='documents/tutors/knowledge/',
+        null=True,
+        blank=True,
+        verbose_name='Documento de conocimientos'
+    )
     is_approved = models.BooleanField(
         default=True,
         verbose_name='Tutor aprobado',

@@ -200,6 +200,21 @@
                                 {% if form.institutional_credential_file.errors %}<div class="text-danger small">{{ form.institutional_credential_file.errors }}</div>{% endif %}
                             </div>
 
+                            <!-- Documento de conocimientos -->
+                            <div class="mb-3" id="knowledge_document_section">
+                                <label for="{{ form.knowledge_document_file.id_for_label }}" class="form-label">
+                                    {{ form.knowledge_document_file.label }}
+                                    {% if config.require_tutor_knowledge_document %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                {{ form.knowledge_document_file }}
+                                {% if form.knowledge_document_file.help_text %}
+                                    <div class="form-text">{{ form.knowledge_document_file.help_text }}</div>
+                                {% endif %}
+                                {% if form.knowledge_document_file.errors %}
+                                    <div class="text-danger small">{{ form.knowledge_document_file.errors }}</div>
+                                {% endif %}
+                            </div>
+
                             <!-- CV -->
                             <div class="mb-3">
                                 <label for="{{ form.cv_file.id_for_label }}" class="form-label">

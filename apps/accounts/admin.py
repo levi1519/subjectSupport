@@ -89,9 +89,10 @@ class TutorProfileAdmin(admin.ModelAdmin):
     actions = ['approve_tutors']
     fieldsets = (
         ('Documentos de verificacion', {
-            'fields': ('document_file', 'institutional_credential_file', 'is_approved'),
+            'fields': ('document_file', 'institutional_credential_file', 'knowledge_document_file', 'is_approved'),
             'description': 'document_file: CV/titulos/certificados. '
-                          'institutional_credential_file: carnet o ID universitario.'
+                          'institutional_credential_file: carnet o ID universitario. '
+                          'knowledge_document_file: justificacion de conocimientos.'
         }),
         ('Verificacion SENESCYT', {
             'fields': ('senescyt_helper',),

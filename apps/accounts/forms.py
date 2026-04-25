@@ -133,6 +133,11 @@ class TutorRegistrationForm(UserCreationForm):
         label='Credencial institucional',
         help_text='Carnet o ID de la institucion donde eres docente activo'
     )
+    knowledge_document_file = forms.FileField(
+        required=False,
+        label='Justificacion de conocimientos (PDF)',
+        help_text='Documento que justifique tu dominio del area (tesis, certificado, portafolio, etc.)'
+    )
     birth_date = forms.DateField(
         required=True,
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
@@ -248,6 +253,17 @@ class TutorRegistrationForm(UserCreationForm):
                 'education_certificate_file',
                 'Debes subir el certificado de tu nivel educativo.'
             )
+
+        # Validar documento de conocimientos
+        knowledge_doc = cleaned_data.get('knowledge_document_file')
+        if config.require_tutor_knowledge_document and not knowledge_doc:
+            self.add_error('knowledge_document_file', 'Este documento es requerido segun la configuracion de la plataforma.')
+        if knowledge_doc:
+            max_mb = config.max_file_size_mb
+            if knowledge_doc.size > max_mb * 1024 * 1024:
+                self.add_error('knowledge_document_file', f'El archivo no debe superar {max_mb}MB.')
+            if not knowledge_doc.name.lower().endswith('.pdf'):
+                self.add_error('knowledge_document_file', 'Solo se aceptan archivos PDF.')
 
         return cleaned_data
 
