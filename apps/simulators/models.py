@@ -358,9 +358,11 @@ class SimulatorAttempt(models.Model):
         unique_together = [['simulator', 'student', 'attempt_number']]
 
     def __str__(self):
+        score_display = self.score if self.score is not None else 'en progreso'
+        suffix = '%' if self.score is not None else ''
         return (
             f"Intento #{self.attempt_number} de {self.student.name} "
-            f"en '{self.simulator.title}' — {self.score or 'en progreso'}%"
+            f"en '{self.simulator.title}' — {score_display}{suffix}"
         )
 
     def calculate_score(self):
