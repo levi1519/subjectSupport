@@ -42,11 +42,14 @@ def register_tutor(request, form, country_code=''):
             profile.country = geo_data['country']
         from apps.academicTutoring.models import PlatformConfig
         config = PlatformConfig.get_config()
-        if config.require_tutor_document:
+        needs_approval = (
+            config.require_tutor_knowledge_document or
+            config.require_tutor_document or
+            config.require_tutor_cv
+        )
+        if needs_approval:
             profile.is_approved = False
-        # Flujo aprobación por conocimiento
-        if config.require_tutor_knowledge_document:
-            profile.is_approved = False
+            profile.welcome_shown = False
         profile.save()
 
         from apps.academicTutoring.models import Institution
@@ -91,6 +94,11 @@ def register_tutor(request, form, country_code=''):
         if subjects:
             profile.subjects_taught.set(subjects)
             profile.refresh_from_db()
+
+        if needs_approval:
+            # No hacer login automatico — retornar con flag
+            return True, user, 'pending_approval'
+
         login(request, user)
         return True, user, None
     except Exception as e:

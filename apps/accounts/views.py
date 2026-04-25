@@ -56,20 +56,15 @@ class RegisterTutorView(FormView):
             return self.form_invalid(form)
         country_code = self.request.geo_data.get('country_code', '') if hasattr(self.request, 'geo_data') else ''
         success, user, error = services.register_tutor(self.request, form, country_code)
-        if success:
-            from apps.academicTutoring.models import PlatformConfig
-            config = PlatformConfig.get_config()
-            if config.require_tutor_document:
-                messages.info(
-                    self.request,
-                    '¡Registro exitoso! Tu cuenta está pendiente de revisión. '
-                    'Te notificaremos por correo cuando sea aprobada. '
-                    'Mientras tanto no podrás iniciar sesión.'
-                )
-                from django.contrib.auth import logout as auth_logout
-                auth_logout(self.request)
-                return redirect('tutor_login')
-            messages.success(self.request, '¡Bienvenido! Tu cuenta de tutor ha sido creada exitosamente.')
+        if success and error == 'pending_approval':
+            messages.warning(
+                self.request,
+                'Registro exitoso. Tu cuenta esta pendiente de aprobacion. '
+                'Revisaremos tus documentos y te notificaremos por email cuando puedas acceder.'
+            )
+            return redirect('tutor_login')
+        elif success:
+            messages.success(self.request, 'Bienvenido! Tu cuenta de tutor ha sido creada exitosamente.')
             return redirect('tutor_dashboard')
         # DEBUG: print(f"DEBUG TUTOR: Error en services.register_tutor: {error}")
         messages.error(self.request, error)
@@ -199,7 +194,27 @@ class TutorLoginView(LoginView):
         if user.user_type != 'tutor':
             form.add_error(None, 'Credenciales incorrectas.')
             return self.form_invalid(form)
-        messages.success(self.request, f'¡Bienvenido de nuevo, {user.name}!')
+
+        # Verificar aprobacion
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        try:
+            profile = user.tutor_profile
+            needs_approval = (
+                config.require_tutor_knowledge_document or
+                config.require_tutor_document or
+                config.require_tutor_cv
+            )
+            if needs_approval and not profile.is_approved:
+                form.add_error(None,
+                    'Tu cuenta esta pendiente de aprobacion. '
+                    'El administrador revisara tus documentos y te notificara cuando puedas acceder.'
+                )
+                return self.form_invalid(form)
+        except Exception:
+            pass
+
+        messages.success(self.request, f'Bienvenido de nuevo, {user.name}!')
         return super().form_valid(form)
 
     def get_success_url(self):
