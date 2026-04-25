@@ -48,6 +48,42 @@ def register_tutor(request, form, country_code=''):
         if config.require_tutor_knowledge_document:
             profile.is_approved = False
         profile.save()
+
+        from apps.academicTutoring.models import Institution
+
+        # Guardar campos nuevos
+        if form.cleaned_data.get('cv_file'):
+            profile.cv_file = form.cleaned_data['cv_file']
+        if form.cleaned_data.get('employment_status'):
+            profile.employment_status = form.cleaned_data['employment_status']
+        if form.cleaned_data.get('education_level'):
+            profile.education_level = form.cleaned_data['education_level']
+        if form.cleaned_data.get('education_certificate_file'):
+            profile.education_certificate_file = form.cleaned_data['education_certificate_file']
+        if form.cleaned_data.get('institutional_credential_file'):
+            profile.institutional_credential_file = form.cleaned_data['institutional_credential_file']
+
+        # Manejar institucion
+        institution_id = form.cleaned_data.get('institution_id')
+        institution_manual = form.cleaned_data.get('institution_manual', '').strip()
+        if institution_id:
+            try:
+                profile.institution = Institution.objects.get(pk=institution_id, active=True)
+            except Institution.DoesNotExist:
+                pass
+        elif institution_manual:
+            inst, _ = Institution.objects.get_or_create(
+                name=institution_manual,
+                defaults={
+                    'type': 'universidad',
+                    'is_manual': True,
+                    'needs_review': True,
+                    'active': True,
+                }
+            )
+            profile.institution = inst
+
+        profile.save()
         subjects = form.cleaned_data.get('subjects_taught')
         if subjects:
             profile.subjects_taught.set(subjects)
@@ -74,6 +110,36 @@ def register_client(request, form, country_code=''):
             profile.city = geo_data['city']
         if geo_data.get('country'):
             profile.country = geo_data['country']
+        profile.save()
+
+        from apps.academicTutoring.models import Institution
+
+        if form.cleaned_data.get('student_type'):
+            profile.student_type = form.cleaned_data['student_type']
+        if form.cleaned_data.get('id_document_file'):
+            profile.id_document_file = form.cleaned_data['id_document_file']
+        if form.cleaned_data.get('enrollment_file'):
+            profile.enrollment_file = form.cleaned_data['enrollment_file']
+
+        institution_id = form.cleaned_data.get('institution_id')
+        institution_manual = form.cleaned_data.get('institution_manual', '').strip()
+        if institution_id:
+            try:
+                profile.institution = Institution.objects.get(pk=institution_id, active=True)
+            except Institution.DoesNotExist:
+                pass
+        elif institution_manual:
+            inst, _ = Institution.objects.get_or_create(
+                name=institution_manual,
+                defaults={
+                    'type': 'universidad',
+                    'is_manual': True,
+                    'needs_review': True,
+                    'active': True,
+                }
+            )
+            profile.institution = inst
+
         profile.save()
         login(request, user)
         return True, user, None

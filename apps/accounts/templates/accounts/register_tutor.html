@@ -154,6 +154,62 @@
                                 {% endif %}
                             </div>
 
+                            <!-- Situacion laboral -->
+                            <div class="mb-3">
+                                <label for="{{ form.employment_status.id_for_label }}" class="form-label">{{ form.employment_status.label }} <span style="color:#ef4444;">*</span></label>
+                                {{ form.employment_status }}
+                                {% if form.employment_status.errors %}<div class="text-danger small">{{ form.employment_status.errors }}</div>{% endif %}
+                            </div>
+
+                            <!-- Nivel educativo -->
+                            <div class="mb-3">
+                                <label for="{{ form.education_level.id_for_label }}" class="form-label">{{ form.education_level.label }} <span style="color:#ef4444;">*</span></label>
+                                {{ form.education_level }}
+                                {% if form.education_level.errors %}<div class="text-danger small">{{ form.education_level.errors }}</div>{% endif %}
+                            </div>
+
+                            <!-- Certificado educativo -->
+                            <div class="mb-3">
+                                <label for="{{ form.education_certificate_file.id_for_label }}" class="form-label">{{ form.education_certificate_file.label }}</label>
+                                {{ form.education_certificate_file }}
+                                <div class="form-text">{{ form.education_certificate_file.help_text }}</div>
+                                {% if form.education_certificate_file.errors %}<div class="text-danger small">{{ form.education_certificate_file.errors }}</div>{% endif %}
+                            </div>
+
+                            <!-- Institucion (buscador + manual) -->
+                            <div class="mb-3" id="institution_section" style="display:none;">
+                                <label class="form-label">Institucion donde eres docente activo</label>
+                                {{ form.institution_id }}
+                                <input type="text" id="institution_search" class="form-control mb-2"
+                                       placeholder="Busca tu universidad o institucion..."
+                                       autocomplete="off">
+                                <div id="institution_results" class="list-group" style="max-height:200px;overflow-y:auto;"></div>
+                                <div class="mt-2" id="manual_institution_section" style="display:none;">
+                                    {{ form.institution_manual }}
+                                    <small class="text-muted">Si tu institucion no aparece en la lista, ingresala manualmente. Quedara en revision del admin.</small>
+                                </div>
+                            </div>
+
+                            <!-- Credencial institucional -->
+                            <div class="mb-3" id="institutional_credential_section" style="display:none;">
+                                <label for="{{ form.institutional_credential_file.id_for_label }}" class="form-label">
+                                    {{ form.institutional_credential_file.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.institutional_credential_file }}
+                                <div class="form-text">{{ form.institutional_credential_file.help_text }}</div>
+                                {% if form.institutional_credential_file.errors %}<div class="text-danger small">{{ form.institutional_credential_file.errors }}</div>{% endif %}
+                            </div>
+
+                            <!-- CV -->
+                            <div class="mb-3">
+                                <label for="{{ form.cv_file.id_for_label }}" class="form-label">
+                                    {{ form.cv_file.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.cv_file }}
+                                <div class="form-text">{{ form.cv_file.help_text }}</div>
+                                {% if form.cv_file.errors %}<div class="text-danger small">{{ form.cv_file.errors }}</div>{% endif %}
+                            </div>
+
                             <div class="mb-3">
                                 <label for="{{ form.phone_number.id_for_label }}" class="form-label">
                                     {{ form.phone_number.label }} <span style="color: #ef4444;">*</span>
@@ -392,6 +448,65 @@
             if (universityInput) {
                 universityInput.addEventListener('input', toggleInstitutional);
                 toggleInstitutional(); // ejecutar al cargar por si hay valor previo
+            }
+
+            // Mostrar/ocultar secciones segun employment_status
+            const employmentSelect = document.getElementById('{{ form.employment_status.id_for_label }}');
+            const institutionSection = document.getElementById('institution_section');
+            const credentialSection = document.getElementById('institutional_credential_section');
+
+            function toggleEmploymentSections() {
+                const val = employmentSelect ? employmentSelect.value : '';
+                if (val === 'docente_activo') {
+                    institutionSection.style.display = 'block';
+                    credentialSection.style.display = 'block';
+                } else {
+                    institutionSection.style.display = 'none';
+                    credentialSection.style.display = 'none';
+                }
+            }
+
+            if (employmentSelect) {
+                employmentSelect.addEventListener('change', toggleEmploymentSections);
+                toggleEmploymentSections();
+            }
+
+            // Buscador de instituciones via fetch
+            const searchInput = document.getElementById('institution_search');
+            const resultsDiv = document.getElementById('institution_results');
+            const institutionIdInput = document.getElementById('{{ form.institution_id.id_for_label }}');
+            const manualSection = document.getElementById('manual_institution_section');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const q = this.value.trim();
+                    if (q.length < 2) { resultsDiv.innerHTML = ''; return; }
+                    fetch(`/api/institutions/?q=${encodeURIComponent(q)}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            resultsDiv.innerHTML = '';
+                            if (data.results.length === 0) {
+                                manualSection.style.display = 'block';
+                                resultsDiv.innerHTML = '<div class="list-group-item text-muted">No se encontraron resultados. Ingresa manualmente abajo.</div>';
+                            } else {
+                                manualSection.style.display = 'none';
+                                data.results.forEach(inst => {
+                                    const item = document.createElement('button');
+                                    item.type = 'button';
+                                    item.className = 'list-group-item list-group-item-action';
+                                    item.style.background = 'var(--surface)';
+                                    item.style.color = 'var(--text)';
+                                    item.textContent = `${inst.name} - ${inst.city}`;
+                                    item.addEventListener('click', () => {
+                                        searchInput.value = inst.name;
+                                        institutionIdInput.value = inst.id;
+                                        resultsDiv.innerHTML = '';
+                                    });
+                                    resultsDiv.appendChild(item);
+                                });
+                            }
+                        });
+                });
             }
         });
     </script>

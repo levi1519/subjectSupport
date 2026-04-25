@@ -431,34 +431,141 @@ class SubjectLevel(models.Model):
 class PlatformConfig(models.Model):
     """
     Singleton de configuración de plataforma.
-    Solo debe existir una instancia. Editable desde admin.
+    Editable desde admin. Solo debe existir una instancia (pk=1).
     """
-    require_tutor_document = models.BooleanField(
-        default=False,
-        verbose_name='Exigir documento a tutores',
-        help_text='Si activo, el tutor debe subir CV o credencial al registrarse'
+
+    # === SECCIÓN 1: Acceso y edad ===
+    min_student_age = models.IntegerField(
+        default=15,
+        verbose_name='Edad mínima de estudiante',
+        help_text='Edad mínima absoluta para registrarse como estudiante'
     )
-    require_student_document = models.BooleanField(
-        default=False,
-        verbose_name='Exigir documento a estudiantes',
-        help_text='Si activo, el estudiante debe subir documento institucional al registrarse'
-    )
-    require_tutor_knowledge_document = models.BooleanField(
-        default=False,
-        verbose_name='Exigir documento de conocimiento al tutor',
-        help_text='Si activo, el tutor debe subir CV, título o certificados. '
-                  'Su cuenta quedará pendiente de aprobación hasta revisión del admin.'
+    min_tutor_age = models.IntegerField(
+        default=18,
+        verbose_name='Edad mínima de tutor',
+        help_text='Edad mínima para registrarse como tutor'
     )
     enable_minor_accounts = models.BooleanField(
         default=False,
         verbose_name='Habilitar cuentas de menores de edad',
-        help_text='Si activo, muestra el flujo de registro para menores en la app'
+        help_text='Si activo, muestra el flujo de registro para menores con tutor legal'
     )
+
+    # === SECCIÓN 2: Documentos tutor ===
+    require_tutor_cv = models.BooleanField(
+        default=True,
+        verbose_name='Exigir CV al tutor',
+        help_text='CV en PDF obligatorio en el registro del tutor'
+    )
+    require_tutor_document = models.BooleanField(
+        default=False,
+        verbose_name='Exigir documento genérico al tutor',
+        help_text='Documento genérico (CV o credencial). Activa flujo de aprobación'
+    )
+    require_tutor_knowledge_document = models.BooleanField(
+        default=False,
+        verbose_name='Exigir documento de conocimiento al tutor',
+        help_text='Títulos, certificados o CV académico. Activa flujo de aprobación hasta revisión del admin'
+    )
+    require_tutor_education_certificate = models.BooleanField(
+        default=False,
+        verbose_name='Exigir certificado de nivel educativo',
+        help_text='Certificado que acredite el nivel educativo declarado por el tutor'
+    )
+    require_tutor_institutional_credential = models.BooleanField(
+        default=False,
+        verbose_name='Exigir credencial institucional al tutor',
+        help_text='Carnet o ID de institución. Requerido si el tutor es docente activo'
+    )
+
+    # === SECCIÓN 3: Documentos estudiante ===
     require_student_university = models.BooleanField(
         default=True,
         verbose_name='Exigir universidad al estudiante',
-        help_text='Si activo, el estudiante debe declarar su institución educativa al registrarse'
+        help_text='El estudiante debe declarar su institución educativa al registrarse'
     )
+    require_student_id_document = models.BooleanField(
+        default=True,
+        verbose_name='Exigir cédula al estudiante',
+        help_text='Cédula obligatoria para estudiantes mayores de edad'
+    )
+    require_student_enrollment_certificate = models.BooleanField(
+        default=True,
+        verbose_name='Exigir carnet/constancia de matrícula',
+        help_text='Carnet o constancia de matrícula para estudiantes universitarios'
+    )
+    require_student_document = models.BooleanField(
+        default=False,
+        verbose_name='Exigir documento institucional al estudiante',
+        help_text='Documento institucional genérico para el estudiante'
+    )
+
+    # === SECCIÓN 4: Instituciones ===
+    enable_institution_search = models.BooleanField(
+        default=True,
+        verbose_name='Habilitar búsqueda de instituciones',
+        help_text='Permite buscar instituciones del dataset MINEDUC en el registro'
+    )
+    allow_manual_institution_entry = models.BooleanField(
+        default=True,
+        verbose_name='Permitir ingreso manual de institución',
+        help_text='Si la institución no está en la lista, el usuario puede ingresarla manualmente. Queda en revisión del admin'
+    )
+
+    # === SECCIÓN 5: Sesiones ===
+    max_subjects_per_tutor = models.IntegerField(
+        default=5,
+        verbose_name='Máximo de materias por tutor',
+        help_text='Cantidad máxima de materias que un tutor puede seleccionar'
+    )
+    session_cancellation_hours = models.IntegerField(
+        default=24,
+        verbose_name='Horas mínimas para cancelar sin penalización',
+        help_text='Aplica cuando los pagos estén activos (Fase 3)'
+    )
+
+    # === SECCIÓN 6: Archivos ===
+    max_file_size_mb = models.IntegerField(
+        default=5,
+        verbose_name='Tamaño máximo de archivo (MB)',
+        help_text='Límite de tamaño por archivo subido en la plataforma'
+    )
+    max_session_materials = models.IntegerField(
+        default=7,
+        verbose_name='Máximo de archivos por sesión',
+        help_text='Cantidad máxima de materiales que se pueden adjuntar a una sesión'
+    )
+    allowed_file_types = models.CharField(
+        max_length=200,
+        default='pdf,jpg,jpeg,png,doc,docx,ppt,pptx,xlsx',
+        verbose_name='Tipos de archivo permitidos',
+        help_text='Extensiones separadas por coma (sin puntos)'
+    )
+
+    # === SECCIÓN 7: Pagos (Fase 3 — inactivos) ===
+    platform_commission_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=10.00,
+        verbose_name='Comisión de plataforma (%)',
+        help_text='Porcentaje que retiene la plataforma de cada sesión pagada (Fase 3)'
+    )
+    enable_payphone = models.BooleanField(
+        default=False,
+        verbose_name='Habilitar PayPhone',
+        help_text='Activa la pasarela de pago PayPhone (Fase 3)'
+    )
+    enable_deposit_voucher = models.BooleanField(
+        default=False,
+        verbose_name='Habilitar pago por comprobante de depósito',
+        help_text='Permite pago manual con comprobante revisado por admin (Fase 3)'
+    )
+    refund_policy_hours = models.IntegerField(
+        default=24,
+        verbose_name='Horas para reembolso completo',
+        help_text='Cancelaciones antes de este plazo reciben reembolso completo (Fase 3)'
+    )
+
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -469,10 +576,127 @@ class PlatformConfig(models.Model):
         return 'Configuración de Plataforma'
 
     def save(self, *args, **kwargs):
-        self.pk = 1  # Singleton: siempre pk=1
+        self.pk = 1
         super().save(*args, **kwargs)
 
     @classmethod
     def get_config(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class Institution(models.Model):
+    """
+    Instituciones educativas de Ecuador.
+    Pobladas desde dataset MINEDUC. Entradas manuales marcadas como needs_review.
+    """
+    INSTITUTION_TYPE_CHOICES = (
+        ('universidad', 'Universidad'),
+        ('instituto', 'Instituto Técnico/Tecnológico'),
+        ('colegio', 'Colegio'),
+        ('escuela', 'Escuela'),
+    )
+
+    name = models.CharField(
+        max_length=300,
+        verbose_name='Nombre de la institución'
+    )
+    type = models.CharField(
+        max_length=20,
+        choices=INSTITUTION_TYPE_CHOICES,
+        default='universidad',
+        verbose_name='Tipo'
+    )
+    province = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        verbose_name='Provincia'
+    )
+    city = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        verbose_name='Ciudad'
+    )
+    is_manual = models.BooleanField(
+        default=False,
+        verbose_name='Ingresada manualmente',
+        help_text='True si fue ingresada por un usuario, no del dataset oficial'
+    )
+    needs_review = models.BooleanField(
+        default=False,
+        verbose_name='Requiere revisión admin',
+        help_text='True para entradas manuales hasta verificación'
+    )
+    active = models.BooleanField(
+        default=True,
+        verbose_name='Activa'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Institución'
+        verbose_name_plural = 'Instituciones'
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} ({self.get_type_display()})"
+
+
+class SessionMaterial(models.Model):
+    """
+    Materiales adjuntos a una sesión de clase.
+    Puede ser URL o archivo. Subido por estudiante o tutor.
+    Se conservan permanentemente para uso futuro del simulador IA.
+    """
+    MATERIAL_TYPE_CHOICES = (
+        ('url', 'Enlace URL'),
+        ('file', 'Archivo'),
+    )
+
+    session = models.ForeignKey(
+        'ClassSession',
+        on_delete=models.CASCADE,
+        related_name='materials',
+        verbose_name='Sesión'
+    )
+    type = models.CharField(
+        max_length=10,
+        choices=MATERIAL_TYPE_CHOICES,
+        verbose_name='Tipo'
+    )
+    url = models.URLField(
+        blank=True,
+        null=True,
+        max_length=500,
+        verbose_name='URL'
+    )
+    file = models.FileField(
+        upload_to='sessions/materials/',
+        blank=True,
+        null=True,
+        verbose_name='Archivo'
+    )
+    filename = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        verbose_name='Nombre del archivo'
+    )
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='uploaded_materials',
+        verbose_name='Subido por'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Material de Sesión'
+        verbose_name_plural = 'Materiales de Sesión'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.get_type_display()} — {self.session}"

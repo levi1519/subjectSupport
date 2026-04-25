@@ -541,3 +541,18 @@ class NotificarmeExpansionView(View):
     def get(self, request):
         # Si no es POST, redirigir a servicio_no_disponible
         return redirect('servicio_no_disponible')
+
+
+from django.http import JsonResponse
+from .models import Institution, SessionMaterial
+
+def institution_search_api(request):
+    """API endpoint para búsqueda de instituciones vía autocomplete."""
+    q = request.GET.get('q', '').strip()
+    if len(q) < 2:
+        return JsonResponse({'results': []})
+    institutions = Institution.objects.filter(
+        name__icontains=q,
+        active=True
+    ).values('id', 'name', 'type', 'city', 'province')[:10]
+    return JsonResponse({'results': list(institutions)})

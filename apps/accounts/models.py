@@ -329,6 +329,53 @@ class TutorProfile(models.Model):
         verbose_name='Documento (CV / Credencial)',
         help_text='PDF, imagen u otro archivo que acredite tu experiencia'
     )
+    cv_file = models.FileField(
+        upload_to='documents/tutors/cv/',
+        blank=True,
+        null=True,
+        verbose_name='Currículum Vitae (PDF)',
+        help_text='CV en formato PDF. Máximo 5MB.'
+    )
+    employment_status = models.CharField(
+        max_length=30,
+        blank=True,
+        default='',
+        choices=(
+            ('desempleado', 'Desempleado / Freelancer'),
+            ('empleado_no_docente', 'Empleado (no sector educativo)'),
+            ('docente_activo', 'Docente activo en institución'),
+        ),
+        verbose_name='Situación laboral',
+        help_text='Estado laboral actual del tutor'
+    )
+    education_level = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        choices=(
+            ('bachiller', 'Bachiller'),
+            ('tecnico', 'Técnico / Tecnólogo'),
+            ('universitario', 'Universitario / Egresado'),
+            ('posgrado', 'Posgrado (Maestría / Doctorado)'),
+        ),
+        verbose_name='Nivel de educación',
+        help_text='Nivel educativo más alto alcanzado'
+    )
+    education_certificate_file = models.FileField(
+        upload_to='documents/tutors/education/',
+        blank=True,
+        null=True,
+        verbose_name='Certificado de nivel educativo (PDF)',
+        help_text='Título, diploma o certificado que acredite el nivel declarado'
+    )
+    institution = models.ForeignKey(
+        'academicTutoring.Institution',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tutors',
+        verbose_name='Institución donde labora'
+    )
     institutional_credential_file = models.FileField(
         upload_to='documents/tutors/institutional/',
         blank=True,
@@ -436,6 +483,39 @@ class ClientProfile(models.Model):
         null=True,
         verbose_name='Documento institucional',
         help_text='Constancia de matrícula, carnet u otro documento de tu institución educativa'
+    )
+    student_type = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        choices=(
+            ('universitario', 'Estudiante universitario'),
+            ('autodidacta', 'Autodidacta'),
+        ),
+        verbose_name='Tipo de estudiante',
+        help_text='¿Eres estudiante de una institución educativa o aprendiz independiente?'
+    )
+    id_document_file = models.FileField(
+        upload_to='documents/students/id/',
+        blank=True,
+        null=True,
+        verbose_name='Cédula de identidad (PDF o imagen)',
+        help_text='Cédula o documento de identidad vigente'
+    )
+    enrollment_file = models.FileField(
+        upload_to='documents/students/enrollment/',
+        blank=True,
+        null=True,
+        verbose_name='Carnet o constancia de matrícula',
+        help_text='Carnet estudiantil vigente o constancia de matrícula'
+    )
+    institution = models.ForeignKey(
+        'academicTutoring.Institution',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='students',
+        verbose_name='Institución educativa'
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -80,33 +80,64 @@ class TutorRegistrationForm(UserCreationForm):
         label='Foto de Perfil',
         help_text='Sube una foto (JPG, PNG, máximo 5MB)'
     )
-    university_name = forms.CharField(
+    cv_file = forms.FileField(
         required=False,
-        max_length=200,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.pdf'}),
+        label='Curriculum Vitae (PDF)',
+        help_text='Sube tu CV en formato PDF. Maximo 5MB.'
+    )
+    employment_status = forms.ChoiceField(
+        choices=[('', 'Selecciona tu situacion laboral')] + [
+            ('desempleado', 'Desempleado / Freelancer'),
+            ('empleado_no_docente', 'Empleado (no sector educativo)'),
+            ('docente_activo', 'Docente activo en institucion'),
+        ],
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='Situacion laboral actual',
+    )
+    education_level = forms.ChoiceField(
+        choices=[('', 'Selecciona tu nivel educativo')] + [
+            ('bachiller', 'Bachiller'),
+            ('tecnico', 'Tecnico / Tecnologo'),
+            ('universitario', 'Universitario / Egresado'),
+            ('posgrado', 'Posgrado (Maestria / Doctorado)'),
+        ],
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='Nivel de educacion alcanzado',
+    )
+    education_certificate_file = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.pdf,.jpg,.jpeg,.png'}),
+        label='Certificado de nivel educativo',
+        help_text='Titulo, diploma o certificado que acredite el nivel declarado'
+    )
+    institution_id = forms.IntegerField(
+        required=False,
+        widget=forms.HiddenInput(),
+        label='ID de institucion seleccionada'
+    )
+    institution_manual = forms.CharField(
+        required=False,
+        max_length=300,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Ej: Universidad de Guayaquil'
+            'placeholder': 'Nombre de la institucion si no aparece en la lista'
         }),
-        label='Universidad / Institución (opcional)',
-        help_text='Institución donde estudias o estudiaste'
-    )
-    document_file = forms.FileField(
-        required=False,
-        widget=forms.ClearableFileInput(attrs={'class': 'form-control'}),
-        label='Documento (CV o Credencial)',
-        help_text='PDF o imagen que acredite tu experiencia como tutor'
+        label='Institucion (ingreso manual)',
     )
     institutional_credential_file = forms.FileField(
         required=False,
-        widget=forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.pdf,.jpg,.jpeg,.png'}),
         label='Credencial institucional',
-        help_text='Si enseñas en una universidad, sube tu carnet o ID institucional'
+        help_text='Carnet o ID de la institucion donde eres docente activo'
     )
     birth_date = forms.DateField(
         required=True,
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         label='Fecha de nacimiento',
-        help_text='Debes ser mayor de 18 años para registrarte como tutor.',
+        help_text='Debes ser mayor de 18 anos para registrarte como tutor.',
     )
     class Meta:
         model = User
@@ -165,10 +196,13 @@ class TutorRegistrationForm(UserCreationForm):
         return email
 
     def clean_subjects_taught(self):
-        """Validate maximum 5 subjects selected"""
+        from apps.academicTutoring.models import PlatformConfig
         subjects = self.cleaned_data.get('subjects_taught')
-        if subjects and subjects.count() > 5:
-            raise ValidationError('Solo puedes seleccionar un máximo de 5 materias.')
+        max_subjects = PlatformConfig.get_config().max_subjects_per_tutor
+        if subjects and subjects.count() > max_subjects:
+            raise ValidationError(
+                f'Solo puedes seleccionar un maximo de {max_subjects} materias.'
+            )
         return subjects
 
     def clean_password2(self):
@@ -179,16 +213,58 @@ class TutorRegistrationForm(UserCreationForm):
             raise ValidationError('Las contraseñas no coinciden.')
         return password2
 
+    def clean(self):
+        cleaned_data = super().clean()
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+
+        # Validar CV
+        cv_file = cleaned_data.get('cv_file')
+        if config.require_tutor_cv and not cv_file:
+            self.add_error('cv_file', 'El CV en PDF es obligatorio para registrarte como tutor.')
+
+        # Validar tamano y extension del CV
+        if cv_file:
+            max_bytes = config.max_file_size_mb * 1024 * 1024
+            if cv_file.size > max_bytes:
+                self.add_error('cv_file', f'El archivo supera el limite de {config.max_file_size_mb}MB.')
+            if not cv_file.name.lower().endswith('.pdf'):
+                self.add_error('cv_file', 'El CV debe estar en formato PDF.')
+
+        # Validar credencial institucional si es docente activo
+        employment_status = cleaned_data.get('employment_status')
+        institutional_file = cleaned_data.get('institutional_credential_file')
+        if employment_status == 'docente_activo':
+            if config.require_tutor_institutional_credential and not institutional_file:
+                self.add_error(
+                    'institutional_credential_file',
+                    'Debes subir tu carnet o ID institucional si eres docente activo.'
+                )
+
+        # Validar certificado educativo
+        education_cert = cleaned_data.get('education_certificate_file')
+        if config.require_tutor_education_certificate and not education_cert:
+            self.add_error(
+                'education_certificate_file',
+                'Debes subir el certificado de tu nivel educativo.'
+            )
+
+        return cleaned_data
+
     def clean_birth_date(self):
         from datetime import date
+        from apps.academicTutoring.models import PlatformConfig
         birth_date = self.cleaned_data.get('birth_date')
         if birth_date:
             today = date.today()
             age = today.year - birth_date.year - (
                 (today.month, today.day) < (birth_date.month, birth_date.day)
             )
-            if age < 18:
-                raise forms.ValidationError('Debes ser mayor de 18 años para registrarte como tutor.')
+            min_age = PlatformConfig.get_config().min_tutor_age
+            if age < min_age:
+                raise forms.ValidationError(
+                    f'Debes tener al menos {min_age} anos para registrarte como tutor.'
+                )
         return birth_date
 
     def save(self, commit=True, country_code=''):
@@ -263,23 +339,41 @@ class ClientRegistrationForm(UserCreationForm):
         required=False,
         widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
         label='Foto de Perfil',
-        help_text='Sube una foto (JPG, PNG, máximo 5MB)'
+        help_text='Sube una foto (JPG, PNG, maximo 5MB)'
     )
-    university_name = forms.CharField(
+    student_type = forms.ChoiceField(
+        choices=[('', 'Selecciona tu tipo de estudiante')] + [
+            ('universitario', 'Estudiante universitario'),
+            ('autodidacta', 'Autodidacta / Aprendiz independiente'),
+        ],
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='Como describirias tu perfil de aprendizaje?',
+    )
+    id_document_file = forms.FileField(
         required=False,
-        max_length=200,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.pdf,.jpg,.jpeg,.png'}),
+        label='Cedula de identidad',
+        help_text='PDF o imagen de tu cedula vigente'
+    )
+    enrollment_file = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.pdf,.jpg,.jpeg,.png'}),
+        label='Carnet o constancia de matricula',
+        help_text='Carnet estudiantil vigente o constancia de matricula'
+    )
+    institution_id = forms.IntegerField(
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+    institution_manual = forms.CharField(
+        required=False,
+        max_length=300,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Ej: UNEMI, ESPOL, UG...'
+            'placeholder': 'Nombre de tu institucion si no aparece en la lista'
         }),
-        label='Institución educativa',
-        help_text='Nombre de tu colegio, universidad u otra institución'
-    )
-    document_file = forms.FileField(
-        required=False,
-        widget=forms.ClearableFileInput(attrs={'class': 'form-control'}),
-        label='Documento institucional (opcional)',
-        help_text='Constancia de matrícula, carnet u otro documento de tu institución'
+        label='Institucion (ingreso manual)',
     )
     birth_date = forms.DateField(
         required=True,
@@ -363,34 +457,52 @@ class ClientRegistrationForm(UserCreationForm):
 
     def clean_birth_date(self):
         from datetime import date
+        from apps.academicTutoring.models import PlatformConfig
         birth_date = self.cleaned_data.get('birth_date')
         if birth_date:
             today = date.today()
             age = today.year - birth_date.year - (
                 (today.month, today.day) < (birth_date.month, birth_date.day)
             )
-            is_minor = age < 18
-            self.calculated_is_minor = is_minor
+            config = PlatformConfig.get_config()
+            min_age = config.min_student_age
+            if age < min_age:
+                raise forms.ValidationError(
+                    f'Debes tener al menos {min_age} anos para registrarte como estudiante.'
+                )
+            self.calculated_is_minor = age < 18
         return birth_date
 
     def clean(self):
-        """Validate parent name if minor"""
         cleaned_data = super().clean()
         from apps.academicTutoring.models import PlatformConfig
         config = PlatformConfig.get_config()
-        if config.require_student_university:
-            university_name = cleaned_data.get('university_name', '').strip()
-            if not university_name:
-                raise ValidationError({
-                    'university_name': 'Debes declarar tu institución educativa para registrarte.'
-                })
+
         is_minor = cleaned_data.get('is_minor')
         parent_name = cleaned_data.get('parent_name')
+        student_type = cleaned_data.get('student_type')
 
+        # Validar tutor legal si es menor
         if is_minor and not parent_name:
             raise ValidationError({
                 'parent_name': 'Se requiere el nombre del padre o tutor legal para menores de edad.'
             })
+
+        # Validar cedula para mayores de edad
+        id_doc = cleaned_data.get('id_document_file')
+        if not is_minor and config.require_student_id_document and not id_doc:
+            self.add_error(
+                'id_document_file',
+                'Debes subir tu cedula de identidad.'
+            )
+
+        # Validar constancia de matricula si es universitario
+        enrollment = cleaned_data.get('enrollment_file')
+        if student_type == 'universitario' and config.require_student_enrollment_certificate and not enrollment:
+            self.add_error(
+                'enrollment_file',
+                'Debes subir tu carnet o constancia de matricula como estudiante universitario.'
+            )
 
         return cleaned_data
 

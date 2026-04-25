@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.conf import settings
-from .models import ServiceArea, TutorLead, ClassSession, NotificacionExpansion, Level, SubjectLevel, CountryConfig, PlatformConfig
+from .models import ServiceArea, TutorLead, ClassSession, NotificacionExpansion, Level, SubjectLevel, CountryConfig, PlatformConfig, Institution
 
 # Importar GISModelAdmin solo si está disponible
 GIS_AVAILABLE = getattr(settings, 'GIS_AVAILABLE', False)
@@ -252,29 +252,72 @@ class SubjectLevelAdmin(admin.ModelAdmin):
 
 @admin.register(PlatformConfig)
 class PlatformConfigAdmin(admin.ModelAdmin):
+
     def has_add_permission(self, request):
         return not PlatformConfig.objects.exists()
 
     def has_delete_permission(self, request, obj=None):
         return False
 
-    list_display = ['require_tutor_document', 'require_student_document', 'require_tutor_knowledge_document', 'enable_minor_accounts', 'updated_at']
     fieldsets = (
-        ('Documentos obligatorios', {
-            'fields': ('require_tutor_document', 'require_student_document'),
-            'description': 'require_tutor_document: activa el flujo de aprobación '
-                          'genérico (CV o credencial). '
-                          'require_tutor_knowledge_document: específico para '
-                          'validación de conocimiento académico.'
+        ('Acceso y edad', {
+            'fields': ('min_student_age', 'min_tutor_age', 'enable_minor_accounts'),
+            'description': 'Controla las edades minimas y el flujo de menores de edad.',
         }),
-        ('Validación de conocimiento', {
-            'fields': ('require_tutor_knowledge_document',),
-            'description': 'Cuando está activo, el tutor debe subir CV, títulos o '
-                          'certificados al registrarse. Su cuenta queda bloqueada '
-                          'hasta aprobación manual del administrador.'
+        ('Documentos del tutor', {
+            'fields': (
+                'require_tutor_cv',
+                'require_tutor_document',
+                'require_tutor_knowledge_document',
+                'require_tutor_education_certificate',
+                'require_tutor_institutional_credential',
+            ),
+            'description': 'Los campos marcados activan el flujo de aprobacion manual del admin.',
         }),
-        ('Funcionalidades', {
-            'fields': ('enable_minor_accounts', 'require_student_university'),
-            'description': 'Activa flujos opcionales de la plataforma.'
+        ('Documentos del estudiante', {
+            'fields': (
+                'require_student_university',
+                'require_student_id_document',
+                'require_student_enrollment_certificate',
+                'require_student_document',
+            ),
+        }),
+        ('Instituciones', {
+            'fields': ('enable_institution_search', 'allow_manual_institution_entry'),
+            'description': 'Controla el buscador de instituciones MINEDUC y las entradas manuales.',
+        }),
+        ('Sesiones', {
+            'fields': ('max_subjects_per_tutor', 'session_cancellation_hours'),
+            'description': 'session_cancellation_hours aplica cuando los pagos esten activos (Fase 3).',
+        }),
+        ('Archivos', {
+            'fields': ('max_file_size_mb', 'max_session_materials', 'allowed_file_types'),
+        }),
+        ('Pagos — Fase 3 (no modificar hasta implementacion)', {
+            'fields': (
+                'platform_commission_percent',
+                'enable_payphone',
+                'enable_deposit_voucher',
+                'refund_policy_hours',
+            ),
+            'classes': ('collapse',),
+            'description': 'Estos campos no tienen efecto hasta la implementacion de pagos (Fase 3).',
+        }),
+    )
+
+
+@admin.register(Institution)
+class InstitutionAdmin(admin.ModelAdmin):
+    list_display = ['name', 'type', 'province', 'city', 'needs_review', 'active']
+    list_filter = ['type', 'province', 'needs_review', 'active', 'is_manual']
+    search_fields = ['name', 'city', 'province']
+    list_editable = ['active', 'needs_review']
+    ordering = ['name']
+    fieldsets = (
+        ('Informacion', {
+            'fields': ('name', 'type', 'province', 'city')
+        }),
+        ('Estado', {
+            'fields': ('active', 'is_manual', 'needs_review')
         }),
     )

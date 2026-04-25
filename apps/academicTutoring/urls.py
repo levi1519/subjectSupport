@@ -14,4 +14,6 @@ urlpatterns = [
     # Geolocalización
     path('servicio-no-disponible/', views.servicio_no_disponible, name='servicio_no_disponible'),
     path('notificarme/', views.NotificarmeExpansionView.as_view(), name='notificarme'),
+    # Instituciones API
+    path('api/institutions/', views.institution_search_api, name='institution_search_api'),
 ]
