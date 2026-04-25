@@ -231,19 +231,42 @@ class TutorProfileAdmin(admin.ModelAdmin):
     get_location_display.short_description = 'Ubicación'
 
     def get_docs_status(self, obj):
-        """Semáforo rápido de documentos subidos."""
-        docs = {
-            'CV': obj.cv_file,
-            'Conoc.': obj.knowledge_document_file,
-            'Cert.': obj.education_certificate_file,
-            'Cred.': obj.institutional_credential_file,
-        }
+        """
+        Renderiza un <a> por documento si existe, o <span> gris si no.
+        """
+        docs = [
+            ('CV',     obj.cv_file),
+            ('Conoc.', obj.knowledge_document_file),
+            ('Cert.',  obj.education_certificate_file),
+            ('Cred.',  obj.institutional_credential_file),
+        ]
         parts = []
-        for label, field in docs.items():
+        for label, field in docs:
             has_doc = bool(field and field.name)
-            color = '#43D9AD' if has_doc else '#8892A4'
-            parts.append(f'<span style="color:{color};font-size:0.75rem;">{label}</span>')
-        return format_html(' '.join(parts))
+            if has_doc:
+                try:
+                    url = field.url
+                    parts.append(
+                        format_html(
+                            '<a href="{}" target="_blank" '
+                            'style="color:#43D9AD;font-size:0.75rem;'
+                            'margin-right:4px;text-decoration:none;" '
+                            'title="Ver {}">{}</a>',
+                            url, label, label
+                        )
+                    )
+                except ValueError:
+                    parts.append(format_html(
+                        '<span style="color:#8892A4;font-size:0.75rem;'
+                        'margin-right:4px;">{}</span>', label
+                    ))
+            else:
+                parts.append(format_html(
+                    '<span style="color:#8892A4;font-size:0.75rem;'
+                    'margin-right:4px;opacity:0.4;">{}</span>', label
+                ))
+        from django.utils.safestring import mark_safe
+        return mark_safe(''.join(str(p) for p in parts))
     get_docs_status.short_description = 'Docs'
 
     # --- readonly_fields (detail view) ---
