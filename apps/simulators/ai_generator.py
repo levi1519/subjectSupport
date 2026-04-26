@@ -9,9 +9,20 @@ Este módulo contiene:
 - generate_reinforcement_simulator() → crea simulador de refuerzo
 """
 import json
+from datetime import timedelta
 from django.utils import timezone
 
 from .models import Simulator, SimulatorQuestion, StudentWeakTopicProfile
+
+
+# ─────────────────────────────────────────────────────────────
+# Constantes de configuración
+# ─────────────────────────────────────────────────────────────
+
+GENERATION_COOLDOWN_HOURS = 24
+MAX_MATERIAL_CHARS = 8000
+MAX_PROMPT_CHARS = 12000
+MAX_QUESTIONS = 10
 
 
 # ─────────────────────────────────────────────────────────────
@@ -194,6 +205,26 @@ def build_reinforcement_prompt(attempt, weak_profiles) -> str:
 # ─────────────────────────────────────────────────────────────
 # Generador de simulador principal (diagnóstico)
 # ─────────────────────────────────────────────────────────────
+
+
+def check_generation_cooldown(session, student, sim_type='diagnostic'):
+    from django.utils import timezone
+    from datetime import timedelta
+    cutoff = timezone.now() - timedelta(hours=GENERATION_COOLDOWN_HOURS)
+    recent = Simulator.objects.filter(
+        session=session,
+        student=student,
+        simulator_type=sim_type,
+        created_at__gte=cutoff,
+    ).exclude(generation_status='failed').exists()
+    return not recent
+
+
+def truncate_material(text, max_chars=MAX_MATERIAL_CHARS):
+    if not text or len(text) <= max_chars:
+        return text or ''
+    return text[:max_chars] + '[Material truncado por longitud]'
+
 
 def generate_simulator(session, student):
     """
