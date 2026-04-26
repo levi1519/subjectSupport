@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import password_reset_views
 
 urlpatterns = [
     # Registration routes
@@ -21,4 +22,9 @@ urlpatterns = [
     path('profile/client/edit/', views.EditClientProfileView.as_view(), name='edit_client_profile'),
     # Tutor management routes
     path('tutor/manage-subjects/', views.ManageTutorSubjectsView.as_view(), name='manage_subjects'),
+    
+    # Password reset flow
+    path('password-reset/', password_reset_views.PasswordResetRequestView.as_view(), name='password_reset_request'),
+    path('password-reset/verificar/', password_reset_views.PasswordResetVerifyView.as_view(), name='password_reset_verify'),
+    path('password-reset/nueva/', password_reset_views.PasswordResetNewView.as_view(), name='password_reset_new'),
 ]
