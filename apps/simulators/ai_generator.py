@@ -192,6 +192,129 @@ def build_reinforcement_prompt(attempt, weak_profiles) -> str:
 
 
 # ─────────────────────────────────────────────────────────────
+# Generador de simulador principal (diagnóstico)
+# ─────────────────────────────────────────────────────────────
+
+def generate_simulator(session, student):
+    """
+    Main entry point: student triggers AI generation of a diagnostic
+    simulator from the tutor's session materials.
+    Tutor does NOT interact with AI at any point.
+    Returns: (success: bool, message: str)
+    """
+    from apps.academicTutoring.models import SessionMaterial
+    from apps.simulators.models import Simulator, SimulatorQuestion
+
+    # Step 1 — Check materials exist
+    materials = SessionMaterial.objects.filter(session=session)
+    if not materials.exists():
+        return False, (
+            "La sesión no tiene materiales. "
+            "El tutor debe subir material primero."
+        )
+
+    # Step 2 — Check session ownership
+    if session.client != student:
+        return False, "No tienes acceso a esta sesión."
+
+    # Step 3 — Cooldown check (token protection)
+    if not check_generation_cooldown(session, student, 'diagnostic'):
+        return False, (
+            f"Ya generaste un simulacro para esta sesión hoy. "
+            f"Espera {GENERATION_COOLDOWN_HOURS} horas antes de regenerar."
+        )
+
+    # Step 4 — Check no duplicate published simulator
+    existing = Simulator.objects.filter(
+        session=session,
+        student=student,
+        status='published',
+        simulator_type='diagnostic'
+    ).first()
+    if existing:
+        return False, "Ya existe un simulacro generado para esta sesión."
+
+    # Step 5 — Create Simulator in GENERATING state
+    simulator = Simulator.objects.create(
+        session=session,
+        tutor=session.tutor,
+        student=student,
+        simulator_type='diagnostic',
+        status='draft',
+        generation_status='generating',
+        title=f"Simulacro — {session.subject}",
+        subject=session.subject,
+        source_material_url=(
+            materials.filter(type='url').first().url
+            if materials.filter(type='url').exists() else None
+        ),
+        max_attempts=3,
+    )
+
+    # Step 6 — Build weak topics context
+    weak_profiles = StudentWeakTopicProfile.objects.filter(
+        student=student,
+        subject=session.subject,
+        cumulative_score_pct__lt=60
+    ).order_by('cumulative_score_pct')[:5]
+    weak_topics = [p.topic_tag for p in weak_profiles]
+    simulator.weak_topics_context = weak_topics
+    simulator.save(update_fields=['weak_topics_context'])
+
+    # Step 7 — Build prompts
+    system_prompt = build_system_prompt()
+    user_prompt = build_user_prompt(session, materials, weak_topics)
+    simulator.generation_prompt = user_prompt
+    simulator.save(update_fields=['generation_prompt'])
+
+    # Step 8 — Call AI provider
+    raw_data = call_ai_provider(system_prompt, user_prompt)
+    if raw_data is None:
+        simulator.generation_status = 'failed'
+        simulator.generation_error = 'API call failed or timed out'
+        simulator.save(update_fields=['generation_status', 'generation_error'])
+        return False, (
+            "Error al conectar con el servicio de IA. "
+            "Intenta de nuevo en unos minutos."
+        )
+
+    # Step 9 — Validate questions
+    questions = validate_questions(raw_data)
+    if questions is None:
+        simulator.generation_status = 'failed'
+        simulator.generation_error = f'Validation failed: {str(raw_data)[:200]}'
+        simulator.save(update_fields=['generation_status', 'generation_error'])
+        return False, "La IA no generó preguntas válidas. Intenta de nuevo."
+
+    # Step 10 — Create SimulatorQuestion objects
+    for i, q in enumerate(questions, start=1):
+        SimulatorQuestion.objects.create(
+            simulator=simulator,
+            order=i,
+            topic_tag=q['topic_tag'],
+            difficulty=q['difficulty'],
+            statement=q['statement'],
+            option_a=q['option_a'],
+            option_b=q['option_b'],
+            option_c=q['option_c'],
+            option_d=q['option_d'],
+            correct_option=q['correct_option'],
+            explanation=q.get('explanation', ''),
+            is_active=True,
+        )
+
+    # Step 11 — Publish simulator
+    simulator.generation_status = 'done'
+    simulator.status = 'published'
+    simulator.published_at = timezone.now()
+    simulator.save(update_fields=[
+        'generation_status', 'status', 'published_at'
+    ])
+
+    return True, f"Simulacro generado con {len(questions)} preguntas."
+
+
+# ─────────────────────────────────────────────────────────────
 # Generador de simulador de refuerzo
 # ─────────────────────────────────────────────────────────────
 
