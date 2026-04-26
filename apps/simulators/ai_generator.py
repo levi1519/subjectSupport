@@ -101,6 +101,9 @@ def call_deepseek(system_prompt: str, user_prompt: str):
         "response_format": {"type": "json_object"},
     }
 
+    import logging
+    logger = logging.getLogger(__name__)
+
     try:
         r = requests.post(
             f"{base_url}/chat/completions",
@@ -112,7 +115,14 @@ def call_deepseek(system_prompt: str, user_prompt: str):
         data = r.json()
         content = data["choices"][0]["message"]["content"]
         return json.loads(content)
-    except Exception:
+    except requests.exceptions.Timeout:
+        logger.error("DeepSeek timeout after 120s")
+        return None
+    except requests.exceptions.HTTPError as e:
+        logger.error("DeepSeek HTTP error: %s — %s", e, r.text[:500])
+        return None
+    except Exception as e:
+        logger.error("DeepSeek unexpected error: %s", str(e), exc_info=True)
         return None
 
 
