@@ -355,14 +355,14 @@ class ClientRegistrationForm(UserCreationForm):
         label='Cédula / Identificación',
     )
     university_name = forms.CharField(
-        required=True,
+        required=False,
         max_length=200,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Ej: Universidad de Guayaquil, ESPOL'
         }),
         label='Universidad donde estudias',
-        help_text='Universidad en la que estás matriculado actualmente'
+        help_text='Requerido solo si eres estudiante universitario'
     )
     avatar = forms.ImageField(
         required=False,
