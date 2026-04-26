@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 {% load accounts_filters %}
 <!DOCTYPE html>
 <html lang="es">
@@ -451,21 +451,21 @@
                                 {% endif %}
                             </div>
                             <div>
-                                {% if session._pub_simulator %}
+                                {% if session.pub_simulator %}
                                     <div class="d-flex gap-2">
-                                        <a href="{% url 'simulators:detail' session._pub_simulator.pk %}"
+                                        <a href="{% url 'simulators:detail' session.pub_simulator.pk %}"
                                            class="btn btn-sm btn-outline-primary">Ver simulacro</a>
                                         <span class="badge align-self-center"
-                                            style="background:{% if session._pub_simulator.status == 'approved' %}var(--accent);color:#1A1A2E{% elif session._pub_simulator.status == 'pending_approval' %}var(--warning);color:#1A1A2E{% else %}var(--primary){% endif %};">
-                                            {% if session._pub_simulator.status == 'approved' %}✅ Aprobado
-                                            {% elif session._pub_simulator.status == 'pending_approval' %}⏳ En revisión
+                                            style="background:{% if session.pub_simulator.status == 'approved' %}var(--accent);color:#1A1A2E{% elif session.pub_simulator.status == 'pending_approval' %}var(--warning);color:#1A1A2E{% else %}var(--primary){% endif %};">
+                                            {% if session.pub_simulator.status == 'approved' %}✅ Aprobado
+                                            {% elif session.pub_simulator.status == 'pending_approval' %}⏳ En revisión
                                             {% else %}Publicado{% endif %}
                                         </span>
                                     </div>
-                                {% elif session._rejected_simulator %}
+                                {% elif session.rejected_simulator %}
                                     <div>
                                         <span class="text-muted small d-block mb-1">
-                                            ❌ Rechazado{% if session._rejected_simulator.tutor_feedback %}: {{ session._rejected_simulator.tutor_feedback|truncatechars:40 }}{% endif %}
+                                            ❌ Rechazado{% if session.rejected_simulator.tutor_feedback %}: {{ session.rejected_simulator.tutor_feedback|truncatechars:40 }}{% endif %}
                                         </span>
                                         <form method="post"
                                             action="{% url 'simulators:generate' session.id %}">
@@ -513,3 +513,4 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+

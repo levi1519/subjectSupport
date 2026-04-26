@@ -348,13 +348,13 @@ class ClientDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
                 student=self.request.user,
                 status__in=['published', 'pending_approval', 'approved']
             ).first()
-            session._pub_simulator = pub_sim
+            session.pub_simulator = pub_sim
             rejected_sim = Simulator.objects.filter(
                 session=session,
                 student=self.request.user,
                 status='rejected'
             ).first()
-            session._rejected_simulator = rejected_sim
+            session.rejected_simulator = rejected_sim
 
         # Check for expiring videos
         from django.utils import timezone as tz
