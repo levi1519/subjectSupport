@@ -78,7 +78,7 @@ def call_deepseek(system_prompt: str, user_prompt: str):
     import os
     import requests
 
-    api_key = os.getenv("DEEPSEEK_API_KEY", "")
+    api_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
     if not api_key:
         # Fallback: intentar con OPENAI_API_KEY
         api_key = os.getenv("OPENAI_API_KEY", "")
