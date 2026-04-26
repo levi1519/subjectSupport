@@ -226,6 +226,49 @@ def truncate_material(text, max_chars=MAX_MATERIAL_CHARS):
     return text[:max_chars] + '[Material truncado por longitud]'
 
 
+def build_user_prompt(session, materials, weak_topics):
+    """
+    Construye el prompt de usuario para generar un simulador diagnóstico
+    a partir de los materiales de la sesión.
+    """
+    lines = [
+        f"Materia: {session.subject}\n",
+        "Genera entre 5 y 10 preguntas de opción múltiple basadas en los "
+        "siguientes materiales de clase:\n\n",
+    ]
+
+    for idx, mat in enumerate(materials, start=1):
+        content = ""
+        if mat.type == 'text' and mat.text_content:
+            content = truncate_material(mat.text_content)
+        elif mat.type == 'file' and mat.file:
+            content = f"[Archivo adjunto: {mat.file.name}]"
+        elif mat.type == 'url' and mat.url:
+            content = f"[Enlace: {mat.url}]"
+        lines.append(f"--- Material {idx} ({mat.type}) ---\n{content}\n\n")
+
+    if weak_topics:
+        lines.append(
+            "\nEl estudiante tiene dificultades en estos temas — "
+            "incluye al menos 2 preguntas sobre cada uno:\n"
+        )
+        for topic in weak_topics:
+            lines.append(f"- {topic}\n")
+
+    lines.append(
+        "\nResponde SOLO con el JSON especificado en el system prompt."
+    )
+    return "".join(lines)[:MAX_PROMPT_CHARS]
+
+
+def call_ai_provider(system_prompt, user_prompt):
+    """
+    Wrapper que llama a DeepSeek (call_deepseek).
+    Puede extenderse para soportar múltiples proveedores.
+    """
+    return call_deepseek(system_prompt, user_prompt)
+
+
 def generate_simulator(session, student):
     """
     Main entry point: student triggers AI generation of a diagnostic
