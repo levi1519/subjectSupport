@@ -386,6 +386,52 @@
                     </div>
                 </div>
 
+                <div class="card info-card mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">🤖 Generar Simulacro con IA</h5>
+                        <a href="{% url 'simulators:list' %}" class="btn btn-primary btn-sm">Ver todos</a>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        Genera simulacros automáticos desde los materiales de tus sesiones completadas.
+                    </p>
+                    {% for session in past_sessions %}
+                        {% if session.status == 'completed' %}
+                        <div class="d-flex align-items-center justify-content-between mb-2 p-3"
+                             style="background:rgba(108,99,255,0.08);border-radius:8px;border:1px solid rgba(108,99,255,0.2);">
+                            <div>
+                                <span class="fw-semibold text-white">{{ session.subject }}</span>
+                                <span class="text-muted small ms-2">{{ session.scheduled_date|date:"d/m/Y" }} — {{ session.tutor.name }}</span>
+                                {% if session.materials.exists %}
+                                    <span class="badge ms-2" style="background:var(--accent);color:#1A1A2E;font-size:0.7rem;">
+                                        📎 {{ session.materials.count }} material(es)
+                                    </span>
+                                {% else %}
+                                    <span class="badge ms-2" style="background:rgba(136,146,164,0.3);color:var(--muted);font-size:0.7rem;">Sin materiales</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if session.simulators.exists %}
+                                    <a href="{% url 'simulators:detail' session.simulators.first.pk %}"
+                                       class="btn btn-sm btn-outline-primary">Ver simulacro</a>
+                                {% elif session.materials.exists %}
+                                    <form method="post" action="{% url 'simulators:generate' session.id %}">
+                                        {% csrf_token %}
+                                        <button type="button" class="btn btn-sm btn-primary"
+                                            onclick="if(confirm('Generar simulacro con IA para {{ session.subject }}? Tarda 20-30 segundos.')) this.form.submit()">
+                                            🤖 Generar con IA
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted small">El tutor debe subir materiales</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% empty %}
+                        <p class="text-muted small mb-0">No tienes sesiones completadas aún.</p>
+                    {% endfor %}
+                </div>
+
                 <div class="card info-card">
                     <h5 class="fw-bold mb-3">💡 Consejos</h5>
                     <ul class="text-muted small mb-0">
