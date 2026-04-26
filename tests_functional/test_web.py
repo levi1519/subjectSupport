@@ -33,7 +33,7 @@ def run():
     # W03
     try:
         s = SessionHTTP()
-        r = s.get("/accounts/login/")
+        r = s.get("/estudiantes/login/")
         ok = "csrfmiddlewaretoken" in r.text
         results.append(("W03 CSRF token present in login form", ok))
     except Exception as e:

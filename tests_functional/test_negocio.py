@@ -139,7 +139,7 @@ def run():
         s = SessionHTTP()
         _login_as_client(s)
         r = s.get("/accounts/dashboard/tutor/")
-        ok = "login" in r.url or r.status_code == 302 or "tutor" not in r.url
+        ok = r.status_code in [302, 403] or "login" in r.url or "tutor" not in r.url
         results.append(("N08 Tutor dashboard forbidden for student", ok))
     except Exception as e:
         results.append((f"N08 ERROR: {e}", False))
@@ -149,7 +149,7 @@ def run():
         s = SessionHTTP()
         _login_as_tutor(s)
         r = s.get("/accounts/dashboard/client/")
-        ok = "login" in r.url or r.status_code == 302 or "client" not in r.url
+        ok = r.status_code in [302, 403] or "login" in r.url or "client" not in r.url
         results.append(("N09 Student dashboard forbidden for tutor", ok))
     except Exception as e:
         results.append((f"N09 ERROR: {e}", False))
