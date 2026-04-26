@@ -49,6 +49,9 @@ class Simulator(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'draft', 'Borrador'
         PUBLISHED = 'published', 'Publicado'
+        PENDING_APPROVAL = 'pending_approval', 'Pendiente de aprobación'
+        APPROVED = 'approved', 'Aprobado por tutor'
+        REJECTED = 'rejected', 'Rechazado por tutor'
         CLOSED = 'closed', 'Cerrado'
 
     class GenerationStatus(models.TextChoices):
@@ -160,6 +163,17 @@ class Simulator(models.Model):
         null=True,
         verbose_name='Publicado el'
     )
+    tutor_reviewed_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Revisado por tutor el'
+    )
+    tutor_feedback = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Comentario del tutor',
+        help_text='Visible al estudiante si el simulacro es rechazado'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -187,7 +201,11 @@ class Simulator(models.Model):
 
     @property
     def is_published(self):
-        return self.status == self.Status.PUBLISHED
+        return self.status in (
+            self.Status.PUBLISHED,
+            self.Status.PENDING_APPROVAL,
+            self.Status.APPROVED
+        )
 
     @property
     def attempts_by_student(self):
@@ -196,7 +214,7 @@ class Simulator(models.Model):
     @property
     def student_can_attempt(self):
         return (
-            self.is_published
+            self.status in (self.Status.PUBLISHED, self.Status.APPROVED)
             and self.attempts_by_student < self.max_attempts
         )
 

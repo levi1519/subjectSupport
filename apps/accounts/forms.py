@@ -840,11 +840,47 @@ class TutorProfileEditForm(forms.ModelForm):
         return email
 
     def clean_hourly_rate(self):
+        from apps.academicTutoring.models import PlatformConfig
+        from django.utils import timezone
+        from datetime import timedelta
+
         rate = self.cleaned_data.get('hourly_rate')
-        if rate is not None and rate > 50:
-            raise forms.ValidationError('La tarifa máxima permitida es $50/hora.')
-        if rate is not None and rate < 0:
-            raise forms.ValidationError('La tarifa no puede ser negativa.')
+        config = PlatformConfig.get_config()
+
+        if rate is None:
+            return rate
+
+        # Validate range
+        min_rate = float(config.hourly_rate_min)
+        if rate < min_rate:
+            raise forms.ValidationError(
+                f'La tarifa mínima permitida es ${min_rate:.2f}/hora.'
+            )
+        if rate > 50:
+            raise forms.ValidationError(
+                'La tarifa máxima permitida es $50.00/hora.'
+            )
+
+        # Cooldown validation
+        if self.instance and self.instance.pk:
+            profile = self.instance
+            if profile.hourly_rate_updated_at:
+                cooldown_days = config.hourly_rate_cooldown_days
+                cooldown_until = (
+                    profile.hourly_rate_updated_at +
+                    timedelta(days=cooldown_days)
+                )
+                if timezone.now() < cooldown_until:
+                    days_remaining = (
+                        cooldown_until - timezone.now()
+                    ).days + 1
+                    raise forms.ValidationError(
+                        f'No puedes modificar tu tarifa por '
+                        f'{days_remaining} día(s) más. '
+                        f'Disponible el '
+                        f'{cooldown_until.strftime("%d/%m/%Y")}.'
+                    )
+
         return rate
 
     def save(self, commit=True):

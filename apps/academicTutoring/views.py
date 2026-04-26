@@ -5,8 +5,10 @@ from django.contrib import messages
 from django.views.generic import View, TemplateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse
+from django.utils import timezone
+from datetime import timedelta
 
-from .models import ClassSession, NotificacionExpansion
+from .models import ClassSession, NotificacionExpansion, SessionMaterial, PlatformConfig
 from .forms import SessionRequestForm, SessionConfirmationForm, NotificacionExpansionForm
 from . import services as academic_services
 from apps.accounts.models import User, TutorProfile, Notification, KnowledgeArea
@@ -636,3 +638,256 @@ def institution_search_api(request):
         active=True
     ).values('id', 'name', 'type', 'city', 'province')[:10]
     return JsonResponse({'results': list(institutions)})
+
+
+class TutorSessionHistoryView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'core/tutor_session_history.html'
+
+    def test_func(self):
+        return self.request.user.user_type == 'tutor'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        config = PlatformConfig.get_config()
+        archive_cutoff = timezone.now() - timedelta(
+            days=config.session_archive_days
+        )
+
+        # Auto-archive old completed sessions
+        ClassSession.objects.filter(
+            tutor=self.request.user,
+            status__in=['completed', 'cancelled'],
+            is_archived=False,
+            updated_at__lt=archive_cutoff
+        ).update(is_archived=True, archived_at=timezone.now())
+
+        completed = ClassSession.objects.filter(
+            tutor=self.request.user,
+            status='completed',
+            is_archived=False
+        ).select_related('client').prefetch_related(
+            'materials', 'simulators'
+        ).order_by('-scheduled_date')
+
+        cancelled = ClassSession.objects.filter(
+            tutor=self.request.user,
+            status='cancelled',
+            is_archived=False
+        ).select_related('client').order_by('-scheduled_date')
+
+        # Simulators pending tutor approval
+        from apps.simulators.models import Simulator
+        pending_simulators = Simulator.objects.filter(
+            tutor=self.request.user,
+            status='pending_approval'
+        ).select_related('student', 'session').order_by('-created_at')
+
+        context['completed_sessions'] = completed
+        context['cancelled_sessions'] = cancelled
+        context['pending_simulators'] = pending_simulators
+        context['archive_days'] = config.session_archive_days
+        return context
+
+
+class TutorUploadRecordingView(LoginRequiredMixin, UserPassesTestMixin, View):
+
+    def test_func(self):
+        self.session = get_object_or_404(
+            ClassSession,
+            pk=self.kwargs['session_id'],
+            tutor=self.request.user,
+            status='completed'
+        )
+        return True
+
+    def post(self, request, session_id):
+        config = PlatformConfig.get_config()
+        recording_url = request.POST.get('recording_url', '').strip()
+        now = timezone.now()
+
+        if recording_url:
+            self.session.recording_url = recording_url
+            self.session.video_uploaded_at = now
+            self.session.video_expires_at = now + timedelta(
+                days=config.video_retention_days
+            )
+            self.session.save(update_fields=[
+                'recording_url', 'video_uploaded_at', 'video_expires_at'
+            ])
+            Notification.objects.create(
+                recipient=self.session.client,
+                message=(
+                    f'Tu tutor {self.session.tutor.name} subió el video de la sesión '
+                    f'"{self.session.subject}". Disponible para descarga durante '
+                    f'{config.video_retention_days} días (hasta '
+                    f'{self.session.video_expires_at.strftime("%d/%m/%Y")}).'
+                )
+            )
+            messages.success(request,
+                f'Video registrado. El estudiante tiene '
+                f'{config.video_retention_days} días para descargarlo.')
+        else:
+            messages.error(request, 'Ingresa una URL válida para el video.')
+
+        # Also handle additional material upload
+        material_url = request.POST.get('material_url', '').strip()
+        material_file = request.FILES.get('material_file')
+        existing_count = SessionMaterial.objects.filter(
+            session=self.session).count()
+
+        if material_url and existing_count < config.max_session_materials:
+            SessionMaterial.objects.create(
+                session=self.session,
+                type='url',
+                url=material_url,
+                uploaded_by=request.user
+            )
+            messages.success(request, 'Material adicional agregado.')
+
+        if material_file and existing_count < config.max_session_materials:
+            from apps.accounts.services import sanitize_filename
+            material_file.name = sanitize_filename(material_file.name)
+            SessionMaterial.objects.create(
+                session=self.session,
+                type='file',
+                file=material_file,
+                filename=material_file.name,
+                uploaded_by=request.user
+            )
+            messages.success(request, 'Archivo adicional agregado.')
+
+        return redirect('tutor_session_history')
+
+    def get(self, request, session_id):
+        return redirect('tutor_session_history')
+
+
+class SimulatorApproveView(LoginRequiredMixin, UserPassesTestMixin, View):
+
+    def test_func(self):
+        from apps.simulators.models import Simulator
+        self.simulator = get_object_or_404(
+            Simulator,
+            pk=self.kwargs['pk'],
+            tutor=self.request.user,
+            status='pending_approval'
+        )
+        return True
+
+    def post(self, request, pk):
+        from apps.simulators.models import Simulator
+        action = request.POST.get('action')  # 'approve' or 'reject'
+        feedback = request.POST.get('feedback', '').strip()
+        now = timezone.now()
+
+        if action == 'approve':
+            self.simulator.status = 'approved'
+            self.simulator.tutor_reviewed_at = now
+            self.simulator.tutor_feedback = feedback or None
+            self.simulator.save(update_fields=[
+                'status', 'tutor_reviewed_at', 'tutor_feedback'
+            ])
+            Notification.objects.create(
+                recipient=self.simulator.student,
+                message=(
+                    f'Tu simulacro "{self.simulator.title}" fue aprobado '
+                    f'por {self.simulator.tutor.name}. ¡Ya puedes hacerlo!'
+                )
+            )
+            messages.success(request, 'Simulacro aprobado.')
+
+        elif action == 'reject':
+            self.simulator.status = 'rejected'
+            self.simulator.tutor_reviewed_at = now
+            self.simulator.tutor_feedback = feedback
+            self.simulator.save(update_fields=[
+                'status', 'tutor_reviewed_at', 'tutor_feedback'
+            ])
+            Notification.objects.create(
+                recipient=self.simulator.student,
+                message=(
+                    f'Tu simulacro "{self.simulator.title}" fue rechazado '
+                    f'por {self.simulator.tutor.name}. '
+                    f'Puedes generar uno nuevo.'
+                    + (f' Motivo: {feedback}' if feedback else '')
+                )
+            )
+            messages.warning(request, 'Simulacro rechazado. El estudiante puede regenerarlo.')
+        else:
+            messages.error(request, 'Acción inválida.')
+
+        return redirect('tutor_session_history')
+
+    def get(self, request, pk):
+        return redirect('tutor_session_history')
+
+
+class RateSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """
+    Both tutor and student can rate a completed session.
+    One rating per user per session — cannot re-rate.
+    """
+
+    def test_func(self):
+        self.session = get_object_or_404(
+            ClassSession,
+            pk=self.kwargs['session_id'],
+            status='completed'
+        )
+        user = self.request.user
+        return (
+            user == self.session.tutor or
+            user == self.session.client
+        )
+
+    def post(self, request, session_id):
+        rating_str = request.POST.get('rating', '')
+        comment = request.POST.get('comment', '').strip()
+
+        try:
+            rating = int(rating_str)
+            if rating < 1 or rating > 5:
+                raise ValueError
+        except (ValueError, TypeError):
+            messages.error(request, 'Calificación inválida. Selecciona entre 1 y 5 estrellas.')
+            return redirect(self.get_redirect_url())
+
+        now = timezone.now()
+
+        if request.user == self.session.client:
+            if self.session.student_rating is not None:
+                messages.warning(request, 'Ya calificaste esta sesión.')
+                return redirect(self.get_redirect_url())
+            self.session.student_rating = rating
+            self.session.student_rating_comment = comment
+            self.session.student_rated_at = now
+            self.session.save(update_fields=[
+                'student_rating', 'student_rating_comment',
+                'student_rated_at'
+            ])
+            messages.success(request,
+                f'Calificaste la sesión con {rating} ★.')
+
+        elif request.user == self.session.tutor:
+            if self.session.tutor_rating is not None:
+                messages.warning(request, 'Ya calificaste esta sesión.')
+                return redirect(self.get_redirect_url())
+            self.session.tutor_rating = rating
+            self.session.tutor_rating_comment = comment
+            self.session.tutor_rated_at = now
+            self.session.save(update_fields=[
+                'tutor_rating', 'tutor_rating_comment',
+                'tutor_rated_at'
+            ])
+            messages.success(request,
+                f'Calificaste al estudiante con {rating} ★.')
+
+        return redirect(self.get_redirect_url())
+
+    def get_redirect_url(self):
+        if self.request.user.user_type == 'tutor':
+            return reverse('tutor_session_history')
+        return reverse('client_dashboard')
+
+    def get(self, request, session_id):
+        return redirect(self.get_redirect_url())

@@ -379,13 +379,13 @@ def generate_simulator(session, student):
 
     # Step 11 — Publish simulator
     simulator.generation_status = 'done'
-    simulator.status = 'published'
+    simulator.status = 'pending_approval'
     simulator.published_at = timezone.now()
     simulator.save(update_fields=[
         'generation_status', 'status', 'published_at'
     ])
 
-    return True, f"Simulacro generado con {len(questions)} preguntas."
+    return True, f"Simulacro generado con {len(questions)} preguntas. Pendiente de revisión del tutor."
 
 
 # ─────────────────────────────────────────────────────────────
@@ -479,12 +479,12 @@ def generate_reinforcement_simulator(attempt, student):
 
     # Step 7 — Publish
     simulator.generation_status = Simulator.GenerationStatus.DONE
-    simulator.status = Simulator.Status.PUBLISHED
+    simulator.status = Simulator.Status.PENDING_APPROVAL
     simulator.published_at = timezone.now()
     simulator.save(update_fields=[
         "generation_status", "status", "published_at"
     ])
     return True, (
         f"Simulacro de refuerzo generado con {len(questions)} "
-        f"preguntas enfocadas en tus temas débiles."
+        f"preguntas. Pendiente de revisión del tutor."
     )

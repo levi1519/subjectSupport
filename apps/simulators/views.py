@@ -39,7 +39,7 @@ class SimulatorListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         simulators = Simulator.objects.filter(
             student=self.request.user,
-            status='published'
+            status__in=['published', 'pending_approval', 'approved']
         ).select_related('session', 'tutor').order_by('-created_at')
 
         for sim in simulators:
@@ -62,7 +62,7 @@ class SimulatorDetailView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
             Simulator,
             pk=self.kwargs['pk'],
             student=self.request.user,
-            status='published'
+            status__in=['published', 'pending_approval', 'approved', 'rejected']
         )
         return True
 
@@ -91,7 +91,7 @@ class SimulatorStartView(LoginRequiredMixin, UserPassesTestMixin, View):
             Simulator,
             pk=self.kwargs['pk'],
             student=self.request.user,
-            status='published'
+            status__in=['published', 'pending_approval', 'approved']
         )
         return True
 
@@ -134,7 +134,8 @@ class SimulatorAttemptView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
     def test_func(self):
         self.simulator = get_object_or_404(
             Simulator, pk=self.kwargs['pk'],
-            student=self.request.user, status='published'
+            student=self.request.user,
+            status__in=['published', 'pending_approval', 'approved']
         )
         self.attempt = get_object_or_404(
             SimulatorAttempt,
@@ -171,7 +172,8 @@ class SimulatorSubmitView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         self.simulator = get_object_or_404(
             Simulator, pk=self.kwargs['pk'],
-            student=self.request.user, status='published'
+            student=self.request.user,
+            status__in=['published', 'pending_approval', 'approved']
         )
         self.attempt = get_object_or_404(
             SimulatorAttempt,
@@ -237,7 +239,9 @@ class SimulatorResultsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
     def test_func(self):
         self.simulator = get_object_or_404(
             Simulator, pk=self.kwargs['pk'],
-            student=self.request.user
+            student=self.request.user,
+            status__in=['published', 'pending_approval', 'approved',
+                        'rejected', 'closed']
         )
         self.attempt = get_object_or_404(
             SimulatorAttempt,
@@ -290,6 +294,12 @@ class SimulatorGenerateView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
         success, message = generate_simulator(session, request.user)
         if success:
+            from apps.simulators.models import Simulator as Sim
+            Sim.objects.filter(
+                session=session,
+                student=request.user,
+                status='rejected'
+            ).update(generation_status='failed')
             messages.success(request, message)
             return redirect('simulators:list')
         else:

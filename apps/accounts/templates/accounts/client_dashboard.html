@@ -143,6 +143,17 @@
             {% endfor %}
         {% endif %}
 
+        {% for session in expiring_videos %}
+            <div class="alert alert-warning alert-dismissible fade show">
+                📹 El video de la sesión <strong>{{ session.subject }}</strong>
+                con {{ session.tutor.name }} expira el
+                <strong>{{ session.video_expires_at|date:"d/m/Y" }}</strong>.
+                <a href="{{ session.recording_url }}" target="_blank"
+                   class="alert-link">Descargar ahora</a>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+
         <div class="row">
             <!-- Clases Confirmadas -->
             <div class="col-12 mb-4">
@@ -298,6 +309,7 @@
                                         <th>Fecha</th>
                                         <th>Hora</th>
                                         <th>Estado</th>
+                                        <th>Calificar</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -326,6 +338,35 @@
                                                     <span class="badge badge-completed">Completada</span>
                                                 {% else %}
                                                     <span class="badge badge-cancelled">Cancelada</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if session.status == 'completed' %}
+                                                    {% if not session.student_rating %}
+                                                        <form method="post"
+                                                              action="{% url 'rate_session' session.id %}"
+                                                              class="d-inline-flex gap-1">
+                                                            {% csrf_token %}
+                                                            <select name="rating"
+                                                                    class="form-select form-select-sm"
+                                                                    style="width:70px;background:var(--surface);
+                                                                           border:1px solid rgba(108,99,255,0.3);
+                                                                           color:var(--text);">
+                                                                <option value="">★</option>
+                                                                <option value="1">1★</option>
+                                                                <option value="2">2★</option>
+                                                                <option value="3">3★</option>
+                                                                <option value="4">4★</option>
+                                                                <option value="5">5★</option>
+                                                            </select>
+                                                            <button type="submit"
+                                                                    class="btn btn-sm btn-primary">Ok</button>
+                                                        </form>
+                                                    {% else %}
+                                                        <span style="color:var(--warning);">
+                                                            {{ session.student_rating }} ★
+                                                        </span>
+                                                    {% endif %}
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -410,11 +451,35 @@
                                 {% endif %}
                             </div>
                             <div>
-                                {% if session.simulators.exists %}
-                                    <a href="{% url 'simulators:detail' session.simulators.first.pk %}"
-                                       class="btn btn-sm btn-outline-primary">Ver simulacro</a>
+                                {% if session._pub_simulator %}
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'simulators:detail' session._pub_simulator.pk %}"
+                                           class="btn btn-sm btn-outline-primary">Ver simulacro</a>
+                                        <span class="badge align-self-center"
+                                            style="background:{% if session._pub_simulator.status == 'approved' %}var(--accent);color:#1A1A2E{% elif session._pub_simulator.status == 'pending_approval' %}var(--warning);color:#1A1A2E{% else %}var(--primary){% endif %};">
+                                            {% if session._pub_simulator.status == 'approved' %}✅ Aprobado
+                                            {% elif session._pub_simulator.status == 'pending_approval' %}⏳ En revisión
+                                            {% else %}Publicado{% endif %}
+                                        </span>
+                                    </div>
+                                {% elif session._rejected_simulator %}
+                                    <div>
+                                        <span class="text-muted small d-block mb-1">
+                                            ❌ Rechazado{% if session._rejected_simulator.tutor_feedback %}: {{ session._rejected_simulator.tutor_feedback|truncatechars:40 }}{% endif %}
+                                        </span>
+                                        <form method="post"
+                                            action="{% url 'simulators:generate' session.id %}">
+                                            {% csrf_token %}
+                                            <button type="button" class="btn btn-sm btn-warning"
+                                                style="color:#1A1A2E;"
+                                                onclick="if(confirm('Regenerar simulacro con IA?')) this.form.submit()">
+                                                🔄 Regenerar con IA
+                                            </button>
+                                        </form>
+                                    </div>
                                 {% elif session.materials.exists %}
-                                    <form method="post" action="{% url 'simulators:generate' session.id %}">
+                                    <form method="post"
+                                        action="{% url 'simulators:generate' session.id %}">
                                         {% csrf_token %}
                                         <button type="button" class="btn btn-sm btn-primary"
                                             onclick="if(confirm('Generar simulacro con IA para {{ session.subject }}? Tarda 20-30 segundos.')) this.form.submit()">

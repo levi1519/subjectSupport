@@ -239,6 +239,11 @@ def update_tutor_profile(user, form):
         return False, None, 'Invalid form data'
     try:
         profile = form.save()
+        from django.utils import timezone
+        # Track hourly_rate change for cooldown
+        if 'hourly_rate' in form.changed_data:
+            profile.hourly_rate_updated_at = timezone.now()
+            profile.save(update_fields=['hourly_rate_updated_at'])
         return True, profile, None
     except Exception as e:
         return False, None, str(e)
