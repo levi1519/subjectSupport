@@ -4,6 +4,32 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 
 
+def update_weak_topic_profile(attempt):
+    """
+    Actualiza (o crea) StudentWeakTopicProfile para cada tema del intento.
+    Debe llamarse DESPUÉS de attempt.calculate_score().
+    """
+    subject = attempt.simulator.subject
+    student = attempt.student
+
+    for topic, stats in attempt.performance_by_topic.items():
+        correct = stats.get('correct', 0)
+        total = stats.get('total', 0)
+
+        profile, _ = StudentWeakTopicProfile.objects.get_or_create(
+            student=student,
+            subject=subject,
+            topic_tag=topic,
+            defaults={
+                'total_questions_seen': 0,
+                'total_correct': 0,
+                'cumulative_score_pct': 0,
+                'consecutive_failures': 0,
+            }
+        )
+        profile.update_from_attempt(correct=correct, questions_in_topic=total)
+
+
 class Simulator(models.Model):
     """
     Simulador de preguntas asociado a una sesión de clase.
@@ -420,6 +446,18 @@ class SimulatorAttempt(models.Model):
             for topic, stats in self.performance_by_topic.items()
             if stats.get('pct', 100) < 60
         ]
+
+    def finalize(self):
+        """
+        Finaliza el intento: calcula score y actualiza perfiles de temas débiles.
+        Llama a este método cuando el estudiante termina el simulador.
+        """
+        from django.utils import timezone
+        self.calculate_score()
+        self.status = self.AttemptStatus.COMPLETED
+        self.finished_at = timezone.now()
+        self.save(update_fields=['status', 'finished_at'])
+        update_weak_topic_profile(self)
 
 
 class SimulatorResponse(models.Model):
