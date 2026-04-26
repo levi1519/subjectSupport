@@ -17,4 +17,6 @@ urlpatterns = [
 
     # Dashboard de estudiantes
     path('dashboard/', views.ClientDashboardView.as_view(), name='client_dashboard'),
+    
+    path('password-reset/', views.StudentLoginView.as_view(), name='_pr_student_alias'),
 ]
