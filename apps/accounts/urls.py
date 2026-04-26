@@ -26,5 +26,5 @@ urlpatterns = [
     # Password reset flow
     path('password-reset/', password_reset_views.PasswordResetRequestView.as_view(), name='password_reset_request'),
     path('password-reset/verificar/', password_reset_views.PasswordResetVerifyView.as_view(), name='password_reset_verify'),
-    path('password-reset/nueva/', password_reset_views.PasswordResetNewPasswordView.as_view(), name='password_reset_new_password'),
+    path('password-reset/nueva/', password_reset_views.PasswordResetNewView.as_view(), name='password_reset_new'),
 ]
