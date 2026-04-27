@@ -14,6 +14,18 @@ urlpatterns = [
     # Geolocalización
     path('servicio-no-disponible/', views.servicio_no_disponible, name='servicio_no_disponible'),
     path('notificarme/', views.NotificarmeExpansionView.as_view(), name='notificarme'),
+    path('tutor/historial/',
+        views.TutorSessionHistoryView.as_view(),
+        name='tutor_session_history'),
+    path('sessions/<int:session_id>/upload-recording/',
+        views.TutorUploadRecordingView.as_view(),
+        name='upload_recording'),
+    path('simulators/<int:pk>/approve/',
+        views.SimulatorApproveView.as_view(),
+        name='simulator_approve'),
+    path('sessions/<int:session_id>/rate/',
+        views.RateSessionView.as_view(),
+        name='rate_session'),
     # Instituciones API
     path('api/institutions/', views.institution_search_api, name='institution_search_api'),
 ]

@@ -339,6 +339,31 @@ class ClientDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         context['notifications'] = Notification.objects.filter(
             recipient=self.request.user, is_read=False
         )
+
+        # For each past session, annotate simulator status
+        from apps.simulators.models import Simulator
+        for session in context['past_sessions']:
+            pub_sim = Simulator.objects.filter(
+                session=session,
+                student=self.request.user,
+                status__in=['published', 'pending_approval', 'approved']
+            ).first()
+            session.pub_simulator = pub_sim
+            rejected_sim = Simulator.objects.filter(
+                session=session,
+                student=self.request.user,
+                status='rejected'
+            ).first()
+            session.rejected_simulator = rejected_sim
+
+        # Check for expiring videos
+        from django.utils import timezone as tz
+        expiring = context['past_sessions'].filter(
+            recording_url__isnull=False,
+            video_expires_at__gt=tz.now()
+        ) if hasattr(context['past_sessions'], 'filter') else []
+        context['expiring_videos'] = expiring
+
         return context
 
 

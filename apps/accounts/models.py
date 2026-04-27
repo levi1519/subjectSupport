@@ -270,6 +270,12 @@ class TutorProfile(models.Model):
         verbose_name='Tarifa por Hora (USD)',
         help_text='Precio por hora de tutoría en dólares'
     )
+    hourly_rate_updated_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Tarifa actualizada el',
+        help_text='Fecha de la última vez que el tutor estableció o modificó su tarifa'
+    )
     phone_number = models.CharField(
         max_length=20,
         blank=True,
@@ -320,6 +326,12 @@ class TutorProfile(models.Model):
         null=True,
         verbose_name='URL de la Institución',
         help_text='Solo para instituciones extranjeras'
+    )
+    linkedin_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='LinkedIn',
+        help_text='Perfil de LinkedIn (opcional). Ej: https://linkedin.com/in/tu-nombre'
     )
     is_foreign_institution = models.BooleanField(
         default=False,
@@ -424,6 +436,21 @@ class TutorProfile(models.Model):
         from datetime import date
         today = date.today()
         return today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
+
+    @property
+    def days_until_rate_change(self):
+        if not self.hourly_rate_updated_at:
+            return 0
+        from django.utils import timezone
+        from datetime import timedelta
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        cooldown_until = (
+            self.hourly_rate_updated_at +
+            timedelta(days=config.hourly_rate_cooldown_days)
+        )
+        remaining = (cooldown_until - timezone.now()).days
+        return max(0, remaining)
 
 
 class ClientProfile(models.Model):

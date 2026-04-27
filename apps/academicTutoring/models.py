@@ -344,6 +344,68 @@ class ClassSession(models.Model):
         max_length=500,
         verbose_name='Material de clase (URL)'
     )
+    recording_url = models.URLField(
+        blank=True,
+        null=True,
+        max_length=500,
+        verbose_name='URL del video de la clase',
+        help_text='Enlace al video de la sesión (YouTube, Drive, etc.)'
+    )
+    video_uploaded_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Video subido el'
+    )
+    video_expires_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Video disponible hasta'
+    )
+    is_archived = models.BooleanField(
+        default=False,
+        verbose_name='Sesión archivada',
+        help_text='Las sesiones archivadas no aparecen en el dashboard activo'
+    )
+    archived_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Archivada el'
+    )
+
+    # Calificaciones post-sesión
+    student_rating = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Calificación del estudiante al tutor',
+        help_text='★ 1-5'
+    )
+    student_rating_comment = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Comentario del estudiante'
+    )
+    student_rated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Calificado por estudiante el'
+    )
+    tutor_rating = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Calificación del tutor al estudiante',
+        help_text='★ 1-5'
+    )
+    tutor_rating_comment = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Comentario del tutor'
+    )
+    tutor_rated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Calificado por tutor el'
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -574,6 +636,32 @@ class PlatformConfig(models.Model):
         default=24,
         verbose_name='Horas para reembolso completo',
         help_text='Cancelaciones antes de este plazo reciben reembolso completo (Fase 3)'
+    )
+
+    # === SECCIÓN 8: Video y Archivado ===
+    video_retention_days = models.IntegerField(
+        default=7,
+        verbose_name='Días de retención del video',
+        help_text='Días que el video de la clase estará disponible para descarga por el estudiante'
+    )
+    session_archive_days = models.IntegerField(
+        default=30,
+        verbose_name='Días para archivar sesión completada',
+        help_text='Días después de completada una sesión para que desaparezca del dashboard activo'
+    )
+
+    # === SECCIÓN 9: Tarifa del tutor ===
+    hourly_rate_min = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=5.00,
+        verbose_name='Tarifa mínima por hora (USD)',
+        help_text='Piso de tarifa que puede establecer un tutor'
+    )
+    hourly_rate_cooldown_days = models.IntegerField(
+        default=30,
+        verbose_name='Días de bloqueo para cambio de tarifa',
+        help_text='Días que debe esperar un tutor para cambiar su tarifa después de establecerla'
     )
 
     updated_at = models.DateTimeField(auto_now=True)

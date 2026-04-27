@@ -37,6 +37,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'manage_subjects' %}">Mis Materias</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'tutor_session_history' %}">📋 Historial</a>
+                    </li>
                     {% if user.country_code %}
                         <li class="nav-item d-flex align-items-center">
                             <span class="nav-link" style="font-size: 1.2rem;" title="{{ user.country_code|upper }}">

@@ -318,6 +318,20 @@ class PlatformConfigAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
             'description': 'Estos campos no tienen efecto hasta la implementacion de pagos (Fase 3).',
         }),
+        ('Video y Archivado', {
+            'fields': (
+                'video_retention_days',
+                'session_archive_days',
+            ),
+            'description': 'Controla la retención de videos y el archivado de sesiones.'
+        }),
+        ('Tarifa del tutor', {
+            'fields': (
+                'hourly_rate_min',
+                'hourly_rate_cooldown_days',
+            ),
+            'description': 'Controla el rango y cooldown de la tarifa horaria del tutor.'
+        }),
     )
 
 

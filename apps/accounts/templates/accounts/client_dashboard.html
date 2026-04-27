@@ -1,4 +1,4 @@
-{% load static %}
+﻿{% load static %}
 {% load accounts_filters %}
 <!DOCTYPE html>
 <html lang="es">
@@ -36,6 +36,9 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'tutor_selection' %}">Buscar Tutores</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'simulators:list' %}">🎯 Simulacros</a>
                     </li>
                     {% if user.country_code %}
                         <li class="nav-item d-flex align-items-center">
@@ -139,6 +142,17 @@
                 </div>
             {% endfor %}
         {% endif %}
+
+        {% for session in expiring_videos %}
+            <div class="alert alert-warning alert-dismissible fade show">
+                📹 El video de la sesión <strong>{{ session.subject }}</strong>
+                con {{ session.tutor.name }} expira el
+                <strong>{{ session.video_expires_at|date:"d/m/Y" }}</strong>.
+                <a href="{{ session.recording_url }}" target="_blank"
+                   class="alert-link">Descargar ahora</a>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
 
         <div class="row">
             <!-- Clases Confirmadas -->
@@ -295,6 +309,7 @@
                                         <th>Fecha</th>
                                         <th>Hora</th>
                                         <th>Estado</th>
+                                        <th>Calificar</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -323,6 +338,35 @@
                                                     <span class="badge badge-completed">Completada</span>
                                                 {% else %}
                                                     <span class="badge badge-cancelled">Cancelada</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if session.status == 'completed' %}
+                                                    {% if not session.student_rating %}
+                                                        <form method="post"
+                                                              action="{% url 'rate_session' session.id %}"
+                                                              class="d-inline-flex gap-1">
+                                                            {% csrf_token %}
+                                                            <select name="rating"
+                                                                    class="form-select form-select-sm"
+                                                                    style="width:70px;background:var(--surface);
+                                                                           border:1px solid rgba(108,99,255,0.3);
+                                                                           color:var(--text);">
+                                                                <option value="">★</option>
+                                                                <option value="1">1★</option>
+                                                                <option value="2">2★</option>
+                                                                <option value="3">3★</option>
+                                                                <option value="4">4★</option>
+                                                                <option value="5">5★</option>
+                                                            </select>
+                                                            <button type="submit"
+                                                                    class="btn btn-sm btn-primary">Ok</button>
+                                                        </form>
+                                                    {% else %}
+                                                        <span style="color:var(--warning);">
+                                                            {{ session.student_rating }} ★
+                                                        </span>
+                                                    {% endif %}
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -383,6 +427,50 @@
                     </div>
                 </div>
 
+                <div class="card info-card mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">🎯 Mis Simulacros</h5>
+                        <a href="{% url 'simulators:list' %}" class="btn btn-primary btn-sm">Ver todos</a>
+                    </div>
+                    <p class="text-muted small">
+                        Tu tutor generará simulacros desde los materiales de cada sesión completada.
+                        Cuando estén listos, aparecerán aquí para que puedas practicar.
+                    </p>
+                    {% if past_sessions %}
+                        {% for session in past_sessions %}
+                            {% if session.status == 'completed' %}
+                            <div class="d-flex align-items-center justify-content-between mb-2 p-3"
+                                 style="background:rgba(108,99,255,0.08);border-radius:8px;border:1px solid rgba(108,99,255,0.2);">
+                                <div>
+                                    <span class="fw-semibold text-white">{{ session.subject }}</span>
+                                    <span class="text-muted small ms-2">{{ session.scheduled_date|date:"d/m/Y" }} — {{ session.tutor.name }}</span>
+                                    {% if session.materials.count %}
+                                        <span class="badge bg-success ms-1">{{ session.materials.count }} material(es)</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary ms-1">Sin materiales</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    {% if session.pub_simulator %}
+                                        {% if session.pub_simulator.status == 'approved' %}
+                                            <a href="{% url 'simulators:detail' session.pub_simulator.pk %}" class="btn btn-sm btn-primary">
+                                                🚀 Hacer simulacro
+                                            </a>
+                                        {% elif session.pub_simulator.status == 'pending_approval' %}
+                                            <span class="text-warning small">⏳ En revisión del tutor</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted small">⏳ Pendiente de tu tutor</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No tienes sesiones completadas aún.</p>
+                    {% endif %}
+                </div>
+
                 <div class="card info-card">
                     <h5 class="fw-bold mb-3">💡 Consejos</h5>
                     <ul class="text-muted small mb-0">
@@ -399,3 +487,4 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+

@@ -355,14 +355,14 @@ class ClientRegistrationForm(UserCreationForm):
         label='Cédula / Identificación',
     )
     university_name = forms.CharField(
-        required=True,
+        required=False,
         max_length=200,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Ej: Universidad de Guayaquil, ESPOL'
         }),
         label='Universidad donde estudias',
-        help_text='Universidad en la que estás matriculado actualmente'
+        help_text='Requerido solo si eres estudiante universitario'
     )
     avatar = forms.ImageField(
         required=False,
@@ -798,6 +798,15 @@ class TutorProfileEditForm(forms.ModelForm):
         label='Tarifa por Hora (USD)',
         help_text='Precio por hora de tutoría (opcional)'
     )
+    linkedin_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'https://linkedin.com/in/tu-nombre'
+        }),
+        label='LinkedIn',
+        help_text='Opcional — visible en tu perfil público'
+    )
     cedula = forms.CharField(
         required=False,
         max_length=20,
@@ -824,7 +833,7 @@ class TutorProfileEditForm(forms.ModelForm):
 
     class Meta:
         model = TutorProfile
-        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'cedula', 'birth_date', 'avatar', 'university_name', 'document_file']
+        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'linkedin_url', 'cedula', 'birth_date', 'avatar', 'university_name', 'document_file']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -840,11 +849,47 @@ class TutorProfileEditForm(forms.ModelForm):
         return email
 
     def clean_hourly_rate(self):
+        from apps.academicTutoring.models import PlatformConfig
+        from django.utils import timezone
+        from datetime import timedelta
+
         rate = self.cleaned_data.get('hourly_rate')
-        if rate is not None and rate > 50:
-            raise forms.ValidationError('La tarifa máxima permitida es $50/hora.')
-        if rate is not None and rate < 0:
-            raise forms.ValidationError('La tarifa no puede ser negativa.')
+        config = PlatformConfig.get_config()
+
+        if rate is None:
+            return rate
+
+        # Validate range
+        min_rate = float(config.hourly_rate_min)
+        if rate < min_rate:
+            raise forms.ValidationError(
+                f'La tarifa mínima permitida es ${min_rate:.2f}/hora.'
+            )
+        if rate > 50:
+            raise forms.ValidationError(
+                'La tarifa máxima permitida es $50.00/hora.'
+            )
+
+        # Cooldown validation
+        if self.instance and self.instance.pk:
+            profile = self.instance
+            if profile.hourly_rate_updated_at:
+                cooldown_days = config.hourly_rate_cooldown_days
+                cooldown_until = (
+                    profile.hourly_rate_updated_at +
+                    timedelta(days=cooldown_days)
+                )
+                if timezone.now() < cooldown_until:
+                    days_remaining = (
+                        cooldown_until - timezone.now()
+                    ).days + 1
+                    raise forms.ValidationError(
+                        f'No puedes modificar tu tarifa por '
+                        f'{days_remaining} día(s) más. '
+                        f'Disponible el '
+                        f'{cooldown_until.strftime("%d/%m/%Y")}.'
+                    )
+
         return rate
 
     def save(self, commit=True):
