@@ -80,6 +80,18 @@
                     Preguntas: {{ sim.question_count }}
                     — Tipo: {{ sim.get_simulator_type_display }}
                   </p>
+                  <details class="mb-3">
+                    <summary class="text-info" style="cursor:pointer">📋 Ver preguntas ({{ sim.questions.count }})</summary>
+                    <ol class="mt-2">
+                      {% for q in sim.questions.all %}
+                      <li class="mb-2">
+                        <strong>{{ q.statement }}</strong>
+                        <small class="text-muted d-block">A) {{ q.option_a }} | B) {{ q.option_b }} | C) {{ q.option_c }} | D) {{ q.option_d }}</small>
+                        <small class="text-success">✓ Correcta: {{ q.correct_option }} — {{ q.explanation }}</small>
+                      </li>
+                      {% endfor %}
+                    </ol>
+                  </details>
                 </div>
               </div>
               <form method="post" action="{% url 'simulator_approve' sim.pk %}"

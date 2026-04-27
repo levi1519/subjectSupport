@@ -113,7 +113,15 @@
       <div class="col-lg-4">
         <div class="card" style="background:var(--surface);border:1px solid rgba(108,99,255,0.2);">
           <div class="card-body p-4 text-center">
-            {% if can_attempt %}
+            {% if simulator.status == 'pending_approval' %}
+              <div class="alert alert-warning">
+                ⏳ Este simulacro está pendiente de revisión del tutor. Podrás iniciarlo una vez aprobado.
+              </div>
+            {% elif simulator.status == 'rejected' %}
+              <div class="alert alert-danger">
+                ❌ El tutor rechazó este simulacro. {{ simulator.tutor_feedback }}
+              </div>
+            {% elif can_attempt %}
               <p class="text-muted mb-3">
                 Tienes {{ attempts_remaining }} intento(s) disponible(s)
               </p>
