@@ -429,72 +429,36 @@
 
                 <div class="card info-card mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold mb-0">🤖 Generar Simulacro con IA</h5>
+                        <h5 class="fw-bold mb-0">🎯 Mis Simulacros</h5>
                         <a href="{% url 'simulators:list' %}" class="btn btn-primary btn-sm">Ver todos</a>
                     </div>
-                    <p class="text-muted small mb-3">
-                        Genera simulacros automáticos desde los materiales de tus sesiones completadas.
-                    </p>
-                    {% for session in past_sessions %}
-                        {% if session.status == 'completed' %}
-                        <div class="d-flex align-items-center justify-content-between mb-2 p-3"
-                             style="background:rgba(108,99,255,0.08);border-radius:8px;border:1px solid rgba(108,99,255,0.2);">
-                            <div>
-                                <span class="fw-semibold text-white">{{ session.subject }}</span>
-                                <span class="text-muted small ms-2">{{ session.scheduled_date|date:"d/m/Y" }} — {{ session.tutor.name }}</span>
-                                {% if session.materials.exists %}
-                                    <span class="badge ms-2" style="background:var(--accent);color:#1A1A2E;font-size:0.7rem;">
-                                        📎 {{ session.materials.count }} material(es)
-                                    </span>
-                                {% else %}
-                                    <span class="badge ms-2" style="background:rgba(136,146,164,0.3);color:var(--muted);font-size:0.7rem;">Sin materiales</span>
-                                {% endif %}
+                    {% if past_sessions %}
+                        {% for session in past_sessions %}
+                            {% if session.status == 'completed' %}
+                            <div class="d-flex align-items-center justify-content-between mb-2 p-3"
+                                 style="background:rgba(108,99,255,0.08);border-radius:8px;border:1px solid rgba(108,99,255,0.2);">
+                                <div>
+                                    <span class="fw-semibold text-white">{{ session.subject }}</span>
+                                    <span class="text-muted small ms-2">{{ session.scheduled_date|date:"d/m/Y" }} — {{ session.tutor.name }}</span>
+                                </div>
+                                <div>
+                                    {% if session.pub_simulator %}
+                                        <a href="{% url 'simulators:detail' session.pub_simulator.pk %}" class="btn btn-sm btn-primary">
+                                            Ver simulacro
+                                        </a>
+                                    {% elif session.rejected_simulator %}
+                                        <span class="text-danger">❌ Simulacro rechazado</span>
+                                    {% else %}
+                                        <span class="text-muted">⏳ Pendiente de tu tutor</span>
+                                    {% endif %}
+                                </div>
                             </div>
-                            <div>
-                                {% if session.pub_simulator %}
-                                    <div class="d-flex gap-2">
-                                        <a href="{% url 'simulators:detail' session.pub_simulator.pk %}"
-                                           class="btn btn-sm btn-outline-primary">Ver simulacro</a>
-                                        <span class="badge align-self-center"
-                                            style="background:{% if session.pub_simulator.status == 'approved' %}var(--accent);color:#1A1A2E{% elif session.pub_simulator.status == 'pending_approval' %}var(--warning);color:#1A1A2E{% else %}var(--primary){% endif %};">
-                                            {% if session.pub_simulator.status == 'approved' %}✅ Aprobado
-                                            {% elif session.pub_simulator.status == 'pending_approval' %}⏳ En revisión
-                                            {% else %}Publicado{% endif %}
-                                        </span>
-                                    </div>
-                                {% elif session.rejected_simulator %}
-                                    <div>
-                                        <span class="text-muted small d-block mb-1">
-                                            ❌ Rechazado{% if session.rejected_simulator.tutor_feedback %}: {{ session.rejected_simulator.tutor_feedback|truncatechars:40 }}{% endif %}
-                                        </span>
-                                        <form method="post"
-                                            action="{% url 'simulators:generate' session.id %}">
-                                            {% csrf_token %}
-                                            <button type="button" class="btn btn-sm btn-warning"
-                                                style="color:#1A1A2E;"
-                                                onclick="if(confirm('Regenerar simulacro con IA?')) this.form.submit()">
-                                                🔄 Regenerar con IA
-                                            </button>
-                                        </form>
-                                    </div>
-                                {% elif session.materials.exists %}
-                                    <form method="post"
-                                        action="{% url 'simulators:generate' session.id %}">
-                                        {% csrf_token %}
-                                        <button type="button" class="btn btn-sm btn-primary"
-                                            onclick="if(confirm('Generar simulacro con IA para {{ session.subject }}? Tarda 20-30 segundos.')) this.form.submit()">
-                                            🤖 Generar con IA
-                                        </button>
-                                    </form>
-                                {% else %}
-                                    <span class="text-muted small">El tutor debe subir materiales</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endif %}
-                    {% empty %}
-                        <p class="text-muted small mb-0">No tienes sesiones completadas aún.</p>
-                    {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No tienes sesiones completadas aún.</p>
+                    {% endif %}
+                    <a href="{% url 'simulators:list' %}" class="btn btn-outline-secondary btn-sm mt-2">Ver todos</a>
                 </div>
 
                 <div class="card info-card">

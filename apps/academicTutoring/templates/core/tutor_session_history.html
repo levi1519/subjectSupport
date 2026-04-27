@@ -141,13 +141,17 @@
                   <span class="badge" style="background:rgba(108,99,255,0.3);">
                     Materiales: {{ session.materials.count }}
                   </span>
-                  {% if session.simulators.exists %}
-                    {% with sim=session.simulators.first %}
-                      <span class="badge ms-1"
-                        style="background:{% if sim.status == 'pending_approval' %}var(--warning);color:#1A1A2E{% elif sim.status == 'approved' %}var(--accent);color:#1A1A2E{% elif sim.status == 'rejected' %}var(--secondary){% else %}var(--muted){% endif %};">
-                        Simulacro: {{ sim.get_status_display }}
-                      </span>
-                    {% endwith %}
+                  {% if not session.simulators.exists %}
+                    <form method="post" action="{% url 'simulators:generate' session.pk %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-info mt-2">
+                        🤖 Generar Simulacro con IA
+                      </button>
+                    </form>
+                  {% elif session.simulators.filter(status='pending_approval').exists %}
+                    <span class="badge bg-warning">⏳ Simulacro pendiente de tu aprobación</span>
+                  {% elif session.simulators.filter(status='approved').exists %}
+                    <span class="badge bg-success">✅ Simulacro publicado</span>
                   {% endif %}
                 </div>
               </div>

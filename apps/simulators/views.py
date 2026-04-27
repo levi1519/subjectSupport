@@ -277,37 +277,40 @@ class SimulatorResultsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
 
 class SimulatorGenerateView(LoginRequiredMixin, UserPassesTestMixin, View):
     """
-    Student triggers AI generation of a simulator from
-    the tutor's session materials.
-    Tutor does NOT interact with AI at any point.
+    Tutor triggers AI generation of a simulator from
+    the session materials.
     """
 
     def test_func(self):
-        return self.request.user.user_type == 'client'
+        return self.request.user.user_type == 'tutor'
 
     def post(self, request, session_pk):
         session = get_object_or_404(
             ClassSession,
             pk=session_pk,
-            client=request.user,
+            tutor=request.user,
             status='completed'
         )
-        success, message = generate_simulator(session, request.user)
+        if session.tutor != request.user:
+            messages.error(request, "Solo el tutor puede generar simulacros.")
+            return redirect('tutor_dashboard')
+
+        success, message = generate_simulator(session, student=session.client)
         if success:
             from apps.simulators.models import Simulator as Sim
             Sim.objects.filter(
                 session=session,
-                student=request.user,
+                student=session.client,
                 status='rejected'
             ).update(generation_status='failed')
             messages.success(request, message)
-            return redirect('simulators:list')
+            return redirect('tutor_session_history')
         else:
             messages.error(request, message)
-            return redirect('client_dashboard')
+            return redirect('tutor_session_history')
 
     def get(self, request, session_pk):
-        return redirect('client_dashboard')
+        return redirect('tutor_session_history')
 
 
 class ReinforcementGenerateView(LoginRequiredMixin, UserPassesTestMixin, View):
