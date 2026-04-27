@@ -327,6 +327,12 @@ class TutorProfile(models.Model):
         verbose_name='URL de la Institución',
         help_text='Solo para instituciones extranjeras'
     )
+    linkedin_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='LinkedIn',
+        help_text='Perfil de LinkedIn (opcional). Ej: https://linkedin.com/in/tu-nombre'
+    )
     is_foreign_institution = models.BooleanField(
         default=False,
         verbose_name='Institución en el extranjero'

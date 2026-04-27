@@ -432,6 +432,10 @@
                         <h5 class="fw-bold mb-0">🎯 Mis Simulacros</h5>
                         <a href="{% url 'simulators:list' %}" class="btn btn-primary btn-sm">Ver todos</a>
                     </div>
+                    <p class="text-muted small">
+                        Tu tutor generará simulacros desde los materiales de cada sesión completada.
+                        Cuando estén listos, aparecerán aquí para que puedas practicar.
+                    </p>
                     {% if past_sessions %}
                         {% for session in past_sessions %}
                             {% if session.status == 'completed' %}
@@ -440,16 +444,23 @@
                                 <div>
                                     <span class="fw-semibold text-white">{{ session.subject }}</span>
                                     <span class="text-muted small ms-2">{{ session.scheduled_date|date:"d/m/Y" }} — {{ session.tutor.name }}</span>
+                                    {% if session.materials.count %}
+                                        <span class="badge bg-success ms-1">{{ session.materials.count }} material(es)</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary ms-1">Sin materiales</span>
+                                    {% endif %}
                                 </div>
                                 <div>
                                     {% if session.pub_simulator %}
-                                        <a href="{% url 'simulators:detail' session.pub_simulator.pk %}" class="btn btn-sm btn-primary">
-                                            Ver simulacro
-                                        </a>
-                                    {% elif session.rejected_simulator %}
-                                        <span class="text-danger">❌ Simulacro rechazado</span>
+                                        {% if session.pub_simulator.status == 'approved' %}
+                                            <a href="{% url 'simulators:detail' session.pub_simulator.pk %}" class="btn btn-sm btn-primary">
+                                                🚀 Hacer simulacro
+                                            </a>
+                                        {% elif session.pub_simulator.status == 'pending_approval' %}
+                                            <span class="text-warning small">⏳ En revisión del tutor</span>
+                                        {% endif %}
                                     {% else %}
-                                        <span class="text-muted">⏳ Pendiente de tu tutor</span>
+                                        <span class="text-muted small">⏳ Pendiente de tu tutor</span>
                                     {% endif %}
                                 </div>
                             </div>
@@ -458,7 +469,6 @@
                     {% else %}
                         <p class="text-muted">No tienes sesiones completadas aún.</p>
                     {% endif %}
-                    <a href="{% url 'simulators:list' %}" class="btn btn-outline-secondary btn-sm mt-2">Ver todos</a>
                 </div>
 
                 <div class="card info-card">

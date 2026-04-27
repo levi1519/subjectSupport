@@ -196,6 +196,13 @@
                                         <strong>💰 Tarifa:</strong> ${{ tutor.hourly_rate }}/hora
                                     </p>
                                 {% endif %}
+                                {% if tutor.linkedin_url %}
+                                    <p class="card-text small">
+                                        <a href="{{ tutor.linkedin_url }}" target="_blank" rel="noopener" class="text-info">
+                                            🔗 Ver LinkedIn
+                                        </a>
+                                    </p>
+                                {% endif %}
                                 {% if tutor.bio %}
                                     <p class="card-text small text-muted">{{ tutor.bio|truncatewords:15 }}</p>
                                 {% endif %}

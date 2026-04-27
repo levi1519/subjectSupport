@@ -798,6 +798,15 @@ class TutorProfileEditForm(forms.ModelForm):
         label='Tarifa por Hora (USD)',
         help_text='Precio por hora de tutoría (opcional)'
     )
+    linkedin_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'https://linkedin.com/in/tu-nombre'
+        }),
+        label='LinkedIn',
+        help_text='Opcional — visible en tu perfil público'
+    )
     cedula = forms.CharField(
         required=False,
         max_length=20,
@@ -824,7 +833,7 @@ class TutorProfileEditForm(forms.ModelForm):
 
     class Meta:
         model = TutorProfile
-        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'cedula', 'birth_date', 'avatar', 'university_name', 'document_file']
+        fields = ['phone_number', 'bio', 'experience', 'hourly_rate', 'linkedin_url', 'cedula', 'birth_date', 'avatar', 'university_name', 'document_file']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
