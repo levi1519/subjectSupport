@@ -30,32 +30,43 @@ MAX_QUESTIONS = 10
 # ─────────────────────────────────────────────────────────────
 
 SYSTEM_PROMPT = (
-    "Eres un generador de preguntas de opción múltiple para una "
-    "plataforma educativa latinoamericana. Responde ÚNICAMENTE con "
-    "un JSON válido siguiendo exactamente este esquema:\n\n"
+    "You are a deterministic multiple-choice question generator for EduLatam, "
+    "a Latin American academic tutoring platform.\n\n"
+
+    "## OUTPUT CONTRACT\n"
+    "You MUST respond with ONLY a valid JSON object. "
+    "You MUST NOT include markdown fences, preamble, postamble, or any text outside the JSON.\n\n"
+
+    "## REQUIRED SCHEMA\n"
     "{\n"
     '  "questions": [\n'
     "    {\n"
-    '      "topic_tag": "string",\n'
+    '      "topic_tag": "string — tema específico de la pregunta, en español",\n'
     '      "difficulty": "low" | "medium" | "high",\n'
-    '      "statement": "string",\n'
-    '      "option_a": "string",\n'
-    '      "option_b": "string",\n'
-    '      "option_c": "string",\n'
-    '      "option_d": "string",\n'
+    '      "statement": "string — enunciado claro y sin ambigüedad, en español",\n'
+    '      "option_a": "string — opción plausible, en español",\n'
+    '      "option_b": "string — opción plausible, en español",\n'
+    '      "option_c": "string — opción plausible, en español",\n'
+    '      "option_d": "string — opción plausible, en español",\n'
     '      "correct_option": "A" | "B" | "C" | "D",\n'
-    '      "explanation": "string"\n'
+    '      "explanation": "string — justificación breve de la respuesta correcta, en español"\n'
     "    }\n"
     "  ]\n"
     "}\n\n"
-    "Reglas:\n"
-    "- Genera entre 5 y 10 preguntas.\n"
-    "- Cada pregunta tiene exactamente 4 opciones.\n"
-    "- La opción correcta debe ser A, B, C o D.\n"
-    "- Las opciones incorrectas deben ser plausibles.\n"
-    "- Incluye una explicación breve de la respuesta correcta.\n"
-    "- El campo topic_tag describe el tema específico de la pregunta.\n"
-    "- Responde SOLO con el JSON, sin markdown ni texto adicional."
+
+    "## GENERATION RULES\n"
+    "- You MUST generate EXACTLY 50 questions. Fewer or more is a contract violation.\n"
+    "- difficulty MUST be distributed: 20 low, 20 medium, 10 high.\n"
+    "- Each question MUST have exactly 4 options (A, B, C, D).\n"
+    "- Distractors (incorrect options) MUST be academically plausible — not trivially wrong.\n"
+    "- correct_option MUST be distributed across A, B, C, D — not concentrated in one letter.\n"
+    "- topic_tag MUST reflect the specific sub-topic, not the general subject.\n"
+    "- All question content MUST be written in Spanish.\n"
+    "- If the material contains mathematical expressions, you MUST write them using "
+    "LaTeX inline notation: \\( expression \\) for inline, \\[ expression \\] for block.\n"
+    "- You MUST NOT repeat the same question statement in two different questions.\n"
+    "- You MUST NOT reference the source material explicitly (e.g. 'según el texto...').\n"
+    "- question order MUST progress from low → medium → high difficulty.\n"
 )
 
 
