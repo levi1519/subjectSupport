@@ -58,8 +58,14 @@ def _otp_is_expired(request) -> bool:
     expiry_iso = request.session.get(SESSION_KEY_EXPIRY)
     if not expiry_iso:
         return True
-    from datetime import datetime, timezone as dt_tz
-    expiry = datetime.fromisoformat(expiry_iso)
+    from datetime import datetime
+    try:
+        expiry = datetime.fromisoformat(expiry_iso)
+    except (TypeError, ValueError):
+        return True
+    # Si el expiry no tiene tzinfo, interpretarlo en la zona horaria actual
+    if expiry.tzinfo is None:
+        expiry = timezone.make_aware(expiry, timezone.get_current_timezone())
     return timezone.now() > expiry
 
 

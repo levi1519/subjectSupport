@@ -15,6 +15,8 @@ from apps.accounts.models import User, TutorProfile, Notification, KnowledgeArea
 from .services.meeting_service import update_session_with_meeting
 from .utils import send_cancellation_email
 
+from apps.accounts.mixins.roles import ClientRequiredMixin, TutorRequiredMixin
+from django.core.exceptions import PermissionDenied
 import logging
 
 logger = logging.getLogger(__name__)
@@ -93,16 +95,12 @@ def tutor_landing_view(request):
     return render(request, 'landing/tutor_landing.html', {'user_type': 'Tutor'})
 
 
-class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class TutorSelectionView(ClientRequiredMixin, TemplateView):
     """
     View for clients to see and select tutors with geographical prioritization.
     Uses TutorProfileManager for optimized queries.
     """
     template_name = 'core/tutor_selection.html'
-    
-    def test_func(self):
-        """Only clients can view tutor selection"""
-        return self.request.user.user_type == 'client'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -207,17 +205,13 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return context
 
 
-class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+class RequestSessionView(ClientRequiredMixin, FormView):
     """
     View for clients to request a new session with a specific tutor.
     Uses SessionService for business logic.
     """
     template_name = 'core/request_session.html'
     form_class = SessionRequestForm
-    
-    def test_func(self):
-        """Only clients can request sessions"""
-        return self.request.user.user_type == 'client'
     
     def dispatch(self, request, *args, **kwargs):
         """Get tutor from URL parameter"""
@@ -304,7 +298,7 @@ class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         return redirect('client_dashboard')
 
 
-class ConfirmSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+class ConfirmSessionView(TutorRequiredMixin, FormView):
     """
     View for tutors to confirm a session.
     Uses SessionService for business logic.
@@ -312,18 +306,16 @@ class ConfirmSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     template_name = 'core/confirm_session.html'
     form_class = SessionConfirmationForm
     
-    def test_func(self):
-        """Only tutors can confirm sessions and must own the session"""
-        session = get_object_or_404(ClassSession, id=self.kwargs['session_id'])
-        return (self.request.user.user_type == 'tutor' and 
-                self.request.user == session.tutor)
-    
     def dispatch(self, request, *args, **kwargs):
-        """Get session and validate status"""
+        """Get session and validate status and ownership"""
         self.session = get_object_or_404(ClassSession, id=kwargs['session_id'])
         
+        # NUEVA VALIDACION DE PROPIEDAD
+        if request.user != self.session.tutor:
+            raise PermissionDenied("No tienes permiso para confirmar esta sesion.")
+            
         if self.session.status != 'pending':
-            messages.warning(request, 'Esta sesión ya ha sido procesada.')
+            messages.warning(request, 'Esta sesion ya ha sido procesada.')
             return redirect('tutor_dashboard')
         
         return super().dispatch(request, *args, **kwargs)
@@ -466,12 +458,15 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
             return reverse('client_dashboard')
 
 
-class CompleteSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
+class CompleteSessionView(TutorRequiredMixin, View):
     """Mark a confirmed session as completed. Tutor only."""
 
-    def test_func(self):
+    # AGREGADO: Validacion de propiedad en dispatch
+    def dispatch(self, request, *args, **kwargs):
         self.session = get_object_or_404(ClassSession, id=self.kwargs['session_id'])
-        return self.request.user == self.session.tutor
+        if request.user != self.session.tutor:
+            raise PermissionDenied("No tienes permiso para completar esta sesion.")
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         session = self.session
@@ -484,12 +479,15 @@ class CompleteSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
         return redirect('tutor_dashboard')
 
 
-class UpdateMeetingUrlView(LoginRequiredMixin, UserPassesTestMixin, View):
+class UpdateMeetingUrlView(TutorRequiredMixin, View):
     """Allow tutor to update meeting_url of a confirmed session."""
 
-    def test_func(self):
+    # AGREGADO: Validacion de propiedad en dispatch
+    def dispatch(self, request, *args, **kwargs):
         self.session = get_object_or_404(ClassSession, id=self.kwargs['session_id'])
-        return self.request.user == self.session.tutor
+        if request.user != self.session.tutor:
+            raise PermissionDenied("No puedes actualizar el enlace de esta sesion.")
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         session = self.session
