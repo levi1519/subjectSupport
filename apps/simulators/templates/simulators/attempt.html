@@ -82,11 +82,7 @@
             {% endwith %}
 
             <div class="d-flex flex-column gap-2">
-              {% for letter, text in question.option_a|make_list|zip %}
-              {% endfor %}
 
-              {% for opt_letter, opt_text in forloop.parentloop.counter|divisibleby:1|yesno:"," %}
-              {% endfor %}
 
               <div>
                 <input type="radio" name="question_{{ question.id }}"
