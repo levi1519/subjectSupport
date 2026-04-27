@@ -682,6 +682,15 @@ class TutorSessionHistoryView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
             status='pending_approval'
         ).select_related('student', 'session').order_by('-created_at')
 
+        # Annotate simulator status per completed session
+        for session in completed:
+            session.pending_sim = session.simulators.filter(
+                status='pending_approval'
+            ).first()
+            session.approved_sim = session.simulators.filter(
+                status='approved'
+            ).first()
+
         context['completed_sessions'] = completed
         context['cancelled_sessions'] = cancelled
         context['pending_simulators'] = pending_simulators

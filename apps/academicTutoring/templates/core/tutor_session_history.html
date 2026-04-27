@@ -141,16 +141,16 @@
                   <span class="badge" style="background:rgba(108,99,255,0.3);">
                     Materiales: {{ session.materials.count }}
                   </span>
-                  {% if not session.simulators.exists %}
+                  {% if not session.pending_sim and not session.approved_sim %}
                     <form method="post" action="{% url 'simulators:generate' session.pk %}">
                       {% csrf_token %}
                       <button type="submit" class="btn btn-sm btn-outline-info mt-2">
                         🤖 Generar Simulacro con IA
                       </button>
                     </form>
-                  {% elif session.simulators.filter(status='pending_approval').exists %}
+                  {% elif session.pending_sim %}
                     <span class="badge bg-warning">⏳ Simulacro pendiente de tu aprobación</span>
-                  {% elif session.simulators.filter(status='approved').exists %}
+                  {% elif session.approved_sim %}
                     <span class="badge bg-success">✅ Simulacro publicado</span>
                   {% endif %}
                 </div>
