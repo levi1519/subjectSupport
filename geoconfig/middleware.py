@@ -21,6 +21,7 @@ class GeoRestrictionMiddleware:
         '/static/',
         '/media/',
         '/accounts/logout/',
+        '/accounts/password-reset/',
         '/internal/',
         '/gestion-ay-2026-4/',
     ]

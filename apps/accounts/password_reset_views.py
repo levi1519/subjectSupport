@@ -60,6 +60,9 @@ def _otp_is_expired(request) -> bool:
         return True
     from datetime import datetime, timezone as dt_tz
     expiry = datetime.fromisoformat(expiry_iso)
+    # Si el expiry no tiene tzinfo, hacerlo aware en UTC
+    if expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=dt_tz.utc)
     return timezone.now() > expiry
 
 
