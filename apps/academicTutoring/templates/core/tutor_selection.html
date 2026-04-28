@@ -225,22 +225,30 @@
         </div>
 
         {% if is_paginated %}
-        <nav class="mt-4">
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">←</a>
-                    </li>
-                {% endif %}
-                <li class="page-item disabled">
-                    <span class="page-link">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
-                </li>
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">→</a>
-                    </li>
-                {% endif %}
-            </ul>
+        <nav class="mt-4 d-flex justify-content-center" aria-label="Paginación">
+          <ul class="pagination">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if province_filter %}&province={{ province_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}">
+                  &laquo;
+                </a>
+              </li>
+            {% endif %}
+            {% for num in paginator.page_range %}
+              <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if province_filter %}&province={{ province_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}">
+                  {{ num }}
+                </a>
+              </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if province_filter %}&province={{ province_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}">
+                  &raquo;
+                </a>
+              </li>
+            {% endif %}
+          </ul>
         </nav>
         {% endif %}
     </div>

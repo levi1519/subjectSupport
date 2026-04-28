@@ -166,9 +166,12 @@ class TutorSelectionView(ClientRequiredMixin, TemplateView):
         ).filter(num_subjects__gt=0)
 
         # D14-A: Paginación
-        page_number = self.request.GET.get('page', 1)
         paginator = Paginator(tutors_qs, 12)
-        page_obj = paginator.get_page(page_number)
+        page_number = self.request.GET.get('page', 1)
+        try:
+            page_obj = paginator.page(page_number)
+        except (PageNotAnInteger, EmptyPage):
+            page_obj = paginator.page(1)
 
         context.update({
             'tutors':            page_obj,

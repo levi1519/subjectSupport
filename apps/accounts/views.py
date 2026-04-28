@@ -368,6 +368,35 @@ class TutorDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context['pending_count'] = context['pending_sessions'].count()
         context['all_active_sessions'] = list(context['pending_sessions']) + list(context['upcoming_sessions'])
 
+        # RFC-RF040 — Session reminders
+        from django.core.cache import cache as _cache
+        from django.utils import timezone as _tz
+        from datetime import timedelta as _td
+        import datetime as _dt
+
+        _now = _tz.now()
+        _cutoff = _now + _td(hours=24)
+
+        for _session in context['upcoming_sessions']:
+            _scheduled_dt = _tz.make_aware(
+                _dt.datetime.combine(_session.scheduled_date, _session.scheduled_time),
+                _tz.get_current_timezone()
+            ) if not _tz.is_aware(
+                _dt.datetime.combine(_session.scheduled_date, _session.scheduled_time)
+            ) else _dt.datetime.combine(_session.scheduled_date, _session.scheduled_time)
+
+            _reminder_key = f'reminder_sent_{_session.id}'
+            if _now <= _scheduled_dt <= _cutoff and not _cache.get(_reminder_key):
+                Notification.objects.get_or_create(
+                    recipient=self.request.user,
+                    message=(
+                        f'⏰ Recordatorio: tienes una clase de {_session.subject} '
+                        f'con {_session.client.name} hoy a las '
+                        f'{_session.scheduled_time.strftime("%H:%M")}.'
+                    )
+                )
+                _cache.set(_reminder_key, True, 60 * 60 * 24)
+
         # D12-C: Recordatorio de sesiones próximas
         from apps.academicTutoring.models import PlatformConfig
         config = PlatformConfig.get_config()
@@ -456,13 +485,31 @@ class ClientDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
             ).first()
             session.rejected_simulator = rejected_sim
 
-        # Check for expiring videos
+        # Check for expiring and expired videos (D15)
         from django.utils import timezone as tz
-        expiring = context['past_sessions'].filter(
+        from datetime import timedelta
+
+        now = tz.now()
+        warn_threshold = now + timedelta(days=3)
+        expired_threshold = now - timedelta(days=7)
+
+        # Videos expiring within 3 days (not yet expired)
+        expiring_videos = context['past_sessions'].filter(
             recording_url__isnull=False,
-            video_expires_at__gt=tz.now()
+            video_expires_at__gt=now,
+            video_expires_at__lte=warn_threshold,
         ) if hasattr(context['past_sessions'], 'filter') else []
-        context['expiring_videos'] = expiring
+
+        # Videos expired in the last 7 days
+        expired_videos = context['past_sessions'].filter(
+            recording_url__isnull=False,
+            video_expires_at__isnull=False,
+            video_expires_at__lte=now,
+            video_expires_at__gte=expired_threshold,
+        ) if hasattr(context['past_sessions'], 'filter') else []
+
+        context['expiring_videos'] = expiring_videos
+        context['expired_videos'] = expired_videos
 
         # D15-A: Sesiones completadas sin video del tutor
         from apps.academicTutoring.models import ClassSession as CS

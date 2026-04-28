@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.views.generic import TemplateView
 from django.utils import timezone
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from apps.simulators.models import (
     Simulator, SimulatorQuestion, SimulatorAttempt,
@@ -51,12 +51,16 @@ class SimulatorListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 student=self.request.user).order_by('-started_at').first()
 
         # D14-C: Paginación
-        page_number = self.request.GET.get('page', 1)
         paginator = Paginator(simulators, 9)
-        page_obj = paginator.get_page(page_number)
+        page_number = self.request.GET.get('page', 1)
+        try:
+            page_obj = paginator.page(page_number)
+        except (PageNotAnInteger, EmptyPage):
+            page_obj = paginator.page(1)
 
         context['simulators'] = page_obj
         context['page_obj'] = page_obj
+        context['paginator'] = paginator
         context['is_paginated'] = paginator.num_pages > 1
         context['page_title'] = 'Mis Simulacros'
         return context
