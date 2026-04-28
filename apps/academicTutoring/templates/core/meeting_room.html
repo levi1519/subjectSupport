@@ -245,6 +245,59 @@
                 </div>
                 {% endif %}
 
+                {% with materials=session.materials.all %}
+                {% if materials %}
+                <div class="info-box mt-3">
+                    <h6 class="mb-2" style="color:var(--primary);">📎 Materiales de la sesión</h6>
+                    {% for mat in materials %}
+                        {% if mat.type == 'url' %}
+                            <div class="mb-1">
+                                <a href="{{ mat.url }}" target="_blank"
+                                   style="color:var(--accent);font-size:0.9rem;">
+                                    🔗 {{ mat.url|truncatechars:60 }}
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="mb-1">
+                                <a href="{{ mat.file.url }}" target="_blank"
+                                   style="color:var(--accent);font-size:0.9rem;">
+                                    📄 {{ mat.filename|default:mat.file.name }}
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                {% if session.recording_url %}
+                <div class="info-box mt-3"
+                     style="border-left:3px solid var(--accent);">
+                    <h6 class="mb-2" style="color:var(--accent);">🎥 Grabación de la sesión</h6>
+                    <a href="{{ session.recording_url }}" target="_blank"
+                       class="btn btn-sm"
+                       style="background:var(--accent);color:#1A1A2E;font-weight:600;">
+                        Ver / Descargar grabación
+                    </a>
+                    {% if session.video_expires_at %}
+                    <p class="small text-muted mt-2 mb-0">
+                        Disponible hasta: {{ session.video_expires_at|date:"d/m/Y" }}
+                    </p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if user.user_type == 'client' and session.tutor.tutor_profile.hourly_rate %}
+                <div class="mt-3 text-center">
+                    <small class="text-muted">
+                        💰 Tarifa del tutor:
+                        <strong style="color:var(--accent);">
+                            ${{ session.tutor.tutor_profile.hourly_rate }}/hora
+                        </strong>
+                    </small>
+                </div>
+                {% endif %}
+
                 {% if session.notes %}
                 <div class="alert alert-info">
                     <h6><i class="bi bi-sticky-fill"></i> Notas</h6>

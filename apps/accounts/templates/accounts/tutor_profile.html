@@ -211,6 +211,18 @@
                     </div>
                     {% endif %}
 
+                    {% if profile.linkedin_url %}
+                    <div class="info-item">
+                        <div class="info-label">LinkedIn</div>
+                        <div class="info-value">
+                            <a href="{{ profile.linkedin_url }}" target="_blank" rel="noopener"
+                               style="color: var(--accent);">
+                                🔗 Ver perfil de LinkedIn
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     {% if profile.university_name %}
                     <div class="info-item">
                         <div class="info-label">Institución Educativa</div>

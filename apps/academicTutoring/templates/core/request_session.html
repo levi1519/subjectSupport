@@ -84,30 +84,45 @@
                         </div>
 
                         {% if tutor_profile %}
-                        <div class="alert alert-info mb-4" style="background: rgba(108, 99, 255, 0.15); border-color: var(--primary); color: var(--primary);">
-                            <h6 class="fw-bold">Información del Tutor</h6>
-                            <p class="mb-1"><strong>Nombre:</strong> {{ tutor.name }}</p>
-                            <p class="mb-1"><strong>Ubicación:</strong> {{ tutor_profile.city }}, {{ tutor_profile.country }}</p>
-                            {% if tutor_profile.hourly_rate %}
-                            <p class="mb-1">
-                                <strong>💰 Tarifa por hora:</strong>
-                                <span style="color: var(--accent); font-weight: 700; font-size: 1.1rem;">
-                                    ${{ tutor_profile.hourly_rate }} USD/hora
-                                </span>
-                            </p>
-                            {% endif %}
-                            <p class="mb-0"><strong>Materias:</strong>
-                                {% if tutor_profile.subjects_taught.all %}
-                                    {% for subject in tutor_profile.subjects_taught.all %}{{ subject.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                        <div class="mb-4 p-3" style="background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.3);border-radius:10px;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="fw-bold mb-2" style="color:var(--text);">{{ tutor.name }}</h6>
+                                    <p class="mb-1 small text-muted">
+                                        📍 {{ tutor_profile.city }}, {{ tutor_profile.country }}
+                                    </p>
+                                    <p class="mb-0 small text-muted">
+                                        📚
+                                        {% if tutor_profile.subjects_taught.all %}
+                                            {% for subject in tutor_profile.subjects_taught.all %}
+                                                {{ subject.name }}{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}
+                                        {% else %}
+                                            No especificadas
+                                        {% endif %}
+                                    </p>
+                                    {% if tutor_profile.linkedin_url %}
+                                    <p class="mb-0 small mt-1">
+                                        <a href="{{ tutor_profile.linkedin_url }}" target="_blank"
+                                           rel="noopener" style="color:var(--accent);">
+                                            🔗 LinkedIn
+                                        </a>
+                                    </p>
+                                    {% endif %}
+                                </div>
+                                {% if tutor_profile.hourly_rate %}
+                                <div class="text-end">
+                                    <div style="font-size:1.8rem;font-weight:800;color:var(--accent);">
+                                        ${{ tutor_profile.hourly_rate }}
+                                    </div>
+                                    <div class="small text-muted">por hora</div>
+                                </div>
                                 {% else %}
-                                    No especificadas
+                                <div class="text-end">
+                                    <div class="small text-muted">Tarifa no establecida</div>
+                                </div>
                                 {% endif %}
-                            </p>
-                            {% if tutor_profile.linkedin_url %}
-                            <p class="mb-0 mt-1">
-                                <a href="{{ tutor_profile.linkedin_url }}" target="_blank" class="text-info">🔗 Ver LinkedIn</a>
-                            </p>
-                            {% endif %}
+                            </div>
                         </div>
                         {% endif %}
 
