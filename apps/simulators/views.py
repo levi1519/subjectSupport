@@ -1,5 +1,6 @@
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from apps.accounts.mixins.roles import ClientRequiredMixin, TutorRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.views.generic import TemplateView
@@ -30,11 +31,8 @@ def update_weak_topic_profile(attempt):
         )
 
 
-class SimulatorListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class SimulatorListView(ClientRequiredMixin, TemplateView):
     template_name = 'simulators/list.html'
-
-    def test_func(self):
-        return self.request.user.user_type == 'client'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -50,7 +48,6 @@ class SimulatorListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             sim.last_attempt = sim.attempts.filter(
                 student=self.request.user).order_by('-started_at').first()
 
-        # D14-C: Paginación
         paginator = Paginator(simulators, 9)
         page_number = self.request.GET.get('page', 1)
         try:
@@ -66,17 +63,17 @@ class SimulatorListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return context
 
 
-class SimulatorDetailView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class SimulatorDetailView(ClientRequiredMixin, TemplateView):
     template_name = 'simulators/detail.html'
 
-    def test_func(self):
+    def dispatch(self, request, *args, **kwargs):
         self.simulator = get_object_or_404(
             Simulator,
             pk=self.kwargs['pk'],
-            student=self.request.user,
+            student=request.user,
             status__in=['published', 'pending_approval', 'approved', 'rejected']
         )
-        return True
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -96,16 +93,16 @@ class SimulatorDetailView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         return context
 
 
-class SimulatorStartView(LoginRequiredMixin, UserPassesTestMixin, View):
+class SimulatorStartView(ClientRequiredMixin, View):
 
-    def test_func(self):
+    def dispatch(self, request, *args, **kwargs):
         self.simulator = get_object_or_404(
             Simulator,
             pk=self.kwargs['pk'],
-            student=self.request.user,
+            student=request.user,
             status__in=['published', 'pending_approval', 'approved']
         )
-        return True
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         existing = SimulatorAttempt.objects.filter(
@@ -140,30 +137,26 @@ class SimulatorStartView(LoginRequiredMixin, UserPassesTestMixin, View):
         return redirect('simulators:detail', pk=self.kwargs['pk'])
 
 
-class SimulatorAttemptView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class SimulatorAttemptView(ClientRequiredMixin, TemplateView):
     template_name = 'simulators/attempt.html'
 
-    def test_func(self):
+    def dispatch(self, request, *args, **kwargs):
         self.simulator = get_object_or_404(
             Simulator, pk=self.kwargs['pk'],
-            student=self.request.user,
+            student=request.user,
             status__in=['published', 'pending_approval', 'approved']
         )
         self.attempt = get_object_or_404(
             SimulatorAttempt,
             pk=self.kwargs['attempt_pk'],
             simulator=self.simulator,
-            student=self.request.user
+            student=request.user
         )
-        return True
-
-    def dispatch(self, request, *args, **kwargs):
-        response = super().dispatch(request, *args, **kwargs)
-        if hasattr(self, 'attempt') and self.attempt.status != 'in_progress':
+        if self.attempt.status != 'in_progress':
             return redirect('simulators:results',
                 pk=self.kwargs['pk'],
                 attempt_pk=self.kwargs['attempt_pk'])
-        return response
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -179,21 +172,21 @@ class SimulatorAttemptView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
         return context
 
 
-class SimulatorSubmitView(LoginRequiredMixin, UserPassesTestMixin, View):
+class SimulatorSubmitView(ClientRequiredMixin, View):
 
-    def test_func(self):
+    def dispatch(self, request, *args, **kwargs):
         self.simulator = get_object_or_404(
             Simulator, pk=self.kwargs['pk'],
-            student=self.request.user,
+            student=request.user,
             status__in=['published', 'pending_approval', 'approved']
         )
         self.attempt = get_object_or_404(
             SimulatorAttempt,
             pk=self.kwargs['attempt_pk'],
             simulator=self.simulator,
-            student=self.request.user
+            student=request.user
         )
-        return True
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         if self.attempt.status != 'in_progress':
@@ -245,13 +238,13 @@ class SimulatorSubmitView(LoginRequiredMixin, UserPassesTestMixin, View):
             pk=self.kwargs['pk'], attempt_pk=self.kwargs['attempt_pk'])
 
 
-class SimulatorResultsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class SimulatorResultsView(ClientRequiredMixin, TemplateView):
     template_name = 'simulators/results.html'
 
-    def test_func(self):
+    def dispatch(self, request, *args, **kwargs):
         self.simulator = get_object_or_404(
             Simulator, pk=self.kwargs['pk'],
-            student=self.request.user,
+            student=request.user,
             status__in=['published', 'pending_approval', 'approved',
                         'rejected', 'closed']
         )
@@ -259,9 +252,11 @@ class SimulatorResultsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
             SimulatorAttempt,
             pk=self.kwargs['attempt_pk'],
             simulator=self.simulator,
-            student=self.request.user
+            student=request.user
         )
-        return self.attempt.status == 'completed'
+        if self.attempt.status != 'completed':
+            raise PermissionDenied("Este intento aún no está completado.")
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -287,14 +282,11 @@ class SimulatorResultsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
         return context
 
 
-class SimulatorGenerateView(LoginRequiredMixin, UserPassesTestMixin, View):
+class SimulatorGenerateView(TutorRequiredMixin, View):
     """
     Tutor triggers AI generation of a simulator from
     the session materials.
     """
-
-    def test_func(self):
-        return self.request.user.user_type == 'tutor'
 
     def post(self, request, session_pk):
         session = get_object_or_404(
@@ -303,11 +295,7 @@ class SimulatorGenerateView(LoginRequiredMixin, UserPassesTestMixin, View):
             tutor=request.user,
             status='completed'
         )
-        if session.tutor != request.user:
-            messages.error(request, "Solo el tutor puede generar simulacros.")
-            return redirect('tutor_dashboard')
 
-        # Guardar contexto opcional del tutor en la sesión
         tutor_context = request.POST.get('tutor_ai_context', '').strip()
         if tutor_context:
             session.tutor_ai_context = tutor_context
@@ -331,14 +319,11 @@ class SimulatorGenerateView(LoginRequiredMixin, UserPassesTestMixin, View):
         return redirect('tutor_session_history')
 
 
-class ReinforcementGenerateView(LoginRequiredMixin, UserPassesTestMixin, View):
+class ReinforcementGenerateView(ClientRequiredMixin, View):
     """
     Student triggers generation of an adaptive reinforcement
     simulator from results of a completed attempt.
     """
-
-    def test_func(self):
-        return self.request.user.user_type == 'client'
 
     def post(self, request, pk, attempt_pk):
         simulator = get_object_or_404(

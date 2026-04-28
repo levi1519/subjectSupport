@@ -650,11 +650,8 @@ def institution_search_api(request):
     return JsonResponse({'results': list(institutions)})
 
 
-class TutorSessionHistoryView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class TutorSessionHistoryView(TutorRequiredMixin, TemplateView):
     template_name = 'core/tutor_session_history.html'
-
-    def test_func(self):
-        return self.request.user.user_type == 'tutor'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -708,9 +705,8 @@ class TutorSessionHistoryView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
         return context
 
 
-class TutorUploadRecordingView(LoginRequiredMixin, UserPassesTestMixin, View):
-
-    def test_func(self):
+class TutorUploadRecordingView(TutorRequiredMixin, View):
+    def dispatch(self, request, *args, **kwargs):
         self.session = get_object_or_404(
             ClassSession,
             pk=self.kwargs['session_id'],
@@ -781,9 +777,8 @@ class TutorUploadRecordingView(LoginRequiredMixin, UserPassesTestMixin, View):
         return redirect('tutor_session_history')
 
 
-class SimulatorApproveView(LoginRequiredMixin, UserPassesTestMixin, View):
-
-    def test_func(self):
+class SimulatorApproveView(TutorRequiredMixin, View):
+    def dispatch(self, request, *args, **kwargs):
         from apps.simulators.models import Simulator
         self.simulator = get_object_or_404(
             Simulator,
