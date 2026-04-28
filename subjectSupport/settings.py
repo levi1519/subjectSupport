@@ -163,6 +163,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'storages',
+    'anymail',
 ]
 
 # Agregar django.contrib.gis solo si está disponible
