@@ -154,6 +154,15 @@
             </div>
         {% endfor %}
 
+        {% for sess in sessions_without_video %}
+        <div class="alert mb-2" role="alert"
+             style="background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.4);border-radius:8px;">
+            📹 <strong>Recuerda pedirle a {{ sess.tutor.name }}</strong> que suba el video de
+            <em>{{ sess.subject }}</em> ({{ sess.scheduled_date|date:"d/m/Y" }}).
+            El video estará disponible 7 días desde que lo suba.
+        </div>
+        {% endfor %}
+
         <div class="row">
             <!-- Clases Confirmadas -->
             <div class="col-12 mb-4">

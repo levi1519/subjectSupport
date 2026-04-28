@@ -6,6 +6,7 @@ from django.views.generic import View, TemplateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse
 from django.utils import timezone
+from django.core.paginator import Paginator
 from datetime import timedelta
 
 from .models import ClassSession, NotificacionExpansion, SessionMaterial, PlatformConfig
@@ -164,8 +165,16 @@ class TutorSelectionView(ClientRequiredMixin, TemplateView):
             num_subjects=Count('subjects_taught')
         ).filter(num_subjects__gt=0)
 
+        # D14-A: Paginación
+        page_number = self.request.GET.get('page', 1)
+        paginator = Paginator(tutors_qs, 12)
+        page_obj = paginator.get_page(page_number)
+
         context.update({
-            'tutors':            tutors_qs,
+            'tutors':            page_obj,
+            'paginator':         paginator,
+            'page_obj':          page_obj,
+            'is_paginated':      paginator.num_pages > 1,
             'client_country':    client_country,
             'search_query':      search_query,
             'province_filter':   province_filter,
@@ -527,7 +536,7 @@ class MeetingRoomView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     
     def get_success_url(self):
         """Redirect to appropriate dashboard"""
-        if self.request.user.user_type == 'tutor':
+        if getattr(self.request.user, 'user_type', '') == 'tutor':
             return reverse('tutor_dashboard')
         else:
             return reverse('client_dashboard')

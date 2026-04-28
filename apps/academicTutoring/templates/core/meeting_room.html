@@ -207,6 +207,26 @@
                         <span class="info-label">Duración:</span>
                         <span class="info-value">{{ session.get_duration_display }}</span>
                     </div>
+                    {% if session.tutor.tutor_profile.hourly_rate %}
+                    <div class="info-item">
+                        <i class="bi bi-currency-dollar"></i>
+                        <span class="info-label">Tarifa:</span>
+                        <span class="info-value">${{ session.tutor.tutor_profile.hourly_rate }} USD/hora</span>
+                    </div>
+                    {% endif %}
+                    {% if session.materials.count %}
+                    <div class="info-item">
+                        <i class="bi bi-paperclip"></i>
+                        <span class="info-label">Materiales:</span>
+                        <span class="info-value">
+                            {% for mat in session.materials.all %}
+                                {% if mat.type == 'url' %}
+                                    <a href="{{ mat.url }}" target="_blank" style="color:var(--accent);">📎 Ver material {{ forloop.counter }}</a><br>
+                                {% endif %}
+                            {% endfor %}
+                        </span>
+                    </div>
+                    {% endif %}
                 </div>
 
                 {% if session.meeting_id or session.meeting_password %}

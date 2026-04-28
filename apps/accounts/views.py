@@ -8,7 +8,8 @@ from django.views.generic import TemplateView, FormView, UpdateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
 from django.utils import timezone
-from datetime import timedelta
+from django.core.cache import cache
+from datetime import timedelta, datetime
 
 from .forms import (
     TutorRegistrationForm, 
@@ -20,6 +21,57 @@ from .forms import (
 )
 from .models import TutorProfile, ClientProfile, Notification
 from . import services
+
+
+# ─── RFC-D13: Login Rate Limiting ─────────────────────────────────────────
+
+_RL_MAX_ATTEMPTS = 5
+_RL_WINDOW_SECONDS = 15 * 60  # 15 minutes
+
+
+def _get_client_ip(request):
+    """
+    Returns the real client IP.
+    MUST read HTTP_X_FORWARDED_FOR first (Railway proxy sets this header).
+    Falls back to REMOTE_ADDR.
+    """
+    xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    if xff:
+        return xff.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', '127.0.0.1')
+
+
+def _check_rate_limit(request):
+    """
+    Returns (blocked: bool, remaining_attempts: int).
+    blocked MUST be True when failed attempts >= _RL_MAX_ATTEMPTS.
+    """
+    ip = _get_client_ip(request)
+    attempts = cache.get(f'login_attempts_{ip}', 0)
+    if attempts >= _RL_MAX_ATTEMPTS:
+        return True, 0
+    return False, _RL_MAX_ATTEMPTS - attempts
+
+
+def _register_failed_attempt(request):
+    """
+    Increments the failed attempt counter for this IP.
+    TTL MUST be set to _RL_WINDOW_SECONDS on every write (sliding window).
+    """
+    ip = _get_client_ip(request)
+    key = f'login_attempts_{ip}'
+    cache.set(key, cache.get(key, 0) + 1, _RL_WINDOW_SECONDS)
+
+
+def _clear_rate_limit(request):
+    """
+    Deletes the failed attempt counter for this IP.
+    MUST be called on every successful authentication.
+    """
+    ip = _get_client_ip(request)
+    cache.delete(f'login_attempts_{ip}')
+
+# ──────────────────────────────────────────────────────────────────────────
 
 
 class RegisterChoiceView(TemplateView):
@@ -143,9 +195,20 @@ class StudentLoginView(LoginView):
             if request.user.user_type == 'tutor':
                 return redirect('tutor_dashboard')
             return redirect('client_dashboard')
+        if request.method == 'POST':
+            blocked, _ = _check_rate_limit(request)
+            if blocked:
+                form = self.get_form()
+                form.add_error(
+                    None,
+                    f'Demasiados intentos fallidos. '
+                    f'Por favor espera {_RL_WINDOW_SECONDS // 60} minutos.'
+                )
+                return self.form_invalid(form)
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
+        _clear_rate_limit(self.request)
         user = form.get_user()
         # Verify user is actually a student
         if user.user_type != 'client':
@@ -163,6 +226,10 @@ class StudentLoginView(LoginView):
                 pass
         messages.success(self.request, f'¡Bienvenido de nuevo, {user.name}!')
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        _register_failed_attempt(self.request)
+        return super().form_invalid(form)
 
     def get_success_url(self):
         """Redirect based on user role - Admin/Staff go to /admin/"""
@@ -186,9 +253,20 @@ class TutorLoginView(LoginView):
             if request.user.user_type == 'tutor':
                 return redirect('tutor_dashboard')
             return redirect('client_dashboard')
+        if request.method == 'POST':
+            blocked, _ = _check_rate_limit(request)
+            if blocked:
+                form = self.get_form()
+                form.add_error(
+                    None,
+                    f'Demasiados intentos fallidos. '
+                    f'Por favor espera {_RL_WINDOW_SECONDS // 60} minutos.'
+                )
+                return self.form_invalid(form)
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
+        _clear_rate_limit(self.request)
         user = form.get_user()
         # Verify user is actually a tutor
         if user.user_type != 'tutor':
@@ -216,6 +294,10 @@ class TutorLoginView(LoginView):
 
         messages.success(self.request, f'Bienvenido de nuevo, {user.name}!')
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        _register_failed_attempt(self.request)
+        return super().form_invalid(form)
 
     def get_success_url(self):
         """
@@ -285,6 +367,24 @@ class TutorDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         )
         context['pending_count'] = context['pending_sessions'].count()
         context['all_active_sessions'] = list(context['pending_sessions']) + list(context['upcoming_sessions'])
+
+        # D12-C: Recordatorio de sesiones próximas
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        now = timezone.now()
+        reminder_cutoff = now + timedelta(hours=config.session_reminder_hours)
+        upcoming_reminder = []
+        for sess in context['upcoming_sessions']:
+            try:
+                sess_dt = timezone.make_aware(
+                    datetime.combine(sess.scheduled_date, sess.scheduled_time)
+                )
+                if now <= sess_dt <= reminder_cutoff:
+                    upcoming_reminder.append(sess)
+            except Exception:
+                pass
+        context['upcoming_reminder'] = upcoming_reminder
+
         try:
             profile = context.get('profile')
             if profile and not profile.welcome_shown:
@@ -363,6 +463,16 @@ class ClientDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
             video_expires_at__gt=tz.now()
         ) if hasattr(context['past_sessions'], 'filter') else []
         context['expiring_videos'] = expiring
+
+        # D15-A: Sesiones completadas sin video del tutor
+        from apps.academicTutoring.models import ClassSession as CS
+        sessions_without_video = CS.objects.filter(
+            client=self.request.user,
+            status='completed',
+            recording_url__isnull=True,
+            is_archived=False
+        ).select_related('tutor')[:5]
+        context['sessions_without_video'] = sessions_without_video
 
         return context
 

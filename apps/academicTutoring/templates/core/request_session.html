@@ -88,13 +88,26 @@
                             <h6 class="fw-bold">Información del Tutor</h6>
                             <p class="mb-1"><strong>Nombre:</strong> {{ tutor.name }}</p>
                             <p class="mb-1"><strong>Ubicación:</strong> {{ tutor_profile.city }}, {{ tutor_profile.country }}</p>
+                            {% if tutor_profile.hourly_rate %}
+                            <p class="mb-1">
+                                <strong>💰 Tarifa por hora:</strong>
+                                <span style="color: var(--accent); font-weight: 700; font-size: 1.1rem;">
+                                    ${{ tutor_profile.hourly_rate }} USD/hora
+                                </span>
+                            </p>
+                            {% endif %}
                             <p class="mb-0"><strong>Materias:</strong>
-                    {% if tutor_profile.subjects_taught.all %}
-                        {% for subject in tutor_profile.subjects_taught.all %}{{ subject.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                    {% else %}
-                        No especificadas
-                    {% endif %}
-                </p>
+                                {% if tutor_profile.subjects_taught.all %}
+                                    {% for subject in tutor_profile.subjects_taught.all %}{{ subject.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                {% else %}
+                                    No especificadas
+                                {% endif %}
+                            </p>
+                            {% if tutor_profile.linkedin_url %}
+                            <p class="mb-0 mt-1">
+                                <a href="{{ tutor_profile.linkedin_url }}" target="_blank" class="text-info">🔗 Ver LinkedIn</a>
+                            </p>
+                            {% endif %}
                         </div>
                         {% endif %}
 

@@ -247,7 +247,7 @@ def truncate_material(text, max_chars=MAX_MATERIAL_CHARS):
     return text[:max_chars] + '[Material truncado por longitud]'
 
 
-def build_user_prompt(session, materials, weak_topics):
+def build_user_prompt(session, materials, weak_topics, tutor_context=None):
     """
     Construye el prompt de usuario para generar un simulador diagnóstico
     a partir de los materiales de la sesión.
@@ -275,6 +275,13 @@ def build_user_prompt(session, materials, weak_topics):
         )
         for topic in weak_topics:
             lines.append(f"- {topic}\n")
+
+    if tutor_context and tutor_context.strip():
+        lines.append(
+            f"\n\nINSTRUCCIÓN ADICIONAL DEL TUTOR (prioridad alta): "
+            f"{tutor_context.strip()}\n"
+            f"Sin descuidar el dominio general del material.\n"
+        )
 
     lines.append(
         "\nResponde SOLO con el JSON especificado en el system prompt."
@@ -319,15 +326,24 @@ def generate_simulator(session, student):
             f"Espera {GENERATION_COOLDOWN_HOURS} horas antes de regenerar."
         )
 
-    # Step 4 — Check no duplicate published simulator
+    # Step 4 — Check no duplicate active simulator
+    # Bloquear si ya existe uno published, pending_approval o approved
     existing = Simulator.objects.filter(
         session=session,
         student=student,
-        status='published',
+        status__in=['published', 'pending_approval', 'approved'],
         simulator_type='diagnostic'
     ).first()
     if existing:
-        return False, "Ya existe un simulacro generado para esta sesión."
+        status_label = {
+            'published': 'publicado',
+            'pending_approval': 'pendiente de tu aprobación',
+            'approved': 'aprobado',
+        }.get(existing.status, existing.status)
+        return False, (
+            f"Ya existe un simulacro {status_label} para esta sesión. "
+            f"Apruébalo o recházalo desde el historial antes de generar uno nuevo."
+        )
 
     # Step 5 — Create Simulator in GENERATING state
     simulator = Simulator.objects.create(
@@ -358,7 +374,10 @@ def generate_simulator(session, student):
 
     # Step 7 — Build prompts
     system_prompt = build_system_prompt()
-    user_prompt = build_user_prompt(session, materials, weak_topics)
+    user_prompt = build_user_prompt(
+        session, materials, weak_topics,
+        tutor_context=getattr(session, 'tutor_ai_context', None)
+    )
     simulator.generation_prompt = user_prompt
     simulator.save(update_fields=['generation_prompt'])
 

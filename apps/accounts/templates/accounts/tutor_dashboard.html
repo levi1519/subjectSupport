@@ -148,6 +148,25 @@
         </div>
         {% endif %}
 
+        {% if upcoming_reminder %}
+          {% for sess in upcoming_reminder %}
+          <div class="alert d-flex align-items-center gap-3 mb-3"
+               style="background:rgba(255,209,102,0.15);border:1px solid var(--warning);border-radius:10px;">
+            <span style="font-size:2rem;">⏰</span>
+            <div>
+              <strong style="color:var(--warning);">Clase por empezar</strong><br>
+              <span class="text-muted">
+                {{ sess.subject }} con <strong>{{ sess.client.name }}</strong>
+                el {{ sess.scheduled_date|date:"d/m/Y" }} a las {{ sess.scheduled_time|time:"H:i" }}
+              </span>
+              {% if sess.meeting_url %}
+                — <a href="{% url 'meeting_room' sess.id %}" class="text-warning fw-bold">Entrar ahora</a>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
         {% if notifications %}
             {% for notif in notifications %}
                 <div class="alert alert-warning alert-dismissible fade show d-flex justify-content-between align-items-center" role="alert">

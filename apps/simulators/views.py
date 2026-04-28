@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.views.generic import TemplateView
 from django.utils import timezone
+from django.core.paginator import Paginator
 
 from apps.simulators.models import (
     Simulator, SimulatorQuestion, SimulatorAttempt,
@@ -49,7 +50,14 @@ class SimulatorListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             sim.last_attempt = sim.attempts.filter(
                 student=self.request.user).order_by('-started_at').first()
 
-        context['simulators'] = simulators
+        # D14-C: Paginación
+        page_number = self.request.GET.get('page', 1)
+        paginator = Paginator(simulators, 9)
+        page_obj = paginator.get_page(page_number)
+
+        context['simulators'] = page_obj
+        context['page_obj'] = page_obj
+        context['is_paginated'] = paginator.num_pages > 1
         context['page_title'] = 'Mis Simulacros'
         return context
 
@@ -294,6 +302,12 @@ class SimulatorGenerateView(LoginRequiredMixin, UserPassesTestMixin, View):
         if session.tutor != request.user:
             messages.error(request, "Solo el tutor puede generar simulacros.")
             return redirect('tutor_dashboard')
+
+        # Guardar contexto opcional del tutor en la sesión
+        tutor_context = request.POST.get('tutor_ai_context', '').strip()
+        if tutor_context:
+            session.tutor_ai_context = tutor_context
+            session.save(update_fields=['tutor_ai_context'])
 
         success, message = generate_simulator(session, student=session.client)
         if success:

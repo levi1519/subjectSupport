@@ -405,6 +405,12 @@ class ClassSession(models.Model):
         blank=True,
         verbose_name='Calificado por tutor el'
     )
+    tutor_ai_context = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Contexto para IA',
+        help_text='Indicaciones opcionales del tutor para orientar la generación del simulacro'
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -584,6 +590,11 @@ class PlatformConfig(models.Model):
         default=24,
         verbose_name='Horas mínimas para cancelar sin penalización',
         help_text='Aplica cuando los pagos estén activos (Fase 3)'
+    )
+    session_reminder_hours = models.IntegerField(
+        default=24,
+        verbose_name='Horas de anticipación para recordatorio',
+        help_text='Muestra banner al tutor cuando tiene sesiones en las próximas N horas'
     )
 
     # === SECCIÓN 6: Archivos ===
