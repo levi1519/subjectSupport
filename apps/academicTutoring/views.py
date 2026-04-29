@@ -709,11 +709,11 @@ class TutorUploadRecordingView(TutorRequiredMixin, View):
     def dispatch(self, request, *args, **kwargs):
         self.session = get_object_or_404(
             ClassSession,
-            pk=self.kwargs['session_id'],
-            tutor=self.request.user,
+            pk=kwargs['session_id'],
+            tutor=request.user,
             status='completed'
         )
-        return True
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, session_id):
         config = PlatformConfig.get_config()
@@ -782,11 +782,11 @@ class SimulatorApproveView(TutorRequiredMixin, View):
         from apps.simulators.models import Simulator
         self.simulator = get_object_or_404(
             Simulator,
-            pk=self.kwargs['pk'],
-            tutor=self.request.user,
+            pk=kwargs['pk'],
+            tutor=request.user,
             status='pending_approval'
         )
-        return True
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, pk):
         from apps.simulators.models import Simulator
