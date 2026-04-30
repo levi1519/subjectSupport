@@ -296,6 +296,18 @@ class SimulatorGenerateView(TutorRequiredMixin, View):
             status='completed'
         )
 
+        # Verificar que exista al menos 1 PDF en materiales antes de llamar a DeepSeek
+        from apps.academicTutoring.models import SessionMaterial
+        pdf_materials = SessionMaterial.objects.filter(
+            session=session,
+            file__iendswith='.pdf'
+        ).exists()
+        if not pdf_materials:
+            messages.error(request,
+                'Para generar el simulacro necesitas subir al menos un material en PDF. '
+                'Los PDFs permiten que la IA extraiga el contenido con mayor precisión.')
+            return redirect('tutor_session_history')
+
         tutor_context = request.POST.get('tutor_ai_context', '').strip()
         if tutor_context:
             session.tutor_ai_context = tutor_context

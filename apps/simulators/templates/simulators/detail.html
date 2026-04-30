@@ -119,7 +119,13 @@
               </div>
             {% elif simulator.status == 'rejected' %}
               <div class="alert alert-danger">
-                ❌ El tutor rechazó este simulacro. {{ simulator.tutor_feedback }}
+                ❌ Este simulacro fue rechazado por tu tutor.<br>
+                {% if simulator.tutor_feedback %}
+                  <strong>Motivo:</strong> {{ simulator.tutor_feedback }}
+                {% endif %}
+                <p class="mb-0 mt-2 small text-muted">
+                  Tu tutor generará un nuevo simulacro cuando esté listo.
+                </p>
               </div>
             {% elif can_attempt %}
               <p class="text-muted mb-3">

@@ -668,6 +668,22 @@ class TutorSessionHistoryView(TutorRequiredMixin, TemplateView):
             updated_at__lt=archive_cutoff
         ).update(is_archived=True, archived_at=timezone.now())
 
+        # Auto-archivo cuando las 3 condiciones de comisión están cumplidas
+        from apps.academicTutoring.models import SessionMaterial as SM
+        completed_all = ClassSession.objects.filter(
+            tutor=self.request.user,
+            status='completed',
+            is_archived=False
+        )
+        for sess in completed_all:
+            has_recording = bool(sess.recording_url)
+            has_approved_sim = sess.simulators.filter(status='approved').exists()
+            has_pdf = SM.objects.filter(session=sess, file__iendswith='.pdf').exists()
+            if has_recording and has_approved_sim and has_pdf:
+                sess.is_archived = True
+                sess.archived_at = timezone.now()
+                sess.save(update_fields=['is_archived', 'archived_at'])
+
         completed = ClassSession.objects.filter(
             tutor=self.request.user,
             status='completed',
@@ -697,6 +713,13 @@ class TutorSessionHistoryView(TutorRequiredMixin, TemplateView):
             session.approved_sim = session.simulators.filter(
                 status='approved'
             ).first()
+            session.has_any_sim = session.simulators.exists()
+            session.sim_generating = session.simulators.filter(
+                generation_status='generating'
+            ).exists()
+            session.has_pdf = SM.objects.filter(
+                session=session, file__iendswith='.pdf'
+            ).exists()
 
         context['completed_sessions'] = completed
         context['cancelled_sessions'] = cancelled
@@ -759,7 +782,38 @@ class TutorUploadRecordingView(TutorRequiredMixin, View):
             )
             messages.success(request, 'Material adicional agregado.')
 
-        if material_file and existing_count < config.max_session_materials:
+        # VALIDACIÓN PDF RATIO — antes de crear SessionMaterial para archivos
+        if material_file:
+            # 1. Límite máximo de archivos
+            if existing_count >= config.max_session_materials:
+                messages.error(request,
+                    f'Límite de {config.max_session_materials} materiales alcanzado.')
+                return redirect('tutor_session_history')
+
+            # 2. Validar extensión
+            import os
+            ext = os.path.splitext(material_file.name)[1].lower()
+            allowed_all = [f'.{e.strip()}' for e in config.allowed_file_types.split(',')]
+            if ext not in allowed_all:
+                messages.error(request, f'Formato no permitido. Use: {config.allowed_file_types}')
+                return redirect('tutor_session_history')
+
+            # 3. Validar ratio de PDFs tras subir
+            existing_pdfs = SessionMaterial.objects.filter(
+                session=self.session,
+                file__endswith='.pdf'
+            ).count()
+            new_total = existing_count + 1
+            new_pdfs  = existing_pdfs + (1 if ext == '.pdf' else 0)
+            required_pdfs = max(1, int(new_total * config.min_pdf_materials_ratio))
+
+            # Solo advertir si el material actual ya supera 2 archivos y no hay PDFs
+            if new_total > 2 and new_pdfs == 0:
+                messages.warning(request,
+                    f'Recuerda: al menos {required_pdfs} de tus materiales debe(n) ser PDF '
+                    f'para que DeepSeek pueda generar un simulacro de calidad.')
+            # (no bloquear — solo advertir; el bloqueo real está en SimulatorGenerateView)
+
             from apps.accounts.services import sanitize_filename
             material_file.name = sanitize_filename(material_file.name)
             SessionMaterial.objects.create(
@@ -822,11 +876,11 @@ class SimulatorApproveView(TutorRequiredMixin, View):
                 message=(
                     f'Tu simulacro "{self.simulator.title}" fue rechazado '
                     f'por {self.simulator.tutor.name}. '
-                    f'Puedes generar uno nuevo.'
+                    f'Tu tutor generará uno nuevo cuando esté disponible.'
                     + (f' Motivo: {feedback}' if feedback else '')
                 )
             )
-            messages.warning(request, 'Simulacro rechazado. El estudiante puede regenerarlo.')
+            messages.warning(request, 'Simulacro rechazado. El tutor generará uno nuevo cuando esté listo.')
         else:
             messages.error(request, 'Acción inválida.')
 

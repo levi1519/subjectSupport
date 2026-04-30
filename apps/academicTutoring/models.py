@@ -624,6 +624,11 @@ class PlatformConfig(models.Model):
         verbose_name='Tipos de archivo permitidos',
         help_text='Extensiones separadas por coma (sin puntos)'
     )
+    min_pdf_materials_ratio = models.FloatField(
+        default=0.5,
+        verbose_name='Ratio mínimo de PDFs en materiales',
+        help_text='Proporción mínima de archivos PDF respecto al total de materiales subidos'
+    )
 
     # === SECCIÓN 7: Pagos (Fase 3 — inactivos) ===
     platform_commission_percent = models.DecimalField(

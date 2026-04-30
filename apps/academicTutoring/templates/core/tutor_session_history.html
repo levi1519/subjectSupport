@@ -182,7 +182,24 @@
               </div>
               {% endif %}
 
-              {% if not session.pending_sim and not session.approved_sim %}
+              {% if session.sim_generating %}
+              <span class="badge bg-info mt-2">⚙️ Generando simulacro con IA...</span>
+              {% elif session.pending_sim %}
+              <span class="badge bg-warning mt-2">⏳ Simulacro pendiente de tu aprobación</span>
+              {% elif session.approved_sim %}
+              <span class="badge bg-success mt-2">✅ Simulacro publicado</span>
+              {% elif session.has_any_sim %}
+              <form method="post" action="{% url 'simulators:generate' session.pk %}" class="mt-3">
+                {% csrf_token %}
+                <input type="text" name="tutor_ai_context" class="form-control form-control-sm mb-2"
+                  placeholder="Contexto para IA (opcional)"
+                  style="background:rgba(255,255,255,0.05);border:1px solid rgba(108,99,255,0.3);color:var(--text);">
+                <button type="submit" class="btn btn-sm btn-outline-info"
+                  onclick="return confirm('¿Regenerar simulacro con nuevo contexto?')">
+                  🔄 Regenerar Simulacro
+                </button>
+              </form>
+              {% else %}
               <form method="post" action="{% url 'simulators:generate' session.pk %}" class="mt-3">
                 {% csrf_token %}
                 <div class="mb-2">
@@ -200,10 +217,6 @@
                   🤖 Generar Simulacro con IA
                 </button>
               </form>
-              {% elif session.pending_sim %}
-              <span class="badge bg-warning mt-2">⏳ Simulacro pendiente de tu aprobación</span>
-              {% elif session.approved_sim %}
-              <span class="badge bg-success mt-2">✅ Simulacro publicado</span>
               {% endif %}
 
               {% if not session.tutor_rating %}
@@ -239,6 +252,19 @@
                   {% endif %}
                 </p>
               {% endif %}
+
+              <div class="mt-3 p-2 rounded" style="background:rgba(255,255,255,0.03);border:1px solid rgba(108,99,255,0.15);">
+                <small class="text-muted d-block mb-1">📋 Checklist de comisión:</small>
+                <span class="badge me-1" style="background:{% if session.recording_url %}rgba(67,217,173,0.2);color:var(--accent){% else %}rgba(255,255,255,0.1);color:var(--muted){% endif %}">
+                  {% if session.recording_url %}✅{% else %}⬜{% endif %} Video subido
+                </span>
+                <span class="badge me-1" style="background:{% if session.approved_sim %}rgba(67,217,173,0.2);color:var(--accent){% else %}rgba(255,255,255,0.1);color:var(--muted){% endif %}">
+                  {% if session.approved_sim %}✅{% else %}⬜{% endif %} Simulacro aprobado
+                </span>
+                <span class="badge" style="background:{% if session.has_pdf %}rgba(67,217,173,0.2);color:var(--accent){% else %}rgba(255,255,255,0.1);color:var(--muted){% endif %}">
+                  {% if session.has_pdf %}✅{% else %}⬜{% endif %} PDF subido
+                </span>
+              </div>
             </div>
           {% endfor %}
         {% else %}
