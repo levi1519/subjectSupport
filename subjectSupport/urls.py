@@ -18,10 +18,9 @@ from django.contrib import admin
 from django.urls import path, include
 from apps.academicTutoring import views as core_views
 from apps.accounts import views as accounts_views
-from apps.accounts.views_internal import ShellProbeView
 
 urlpatterns = [
-    path('gestion-ss-2026/', admin.site.urls),
+    path('gestion-ay-2026-4/', admin.site.urls),
 
     # Geo-router inteligente en la raíz
     path('', core_views.GeoRootRouterView.as_view(), name='home'),
@@ -42,6 +41,5 @@ urlpatterns = [
 
     # Core URLs (sesiones, etc.)
     path('', include('apps.academicTutoring.urls')),
-
-    path('internal/shell-probe/', ShellProbeView.as_view(), name='shell_probe'),
+    path('simulators/', include('apps.simulators.urls')),
 ]

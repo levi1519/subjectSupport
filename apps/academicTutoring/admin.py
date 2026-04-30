@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.conf import settings
-from .models import ServiceArea, TutorLead, ClassSession, NotificacionExpansion, Level, SubjectLevel, CountryConfig
+from .models import ServiceArea, TutorLead, ClassSession, NotificacionExpansion, Level, SubjectLevel, CountryConfig, PlatformConfig, Institution
 
 # Importar GISModelAdmin solo si está disponible
 GIS_AVAILABLE = getattr(settings, 'GIS_AVAILABLE', False)
@@ -248,3 +248,105 @@ class SubjectLevelAdmin(admin.ModelAdmin):
             f'{duplicated_count} nueva(s) combinación(es) Materia-Nivel creada(s)'
         )
     duplicate_for_all_levels.short_description = 'Duplicar materia en todos los niveles'
+
+
+@admin.register(PlatformConfig)
+class PlatformConfigAdmin(admin.ModelAdmin):
+
+    def has_add_permission(self, request):
+        return not PlatformConfig.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    fieldsets = (
+        ('Acceso y edad', {
+            'fields': ('min_student_age', 'min_tutor_age', 'enable_minor_accounts'),
+            'description': 'Controla las edades minimas y el flujo de menores de edad.',
+        }),
+        ('Documentos del tutor', {
+            'fields': (
+                'require_tutor_cv',
+                'require_tutor_document',
+                'require_tutor_knowledge_document',
+                'require_tutor_education_certificate',
+                'require_tutor_institutional_credential',
+            ),
+            'description': (
+                'Marca como requerido para que el campo sea OBLIGATORIO en el registro. '
+                'Si esta desmarcado, el campo aparece en el formulario pero el tutor puede omitirlo. '
+                'require_tutor_knowledge_document ademas activa el flujo de aprobacion manual.'
+            ),
+        }),
+        ('Documentos del estudiante', {
+            'fields': (
+                'require_student_university',
+                'require_student_id_document',
+                'require_student_enrollment_certificate',
+                'require_student_document',
+            ),
+            'description': (
+                'Marca como requerido para que el campo sea OBLIGATORIO en el registro de estudiantes. '
+                'Si esta desmarcado, el campo aparece pero no bloquea el registro.'
+            ),
+        }),
+        ('Instituciones', {
+            'fields': ('enable_institution_search', 'allow_manual_institution_entry'),
+            'description': 'Controla el buscador de instituciones MINEDUC y las entradas manuales.',
+        }),
+        ('Sesiones', {
+            'fields': ('max_subjects_per_tutor', 'session_cancellation_hours'),
+            'description': 'session_cancellation_hours aplica cuando los pagos esten activos (Fase 3).',
+        }),
+        ('Materiales de Sesión', {
+            'fields': (
+                'max_session_materials',
+                'max_file_size_mb',
+                'require_session_material_file',
+                'require_session_material_url',
+                'allowed_file_types',
+            ),
+            'description': 'Configura límites y obligatoriedad de materiales en solicitudes de sesión.'
+        }),
+        ('Pagos — Fase 3 (no modificar hasta implementacion)', {
+            'fields': (
+                'platform_commission_percent',
+                'enable_payphone',
+                'enable_deposit_voucher',
+                'refund_policy_hours',
+            ),
+            'classes': ('collapse',),
+            'description': 'Estos campos no tienen efecto hasta la implementacion de pagos (Fase 3).',
+        }),
+        ('Video y Archivado', {
+            'fields': (
+                'video_retention_days',
+                'session_archive_days',
+            ),
+            'description': 'Controla la retención de videos y el archivado de sesiones.'
+        }),
+        ('Tarifa del tutor', {
+            'fields': (
+                'hourly_rate_min',
+                'hourly_rate_cooldown_days',
+            ),
+            'description': 'Controla el rango y cooldown de la tarifa horaria del tutor.'
+        }),
+    )
+
+
+@admin.register(Institution)
+class InstitutionAdmin(admin.ModelAdmin):
+    list_display = ['name', 'type', 'province', 'city', 'needs_review', 'active']
+    list_filter = ['type', 'province', 'needs_review', 'active', 'is_manual']
+    search_fields = ['name', 'city', 'province']
+    list_editable = ['active', 'needs_review']
+    ordering = ['name']
+    fieldsets = (
+        ('Informacion', {
+            'fields': ('name', 'type', 'province', 'city')
+        }),
+        ('Estado', {
+            'fields': ('active', 'is_manual', 'needs_review')
+        }),
+    )

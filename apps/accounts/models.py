@@ -151,7 +151,9 @@ class TutorProfileManager(models.Manager):
         ).filter(
             subjects_taught__knowledge_area__slug=knowledge_area_slug,
             user__user_type='tutor',
-            user__is_active=True
+            user__is_active=True,
+            hourly_rate__isnull=False,
+            hourly_rate__gt=0,
         ).distinct()
         if active_codes is not None:
             queryset = queryset.filter(user__country_code__in=active_codes)
@@ -161,7 +163,9 @@ class TutorProfileManager(models.Manager):
         """Fallback queryset returning all active tutors ordered by name."""
         queryset = self.select_related('user').prefetch_related('subjects_taught').filter(
             user__user_type='tutor',
-            user__is_active=True
+            user__is_active=True,
+            hourly_rate__isnull=False,
+            hourly_rate__gt=0,
         )
         if active_codes is not None:
             queryset = queryset.filter(user__country_code__in=active_codes)
@@ -186,7 +190,9 @@ class TutorProfileManager(models.Manager):
             'subjects_taught', 'subjects_taught__knowledge_area'
         ).filter(
             user__user_type='tutor',
-            user__is_active=True
+            user__is_active=True,
+            hourly_rate__isnull=False,
+            hourly_rate__gt=0,
         )
         if active_codes is not None:
             queryset = queryset.filter(user__country_code__in=active_codes)
@@ -208,7 +214,9 @@ class TutorProfileManager(models.Manager):
         ).filter(
             user__user_type='tutor',
             user__is_active=True,
-            user__country_code__iexact=country_code
+            user__country_code__iexact=country_code,
+            hourly_rate__isnull=False,
+            hourly_rate__gt=0,
         )
         if active_codes is not None:
             queryset = queryset.filter(user__country_code__in=active_codes)
@@ -262,11 +270,24 @@ class TutorProfile(models.Model):
         verbose_name='Tarifa por Hora (USD)',
         help_text='Precio por hora de tutoría en dólares'
     )
+    hourly_rate_updated_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Tarifa actualizada el',
+        help_text='Fecha de la última vez que el tutor estableció o modificó su tarifa'
+    )
     phone_number = models.CharField(
         max_length=20,
         blank=True,
         null=True,
         verbose_name='Número de teléfono'
+    )
+    avatar = models.ImageField(
+        upload_to='tutors/avatars/',
+        blank=True,
+        null=True,
+        verbose_name='Foto de perfil',
+        help_text='Sube tu foto de perfil'
     )
     bio = models.TextField(
         blank=True,
@@ -293,10 +314,109 @@ class TutorProfile(models.Model):
     )
     birth_date = models.DateField(null=True, blank=True, verbose_name='Fecha de nacimiento')
     cedula = models.CharField(max_length=20, blank=True, null=True, verbose_name='Cédula / Identificación')
+    university_name = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='Universidad / Institución',
+        help_text='Universidad donde enseña o trabajó'
+    )
+    university_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='URL de la Institución',
+        help_text='Solo para instituciones extranjeras'
+    )
+    linkedin_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='LinkedIn',
+        help_text='Perfil de LinkedIn (opcional). Ej: https://linkedin.com/in/tu-nombre'
+    )
+    is_foreign_institution = models.BooleanField(
+        default=False,
+        verbose_name='Institución en el extranjero'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     documents_required = models.BooleanField(
         default=True,
         verbose_name='Documentos Requeridos'
+    )
+    document_file = models.FileField(
+        upload_to='documents/tutors/',
+        blank=True,
+        null=True,
+        verbose_name='Documento (CV / Credencial)',
+        help_text='PDF, imagen u otro archivo que acredite tu experiencia'
+    )
+    cv_file = models.FileField(
+        upload_to='documents/tutors/cv/',
+        blank=True,
+        null=True,
+        verbose_name='Currículum Vitae (PDF)',
+        help_text='CV en formato PDF. Máximo 5MB.'
+    )
+    employment_status = models.CharField(
+        max_length=30,
+        blank=True,
+        default='',
+        choices=(
+            ('desempleado', 'Desempleado / Freelancer'),
+            ('empleado_no_docente', 'Empleado (no sector educativo)'),
+            ('docente_activo', 'Docente activo en institución'),
+        ),
+        verbose_name='Situación laboral',
+        help_text='Estado laboral actual del tutor'
+    )
+    education_level = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        choices=(
+            ('bachiller', 'Bachiller'),
+            ('tecnico', 'Técnico / Tecnólogo'),
+            ('universitario', 'Universitario / Egresado'),
+            ('posgrado', 'Posgrado (Maestría / Doctorado)'),
+        ),
+        verbose_name='Nivel de educación',
+        help_text='Nivel educativo más alto alcanzado'
+    )
+    education_certificate_file = models.FileField(
+        upload_to='documents/tutors/education/',
+        blank=True,
+        null=True,
+        verbose_name='Certificado de nivel educativo (PDF)',
+        help_text='Título, diploma o certificado que acredite el nivel declarado'
+    )
+    institution = models.ForeignKey(
+        'academicTutoring.Institution',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tutors',
+        verbose_name='Institución donde labora'
+    )
+    institutional_credential_file = models.FileField(
+        upload_to='documents/tutors/institutional/',
+        blank=True,
+        null=True,
+        verbose_name='Credencial institucional',
+        help_text='Carnet o ID de la universidad/institución donde enseñas actualmente'
+    )
+    knowledge_document_file = models.FileField(
+        upload_to='documents/tutors/knowledge/',
+        null=True,
+        blank=True,
+        verbose_name='Documento de conocimientos'
+    )
+    is_approved = models.BooleanField(
+        default=True,
+        verbose_name='Tutor aprobado',
+        help_text='Desactivar cuando documentación está pendiente de revisión'
+    )
+    welcome_shown = models.BooleanField(
+        default=False,
+        verbose_name='Mensaje de bienvenida mostrado'
     )
 
     # Custom manager
@@ -316,6 +436,21 @@ class TutorProfile(models.Model):
         from datetime import date
         today = date.today()
         return today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
+
+    @property
+    def days_until_rate_change(self):
+        if not self.hourly_rate_updated_at:
+            return 0
+        from django.utils import timezone
+        from datetime import timedelta
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        cooldown_until = (
+            self.hourly_rate_updated_at +
+            timedelta(days=config.hourly_rate_cooldown_days)
+        )
+        remaining = (cooldown_until - timezone.now()).days
+        return max(0, remaining)
 
 
 class ClientProfile(models.Model):
@@ -339,11 +474,11 @@ class ClientProfile(models.Model):
         null=True,
         verbose_name='Número de teléfono'
     )
-    avatar_url = models.URLField(
+    avatar = models.ImageField(
+        upload_to='clients/avatars/',
         blank=True,
         null=True,
-        verbose_name='URL del Avatar',
-        help_text='Enlace a tu foto de perfil'
+        verbose_name='Foto de perfil',
     )
     is_minor = models.BooleanField(
         default=False,
@@ -376,6 +511,53 @@ class ClientProfile(models.Model):
     )
     birth_date = models.DateField(null=True, blank=True, verbose_name='Fecha de nacimiento')
     cedula = models.CharField(max_length=20, blank=True, null=True, verbose_name='Cédula / Identificación')
+    university_name = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='Universidad donde estudia',
+        help_text='Universidad actual del estudiante'
+    )
+    document_file = models.FileField(
+        upload_to='documents/students/',
+        blank=True,
+        null=True,
+        verbose_name='Documento institucional',
+        help_text='Constancia de matrícula, carnet u otro documento de tu institución educativa'
+    )
+    student_type = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        choices=(
+            ('universitario', 'Estudiante universitario'),
+            ('autodidacta', 'Autodidacta'),
+        ),
+        verbose_name='Tipo de estudiante',
+        help_text='¿Eres estudiante de una institución educativa o aprendiz independiente?'
+    )
+    id_document_file = models.FileField(
+        upload_to='documents/students/id/',
+        blank=True,
+        null=True,
+        verbose_name='Cédula de identidad (PDF o imagen)',
+        help_text='Cédula o documento de identidad vigente'
+    )
+    enrollment_file = models.FileField(
+        upload_to='documents/students/enrollment/',
+        blank=True,
+        null=True,
+        verbose_name='Carnet o constancia de matrícula',
+        help_text='Carnet estudiantil vigente o constancia de matrícula'
+    )
+    institution = models.ForeignKey(
+        'academicTutoring.Institution',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='students',
+        verbose_name='Institución educativa'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -402,6 +584,11 @@ class Notification(models.Model):
     )
     message = models.CharField(max_length=255)
     is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Leída el'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -37,6 +37,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'manage_subjects' %}">Mis Materias</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'tutor_session_history' %}">📋 Historial</a>
+                    </li>
                     {% if user.country_code %}
                         <li class="nav-item d-flex align-items-center">
                             <span class="nav-link" style="font-size: 1.2rem;" title="{{ user.country_code|upper }}">
@@ -76,8 +79,8 @@
                         <a class="nav-link" href="{% url 'logout' %}?next={% url 'tutor_landing' %}">Cerrar Sesión</a>
                     </li>
                     <li class="nav-item d-flex align-items-center ms-3">
-                        {% if profile.avatar_url %}
-                            <img src="{{ profile.avatar_url|drive_url }}" 
+                        {% if profile.avatar %}
+                            <img src="{{ profile.avatar.url }}" 
                                  alt="Avatar"
                                  style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);background:var(--surface);"
                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -131,6 +134,39 @@
             {% endfor %}
         {% endif %}
 
+        {% if show_welcome %}
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-3"
+             role="alert"
+             style="border: 1px solid var(--accent); background: rgba(67,217,173,0.15);">
+            <span style="font-size:2rem;">🎉</span>
+            <div>
+                <strong>¡Bienvenido a EduLatam, {{ user.name }}!</strong><br>
+                <span>Tu cuenta ha sido aprobada. Ya puedes recibir solicitudes de estudiantes.
+                Completa tu perfil y agrega tus materias para aparecer en las búsquedas.</span>
+            </div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        {% if upcoming_reminder %}
+          {% for sess in upcoming_reminder %}
+          <div class="alert d-flex align-items-center gap-3 mb-3"
+               style="background:rgba(255,209,102,0.15);border:1px solid var(--warning);border-radius:10px;">
+            <span style="font-size:2rem;">⏰</span>
+            <div>
+              <strong style="color:var(--warning);">Clase por empezar</strong><br>
+              <span class="text-muted">
+                {{ sess.subject }} con <strong>{{ sess.client.name }}</strong>
+                el {{ sess.scheduled_date|date:"d/m/Y" }} a las {{ sess.scheduled_time|time:"H:i" }}
+              </span>
+              {% if sess.meeting_url %}
+                — <a href="{% url 'meeting_room' sess.id %}" class="text-warning fw-bold">Entrar ahora</a>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
         {% if notifications %}
             {% for notif in notifications %}
                 <div class="alert alert-warning alert-dismissible fade show d-flex justify-content-between align-items-center" role="alert">
@@ -167,8 +203,8 @@
                                         <tr style="border: none;">
                                             <td style="padding: 16px; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle;">
                                                 <div class="d-flex align-items-center gap-2">
-                                                    {% if session.client.client_profile.avatar_url %}
-                                                        <img src="{{ session.client.client_profile.avatar_url|drive_url }}" 
+                                                    {% if session.client.client_profile.avatar %}
+                                                        <img src="{{ session.client.client_profile.avatar.url }}" 
                                                              style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
                                                     {% else %}
                                                         <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width:32px;height:32px;background:var(--accent);font-size:0.9rem;">
@@ -233,8 +269,8 @@
                                     {% for session in upcoming_sessions %}
                                         <tr>
                                             <td class="d-flex align-items-center gap-2">
-                                                {% if session.client.client_profile.avatar_url %}
-                                                    <img src="{{ session.client.client_profile.avatar_url|drive_url }}"
+                                                {% if session.client.client_profile.avatar %}
+                                                    <img src="{{ session.client.client_profile.avatar.url }}"
                                                          style="width:28px;height:28px;border-radius:50%;object-fit:cover;">
                                                 {% else %}
                                                     <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#1A1A2E;font-size:0.8rem;font-weight:700;">

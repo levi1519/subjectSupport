@@ -8,7 +8,8 @@ from django.views.generic import TemplateView, FormView, UpdateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
 from django.utils import timezone
-from datetime import timedelta
+from django.core.cache import cache
+from datetime import timedelta, datetime
 
 from .forms import (
     TutorRegistrationForm, 
@@ -22,6 +23,57 @@ from .models import TutorProfile, ClientProfile, Notification
 from . import services
 
 
+# ─── RFC-D13: Login Rate Limiting ─────────────────────────────────────────
+
+_RL_MAX_ATTEMPTS = 5
+_RL_WINDOW_SECONDS = 15 * 60  # 15 minutes
+
+
+def _get_client_ip(request):
+    """
+    Returns the real client IP.
+    MUST read HTTP_X_FORWARDED_FOR first (Railway proxy sets this header).
+    Falls back to REMOTE_ADDR.
+    """
+    xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    if xff:
+        return xff.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', '127.0.0.1')
+
+
+def _check_rate_limit(request):
+    """
+    Returns (blocked: bool, remaining_attempts: int).
+    blocked MUST be True when failed attempts >= _RL_MAX_ATTEMPTS.
+    """
+    ip = _get_client_ip(request)
+    attempts = cache.get(f'login_attempts_{ip}', 0)
+    if attempts >= _RL_MAX_ATTEMPTS:
+        return True, 0
+    return False, _RL_MAX_ATTEMPTS - attempts
+
+
+def _register_failed_attempt(request):
+    """
+    Increments the failed attempt counter for this IP.
+    TTL MUST be set to _RL_WINDOW_SECONDS on every write (sliding window).
+    """
+    ip = _get_client_ip(request)
+    key = f'login_attempts_{ip}'
+    cache.set(key, cache.get(key, 0) + 1, _RL_WINDOW_SECONDS)
+
+
+def _clear_rate_limit(request):
+    """
+    Deletes the failed attempt counter for this IP.
+    MUST be called on every successful authentication.
+    """
+    ip = _get_client_ip(request)
+    cache.delete(f'login_attempts_{ip}')
+
+# ──────────────────────────────────────────────────────────────────────────
+
+
 class RegisterChoiceView(TemplateView):
     """Generic registration view that allows users to choose their type."""
     template_name = 'accounts/register_choice.html'
@@ -32,13 +84,39 @@ class RegisterTutorView(FormView):
     template_name = 'accounts/register_tutor.html'
     form_class = TutorRegistrationForm
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.method in ('POST', 'PUT'):
+            kwargs['files'] = self.request.FILES
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from apps.academicTutoring.models import PlatformConfig
+        context['config'] = PlatformConfig.get_config()
+        return context
+
     def form_valid(self, form):
         # DEBUG: print(f"DEBUG TUTOR: Form validado OK. Datos: {form.cleaned_data.get('email')}")
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+
+        # Validar credencial institucional si declaró universidad
+        university_name = form.cleaned_data.get('university_name', '').strip()
+        if university_name and not form.cleaned_data.get('institutional_credential_file'):
+            form.add_error('institutional_credential_file', 'Si perteneces a una institución, debes subir tu carnet o ID institucional.')
+            return self.form_invalid(form)
         country_code = self.request.geo_data.get('country_code', '') if hasattr(self.request, 'geo_data') else ''
         success, user, error = services.register_tutor(self.request, form, country_code)
-        if success:
-            # DEBUG: print(f"DEBUG TUTOR: Usuario creado exitosamente, redirigiendo a tutor_dashboard...")
-            messages.success(self.request, '¡Bienvenido! Tu cuenta de tutor ha sido creada exitosamente.')
+        if success and error == 'pending_approval':
+            messages.warning(
+                self.request,
+                'Registro exitoso. Tu cuenta esta pendiente de aprobacion. '
+                'Revisaremos tus documentos y te notificaremos por email cuando puedas acceder.'
+            )
+            return redirect('tutor_login')
+        elif success:
+            messages.success(self.request, 'Bienvenido! Tu cuenta de tutor ha sido creada exitosamente.')
             return redirect('tutor_dashboard')
         # DEBUG: print(f"DEBUG TUTOR: Error en services.register_tutor: {error}")
         messages.error(self.request, error)
@@ -58,6 +136,13 @@ class RegisterClientView(FormView):
         if request.user.is_authenticated:
             return redirect('client_dashboard')
         return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        context['enable_minor_accounts'] = config.enable_minor_accounts
+        return context
 
     def form_valid(self, form):
         # DEBUG: print(f"DEBUG CLIENT: Form validado OK. Datos: {form.cleaned_data.get('email')}")
@@ -110,16 +195,41 @@ class StudentLoginView(LoginView):
             if request.user.user_type == 'tutor':
                 return redirect('tutor_dashboard')
             return redirect('client_dashboard')
+        if request.method == 'POST':
+            blocked, _ = _check_rate_limit(request)
+            if blocked:
+                form = self.get_form()
+                form.add_error(
+                    None,
+                    f'Demasiados intentos fallidos. '
+                    f'Por favor espera {_RL_WINDOW_SECONDS // 60} minutos.'
+                )
+                return self.form_invalid(form)
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
+        _clear_rate_limit(self.request)
         user = form.get_user()
         # Verify user is actually a student
         if user.user_type != 'client':
             form.add_error(None, 'Credenciales incorrectas.')
             return self.form_invalid(form)
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        if config.require_tutor_document:
+            try:
+                if not user.tutor_profile.is_approved:
+                    form.add_error(None, 'Tu cuenta está pendiente de aprobación por el administrador. '
+                                         'Recibirás una notificación cuando sea revisada.')
+                    return self.form_invalid(form)
+            except Exception:
+                pass
         messages.success(self.request, f'¡Bienvenido de nuevo, {user.name}!')
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        _register_failed_attempt(self.request)
+        return super().form_invalid(form)
 
     def get_success_url(self):
         """Redirect based on user role - Admin/Staff go to /admin/"""
@@ -143,16 +253,51 @@ class TutorLoginView(LoginView):
             if request.user.user_type == 'tutor':
                 return redirect('tutor_dashboard')
             return redirect('client_dashboard')
+        if request.method == 'POST':
+            blocked, _ = _check_rate_limit(request)
+            if blocked:
+                form = self.get_form()
+                form.add_error(
+                    None,
+                    f'Demasiados intentos fallidos. '
+                    f'Por favor espera {_RL_WINDOW_SECONDS // 60} minutos.'
+                )
+                return self.form_invalid(form)
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
+        _clear_rate_limit(self.request)
         user = form.get_user()
         # Verify user is actually a tutor
         if user.user_type != 'tutor':
             form.add_error(None, 'Credenciales incorrectas.')
             return self.form_invalid(form)
-        messages.success(self.request, f'¡Bienvenido de nuevo, {user.name}!')
+
+        # Verificar aprobacion
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        try:
+            profile = user.tutor_profile
+            needs_approval = (
+                config.require_tutor_knowledge_document or
+                config.require_tutor_document or
+                config.require_tutor_cv
+            )
+            if needs_approval and not profile.is_approved:
+                form.add_error(None,
+                    'Tu cuenta esta pendiente de aprobacion. '
+                    'El administrador revisara tus documentos y te notificara cuando puedas acceder.'
+                )
+                return self.form_invalid(form)
+        except Exception:
+            pass
+
+        messages.success(self.request, f'Bienvenido de nuevo, {user.name}!')
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        _register_failed_attempt(self.request)
+        return super().form_invalid(form)
 
     def get_success_url(self):
         """
@@ -190,6 +335,14 @@ class TutorDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from django.utils import timezone as tz
+        from datetime import timedelta
+        # RF-011-B: eliminar notificaciones leídas hace más de 24h
+        Notification.objects.filter(
+            recipient=self.request.user,
+            is_read=True,
+            read_at__lt=tz.now() - timedelta(hours=24)
+        ).delete()
         from apps.academicTutoring.models import ClassSession
         context['pending_sessions'] = ClassSession.objects.get_tutor_sessions(
             self.request.user, status='pending'
@@ -212,6 +365,63 @@ class TutorDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context['notifications'] = Notification.objects.filter(
             recipient=self.request.user, is_read=False
         )
+        context['pending_count'] = context['pending_sessions'].count()
+        context['all_active_sessions'] = list(context['pending_sessions']) + list(context['upcoming_sessions'])
+
+        # RFC-RF040 — Session reminders
+        from django.core.cache import cache as _cache
+        from django.utils import timezone as _tz
+        from datetime import timedelta as _td
+        import datetime as _dt
+
+        _now = _tz.now()
+        _cutoff = _now + _td(hours=24)
+
+        for _session in context['upcoming_sessions']:
+            _scheduled_dt = _tz.make_aware(
+                _dt.datetime.combine(_session.scheduled_date, _session.scheduled_time),
+                _tz.get_current_timezone()
+            ) if not _tz.is_aware(
+                _dt.datetime.combine(_session.scheduled_date, _session.scheduled_time)
+            ) else _dt.datetime.combine(_session.scheduled_date, _session.scheduled_time)
+
+            _reminder_key = f'reminder_sent_{_session.id}'
+            if _now <= _scheduled_dt <= _cutoff and not _cache.get(_reminder_key):
+                Notification.objects.get_or_create(
+                    recipient=self.request.user,
+                    message=(
+                        f'⏰ Recordatorio: tienes una clase de {_session.subject} '
+                        f'con {_session.client.name} hoy a las '
+                        f'{_session.scheduled_time.strftime("%H:%M")}.'
+                    )
+                )
+                _cache.set(_reminder_key, True, 60 * 60 * 24)
+
+        # D12-C: Recordatorio de sesiones próximas
+        from apps.academicTutoring.models import PlatformConfig
+        config = PlatformConfig.get_config()
+        now = timezone.now()
+        reminder_cutoff = now + timedelta(hours=config.session_reminder_hours)
+        upcoming_reminder = []
+        for sess in context['upcoming_sessions']:
+            try:
+                sess_dt = timezone.make_aware(
+                    datetime.combine(sess.scheduled_date, sess.scheduled_time)
+                )
+                if now <= sess_dt <= reminder_cutoff:
+                    upcoming_reminder.append(sess)
+            except Exception:
+                pass
+        context['upcoming_reminder'] = upcoming_reminder
+
+        try:
+            profile = context.get('profile')
+            if profile and not profile.welcome_shown:
+                context['show_welcome'] = True
+                profile.welcome_shown = True
+                profile.save(update_fields=['welcome_shown'])
+        except Exception:
+            pass
         return context
 
 
@@ -228,6 +438,14 @@ class ClientDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from django.utils import timezone as tz
+        from datetime import timedelta
+        # RF-011-B: eliminar notificaciones leídas hace más de 24h
+        Notification.objects.filter(
+            recipient=self.request.user,
+            is_read=True,
+            read_at__lt=tz.now() - timedelta(hours=24)
+        ).delete()
         from apps.academicTutoring.models import ClassSession
         context['upcoming_sessions'] = ClassSession.objects.get_client_sessions(
             self.request.user, status='confirmed'
@@ -250,6 +468,59 @@ class ClientDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         context['notifications'] = Notification.objects.filter(
             recipient=self.request.user, is_read=False
         )
+
+        # For each past session, annotate simulator status
+        from apps.simulators.models import Simulator
+        for session in context['past_sessions']:
+            pub_sim = Simulator.objects.filter(
+                session=session,
+                student=self.request.user,
+                status__in=['published', 'pending_approval', 'approved']
+            ).first()
+            session.pub_simulator = pub_sim
+            rejected_sim = Simulator.objects.filter(
+                session=session,
+                student=self.request.user,
+                status='rejected'
+            ).first()
+            session.rejected_simulator = rejected_sim
+
+        # Check for expiring and expired videos (D15)
+        from django.utils import timezone as tz
+        from datetime import timedelta
+
+        now = tz.now()
+        warn_threshold = now + timedelta(days=3)
+        expired_threshold = now - timedelta(days=7)
+
+        # Videos expiring within 3 days (not yet expired)
+        expiring_videos = context['past_sessions'].filter(
+            recording_url__isnull=False,
+            video_expires_at__gt=now,
+            video_expires_at__lte=warn_threshold,
+        ) if hasattr(context['past_sessions'], 'filter') else []
+
+        # Videos expired in the last 7 days
+        expired_videos = context['past_sessions'].filter(
+            recording_url__isnull=False,
+            video_expires_at__isnull=False,
+            video_expires_at__lte=now,
+            video_expires_at__gte=expired_threshold,
+        ) if hasattr(context['past_sessions'], 'filter') else []
+
+        context['expiring_videos'] = expiring_videos
+        context['expired_videos'] = expired_videos
+
+        # D15-A: Sesiones completadas sin video del tutor
+        from apps.academicTutoring.models import ClassSession as CS
+        sessions_without_video = CS.objects.filter(
+            client=self.request.user,
+            status='completed',
+            recording_url__isnull=True,
+            is_archived=False
+        ).select_related('tutor')[:5]
+        context['sessions_without_video'] = sessions_without_video
+
         return context
 
 

@@ -21,8 +21,9 @@ class GeoRestrictionMiddleware:
         '/static/',
         '/media/',
         '/accounts/logout/',
+        '/accounts/password-reset/',
         '/internal/',
-        '/gestion-ss-2026/',
+        '/gestion-ay-2026-4/',
     ]
 
     def __init__(self, get_response):

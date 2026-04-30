@@ -95,29 +95,29 @@
                             {% endfor %}
                         {% endif %}
 
-                        <form method="post" novalidate>
+                        <form method="post" enctype="multipart/form-data" novalidate>
                             {% csrf_token %}
 
                             {% if form.errors %}
-                            <div style="background: #fee2e2; border: 1px solid #ef4444; border-radius: 8px; padding: 16px; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.1);">
+                            <div style="background: #fee2e2; border: 1px solid #ef4444; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
                                 <div style="display: flex; align-items: center; margin-bottom: 12px;">
                                     <span style="font-size: 20px; margin-right: 8px;">⚠️</span>
-                                    <strong style="color: #991b1b; font-size: 16px;">Errores en el formulario</strong>
+                                    <strong style="color: #991b1b; font-size: 16px;">Corrige los siguientes errores para continuar</strong>
                                 </div>
                                 <ul style="margin: 0; padding-left: 20px; color: #7f1d1d; font-size: 14px; line-height: 1.6;">
-                                    {% for field, errors in form.errors.items %}
-                                        <li style="margin-bottom: 8px;">
-                                            <strong style="color: #991b1b;">{{ field|title }}:</strong> 
-                                            {{ errors|join:", " }}
-                                        </li>
-                                    {% endfor %}
+                                    {% if form.cv_file.errors %}<li><strong>CV (PDF):</strong> {{ form.cv_file.errors|join:", " }}</li>{% endif %}
+                                    {% if form.knowledge_document_file.errors %}<li><strong>Justificacion de conocimientos:</strong> {{ form.knowledge_document_file.errors|join:", " }}</li>{% endif %}
+                                    {% if form.education_certificate_file.errors %}<li><strong>Certificado educativo:</strong> {{ form.education_certificate_file.errors|join:", " }}</li>{% endif %}
+                                    {% if form.institutional_credential_file.errors %}<li><strong>Credencial institucional:</strong> {{ form.institutional_credential_file.errors|join:", " }}</li>{% endif %}
+                                    {% if form.name.errors %}<li><strong>Nombre:</strong> {{ form.name.errors|join:", " }}</li>{% endif %}
+                                    {% if form.email.errors %}<li><strong>Correo:</strong> {{ form.email.errors|join:", " }}</li>{% endif %}
+                                    {% if form.birth_date.errors %}<li><strong>Fecha de nacimiento:</strong> {{ form.birth_date.errors|join:", " }}</li>{% endif %}
+                                    {% if form.cedula.errors %}<li><strong>Cedula:</strong> {{ form.cedula.errors|join:", " }}</li>{% endif %}
+                                    {% if form.subjects_taught.errors %}<li><strong>Materias:</strong> {{ form.subjects_taught.errors|join:", " }}</li>{% endif %}
+                                    {% if form.password1.errors %}<li><strong>Contrasena:</strong> {{ form.password1.errors|join:", " }}</li>{% endif %}
+                                    {% if form.password2.errors %}<li><strong>Confirmar contrasena:</strong> {{ form.password2.errors|join:", " }}</li>{% endif %}
+                                    {% if form.non_field_errors %}<li>{{ form.non_field_errors|join:", " }}</li>{% endif %}
                                 </ul>
-                            </div>
-                            {% endif %}
-
-                            {% if form.non_field_errors %}
-                            <div style="background: #fff3e0; color: #e65100; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
-                                {{ form.non_field_errors }}
                             </div>
                             {% endif %}
 
@@ -146,15 +146,6 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="{{ form.country_code.id_for_label }}" class="form-label">Nacionalidad</label>
-                                {{ form.country_code }}
-                                <small class="text-muted">Selecciona tu país de origen (esto no afecta tu ubicación actual)</small>
-                                {% if form.country_code.errors %}
-                                    <div class="text-danger small">{{ form.country_code.errors }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="mb-3">
                                 <label for="{{ form.cedula.id_for_label }}" class="form-label">{{ form.cedula.label }} <span style="color: #ef4444;">*</span></label>
                                 {{ form.cedula }}
                                 <div class="form-text">{{ form.cedula.help_text }}</div>
@@ -163,16 +154,123 @@
                                 {% endif %}
                             </div>
 
+                            <!-- Situacion laboral -->
+                            <div class="mb-3">
+                                <label for="{{ form.employment_status.id_for_label }}" class="form-label">{{ form.employment_status.label }} <span style="color:#ef4444;">*</span></label>
+                                {{ form.employment_status }}
+                                {% if form.employment_status.errors %}<div class="text-danger small">{{ form.employment_status.errors }}</div>{% endif %}
+                            </div>
+
+                            <!-- Nivel educativo -->
+                            <div class="mb-3">
+                                <label for="{{ form.education_level.id_for_label }}" class="form-label">{{ form.education_level.label }} <span style="color:#ef4444;">*</span></label>
+                                {{ form.education_level }}
+                                {% if form.education_level.errors %}<div class="text-danger small">{{ form.education_level.errors }}</div>{% endif %}
+                            </div>
+
+                            <!-- Certificado educativo -->
+                            <div class="mb-3">
+                                <label for="{{ form.education_certificate_file.id_for_label }}" class="form-label">
+                                    {{ form.education_certificate_file.label }}
+                                    {% if config.require_tutor_education_certificate %}
+                                        <span class="text-danger fw-bold">* Obligatorio</span>
+                                    {% else %}
+                                        <span class="text-muted small">(Opcional)</span>
+                                    {% endif %}
+                                </label>
+                                {{ form.education_certificate_file }}
+                                <small class="text-muted">PDF, JPG, PNG · Max {{ config.max_file_size_mb }}MB</small>
+                                <div class="form-text">{{ form.education_certificate_file.help_text }}</div>
+                                {% if form.education_certificate_file.errors %}<div class="text-danger small">{{ form.education_certificate_file.errors }}</div>{% endif %}
+                            </div>
+
+                            <!-- Institucion (buscador + manual) -->
+                            <div class="mb-3" id="institution_section" style="display:none;">
+                                <label class="form-label">Institucion donde eres docente activo</label>
+                                {{ form.institution_id }}
+                                <input type="text" id="institution_search" class="form-control mb-2"
+                                       placeholder="Busca tu universidad o institucion..."
+                                       autocomplete="off">
+                                <div id="institution_results" class="list-group" style="max-height:200px;overflow-y:auto;"></div>
+                                <div class="mt-2" id="manual_institution_section" style="display:none;">
+                                    {{ form.institution_manual }}
+                                    <small class="text-muted">Si tu institucion no aparece en la lista, ingresala manualmente. Quedara en revision del admin.</small>
+                                </div>
+                            </div>
+
+                            <!-- Credencial institucional -->
+                            <div class="mb-3" id="institutional_credential_section" style="display:none;">
+                                <label for="{{ form.institutional_credential_file.id_for_label }}" class="form-label">
+                                    {{ form.institutional_credential_file.label }}
+                                    {% if config.require_tutor_institutional_credential %}
+                                        <span class="text-danger fw-bold">* Obligatorio</span>
+                                    {% else %}
+                                        <span class="text-muted small">(Opcional)</span>
+                                    {% endif %}
+                                </label>
+                                {{ form.institutional_credential_file }}
+                                <small class="text-muted">PDF, JPG, PNG · Max {{ config.max_file_size_mb }}MB</small>
+                                <div class="form-text">{{ form.institutional_credential_file.help_text }}</div>
+                                {% if form.institutional_credential_file.errors %}<div class="text-danger small">{{ form.institutional_credential_file.errors }}</div>{% endif %}
+                            </div>
+
+                            <!-- Documento de conocimientos -->
+                            <div class="mb-3" id="knowledge_document_section">
+                                <label for="{{ form.knowledge_document_file.id_for_label }}" class="form-label">
+                                    {{ form.knowledge_document_file.label }}
+                                    {% if config.require_tutor_knowledge_document %}
+                                        <span class="text-danger fw-bold">* Obligatorio</span>
+                                    {% else %}
+                                        <span class="text-muted small">(Opcional)</span>
+                                    {% endif %}
+                                </label>
+                                {{ form.knowledge_document_file }}
+                                <small class="text-muted">Solo PDF · Max {{ config.max_file_size_mb }}MB</small>
+                                {% if form.knowledge_document_file.help_text %}
+                                    <div class="form-text">{{ form.knowledge_document_file.help_text }}</div>
+                                {% endif %}
+                                {% if form.knowledge_document_file.errors %}
+                                    <div class="text-danger small">{{ form.knowledge_document_file.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- CV -->
+                            <div class="mb-3">
+                                <label for="{{ form.cv_file.id_for_label }}" class="form-label">
+                                    {{ form.cv_file.label }}
+                                    {% if config.require_tutor_cv %}
+                                        <span class="text-danger fw-bold">* Obligatorio</span>
+                                    {% else %}
+                                        <span class="text-muted small">(Opcional)</span>
+                                    {% endif %}
+                                </label>
+                                {{ form.cv_file }}
+                                <small class="text-muted">Solo PDF · Max {{ config.max_file_size_mb }}MB</small>
+                                <div class="form-text">{{ form.cv_file.help_text }}</div>
+                                {% if form.cv_file.errors %}<div class="text-danger small">{{ form.cv_file.errors }}</div>{% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                                    {{ form.phone_number.label }} <span style="color: #ef4444;">*</span>
+                                </label>
+                                {{ form.phone_number }}
+                                <div class="form-text">{{ form.phone_number.help_text }}</div>
+                                {% if form.phone_number.errors %}
+                                    <div class="text-danger small">{{ form.phone_number.errors }}</div>
+                                {% endif %}
+                            </div>
+
                             <div class="subjects-section mb-4">
                                 <label class="form-label fw-bold">Materias que enseñas <span style="color: #ef4444;">*</span></label>
                                 <div class="form-text mb-3" style="color: rgba(255,255,255,0.6);">Selecciona hasta 5 materias de las categorías disponibles</div>
                                 
-                                {% if form.subjects.errors %}
-                                    <div class="alert alert-danger mb-3">{{ form.subjects.errors }}</div>
+                                {% if form.subjects_taught.errors %}
+                                    <div class="alert alert-danger mb-3">{{ form.subjects_taught.errors }}</div>
                                 {% endif %}
                                 
                                 <div class="accordion" id="subjectsAccordion" style="background: transparent;">
-                                    {% regroup form.subjects.field.queryset by knowledge_area as area_list %}
+                                    {% regroup form.subjects_taught.field.queryset by knowledge_area as area_list %}
                                     {% for area in area_list %}
                                     <div class="accordion-item" style="background: var(--surface, #1f2937); border: 1px solid rgba(108, 99, 255, 0.2); border-radius: 12px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
                                         <h2 class="accordion-header" id="heading{{ forloop.counter }}">
@@ -205,7 +303,7 @@
                                                                     cursor: pointer;"
                                                              onmouseover="this.style.background='rgba(108,99,255,0.1)'; this.style.borderColor='var(--primary)';"
                                                              onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(255,255,255,0.1)';">
-                                                            <input class="form-check-input subject-checkbox" type="checkbox" name="subjects" 
+                                                            <input class="form-check-input subject-checkbox" type="checkbox" name="subjects_taught" 
                                                                    value="{{ subject.id }}" id="subject_{{ subject.id }}"
                                                                    style="width: 20px; height: 20px; margin-right: 12px; cursor: pointer;">
                                                             <label class="form-check-label w-100" for="subject_{{ subject.id }}" 
@@ -244,12 +342,12 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="{{ form.avatar_url.id_for_label }}" class="form-label">{{ form.avatar_url.label }}</label>
-                                {{ form.avatar_url }}
-                                {% if form.avatar_url.errors %}
-                                    <div class="text-danger small">{{ form.avatar_url.errors }}</div>
+                                <label for="{{ form.avatar.id_for_label }}" class="form-label">{{ form.avatar.label }}</label>
+                                {{ form.avatar }}
+                                {% if form.avatar.errors %}
+                                    <div class="text-danger small">{{ form.avatar.errors }}</div>
                                 {% endif %}
-                                <small class="text-muted">Opcional: URL de tu foto de perfil (Google Drive, Dropbox, etc.)</small>
+                                <small class="text-muted">JPG, PNG · Máx 5MB · Opcional</small>
                             </div>
 
                             <div class="mb-3">
@@ -285,12 +383,12 @@
     <script>
         // Contador y validación de materias (máximo 5)
         document.addEventListener('DOMContentLoaded', function() {
-            const checkboxes = document.querySelectorAll('input[name="subjects"]');
+            const checkboxes = document.querySelectorAll('input[name="subjects_taught"]');
             const counter = document.getElementById('count');
             const MAX_SUBJECTS = 5;
             
             function updateCount() {
-                const selected = document.querySelectorAll('input[name="subjects"]:checked').length;
+                const selected = document.querySelectorAll('input[name="subjects_taught"]:checked').length;
                 counter.textContent = selected;
                 
                 // Actualizar estilo del contador
@@ -306,7 +404,7 @@
             
             checkboxes.forEach(function(checkbox) {
                 checkbox.addEventListener('change', function() {
-                    const selected = document.querySelectorAll('input[name="subjects"]:checked').length;
+                    const selected = document.querySelectorAll('input[name="subjects_taught"]:checked').length;
                     
                     if (selected > MAX_SUBJECTS) {
                         this.checked = false;
@@ -319,6 +417,65 @@
             
             // Inicializar contador
             updateCount();
+
+            // Mostrar/ocultar secciones segun employment_status
+            const employmentSelect = document.getElementById('{{ form.employment_status.id_for_label }}');
+            const institutionSection = document.getElementById('institution_section');
+            const credentialSection = document.getElementById('institutional_credential_section');
+
+            function toggleEmploymentSections() {
+                const val = employmentSelect ? employmentSelect.value : '';
+                if (val === 'docente_activo') {
+                    institutionSection.style.display = 'block';
+                    credentialSection.style.display = 'block';
+                } else {
+                    institutionSection.style.display = 'none';
+                    credentialSection.style.display = 'none';
+                }
+            }
+
+            if (employmentSelect) {
+                employmentSelect.addEventListener('change', toggleEmploymentSections);
+                toggleEmploymentSections();
+            }
+
+            // Buscador de instituciones via fetch
+            const searchInput = document.getElementById('institution_search');
+            const resultsDiv = document.getElementById('institution_results');
+            const institutionIdInput = document.getElementById('{{ form.institution_id.id_for_label }}');
+            const manualSection = document.getElementById('manual_institution_section');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const q = this.value.trim();
+                    if (q.length < 2) { resultsDiv.innerHTML = ''; return; }
+                    fetch(`/api/institutions/?q=${encodeURIComponent(q)}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            resultsDiv.innerHTML = '';
+                            if (data.results.length === 0) {
+                                manualSection.style.display = 'block';
+                                resultsDiv.innerHTML = '<div class="list-group-item text-muted">No se encontraron resultados. Ingresa manualmente abajo.</div>';
+                            } else {
+                                manualSection.style.display = 'none';
+                                data.results.forEach(inst => {
+                                    const item = document.createElement('button');
+                                    item.type = 'button';
+                                    item.className = 'list-group-item list-group-item-action';
+                                    item.style.background = 'var(--surface)';
+                                    item.style.color = 'var(--text)';
+                                    item.textContent = `${inst.name} - ${inst.city}`;
+                                    item.addEventListener('click', () => {
+                                        searchInput.value = inst.name;
+                                        institutionIdInput.value = inst.id;
+                                        resultsDiv.innerHTML = '';
+                                    });
+                                    resultsDiv.appendChild(item);
+                                });
+                            }
+                        });
+                });
+            }
         });
     </script>
 </body>

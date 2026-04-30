@@ -5,14 +5,19 @@ from django.contrib import messages
 from django.views.generic import View, TemplateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse
+from django.utils import timezone
+from django.core.paginator import Paginator
+from datetime import timedelta
 
-from .models import ClassSession, NotificacionExpansion
+from .models import ClassSession, NotificacionExpansion, SessionMaterial, PlatformConfig
 from .forms import SessionRequestForm, SessionConfirmationForm, NotificacionExpansionForm
 from . import services as academic_services
 from apps.accounts.models import User, TutorProfile, Notification, KnowledgeArea
 from .services.meeting_service import update_session_with_meeting
 from .utils import send_cancellation_email
 
+from apps.accounts.mixins.roles import ClientRequiredMixin, TutorRequiredMixin
+from django.core.exceptions import PermissionDenied
 import logging
 
 logger = logging.getLogger(__name__)
@@ -22,9 +27,10 @@ logger = logging.getLogger(__name__)
 def mark_notification_read(request, notif_id):
     """Mark a notification as read via POST."""
     if request.method == 'POST':
+        from django.utils import timezone as tz
         Notification.objects.filter(
             id=notif_id, recipient=request.user
-        ).update(is_read=True)
+        ).update(is_read=True, read_at=tz.now())
     return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
 
 
@@ -90,16 +96,12 @@ def tutor_landing_view(request):
     return render(request, 'landing/tutor_landing.html', {'user_type': 'Tutor'})
 
 
-class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class TutorSelectionView(ClientRequiredMixin, TemplateView):
     """
     View for clients to see and select tutors with geographical prioritization.
     Uses TutorProfileManager for optimized queries.
     """
     template_name = 'core/tutor_selection.html'
-    
-    def test_func(self):
-        """Only clients can view tutor selection"""
-        return self.request.user.user_type == 'client'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -114,52 +116,114 @@ class TutorSelectionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         active_codes = get_active_country_codes()
         from apps.academicTutoring.models import CountryConfig
 
-        # Get filter params
-        search_query   = self.request.GET.get('search', '')
-        country_filter = self.request.GET.get('country_code', '')
+        search_query         = self.request.GET.get('search', '')
+        province_filter      = self.request.GET.get('province', '').strip()
+        city_filter          = self.request.GET.get('city', '').strip()
+        knowledge_area_slug  = self.request.GET.get('knowledge_area', '')
+        subject_filter       = self.request.GET.get('subject', '').strip()
 
-        # Query tutors — country filter takes precedence
-        if country_filter:
-            tutors_qs = TutorProfile.objects.get_tutors_filtered_by_country(country_filter, active_codes=active_codes)
+        # Base queryset
+        if city_filter:
+            tutors_qs = TutorProfile.objects.get_tutors_fallback(
+                active_codes=['EC']
+            ).filter(city__icontains=city_filter)
+        elif province_filter:
+            tutors_qs = TutorProfile.objects.get_tutors_fallback(
+                active_codes=['EC']
+            ).filter(country__icontains='Ecuador')
         elif client_country:
-            tutors_qs = TutorProfile.objects.get_tutors_by_country_priority(client_country, active_codes=active_codes)
+            tutors_qs = TutorProfile.objects.get_tutors_by_country_priority(
+                client_country, active_codes=active_codes
+            )
         else:
-            tutors_qs = TutorProfile.objects.get_tutors_fallback(active_codes=active_codes)
+            tutors_qs = TutorProfile.objects.get_tutors_fallback(
+                active_codes=active_codes
+            )
 
-        # Apply knowledge area filter if provided
-        knowledge_area_slug = self.request.GET.get('knowledge_area', '')
+        # Filtro por área
         if knowledge_area_slug:
             tutors_qs = TutorProfile.objects.get_tutors_by_knowledge_area(
                 knowledge_area_slug, active_codes=active_codes
             )
 
-        # Apply search filter
+        # Filtro por materia específica
+        if subject_filter:
+            tutors_qs = tutors_qs.filter(
+                subjects_taught__name__icontains=subject_filter
+            ).distinct()
+
+        # Filtro por búsqueda libre
         tutors_qs = TutorProfile.objects.filter_by_search(tutors_qs, search_query)
 
+        # REGLA DE NEGOCIO: tutor visible SOLO si tiene tarifa Y materias configuradas
+        tutors_qs = tutors_qs.filter(
+            hourly_rate__isnull=False,
+            hourly_rate__gt=0,
+        ).exclude(subjects_taught=None)
+        from django.db.models import Count
+        tutors_qs = tutors_qs.annotate(
+            num_subjects=Count('subjects_taught')
+        ).filter(num_subjects__gt=0)
+
+        # D14-A: Paginación
+        paginator = Paginator(tutors_qs, 12)
+        page_number = self.request.GET.get('page', 1)
+        try:
+            page_obj = paginator.page(page_number)
+        except (PageNotAnInteger, EmptyPage):
+            page_obj = paginator.page(1)
+
         context.update({
-            'tutors':         tutors_qs,
-            'client_country': client_country,
-            'search_query':   search_query,
-            'country_filter': country_filter,
-            'countries':      CountryConfig.objects.filter(active=True).order_by('country_name'),
-            'knowledge_areas': KnowledgeArea.objects.all().order_by('name'),
+            'tutors':            page_obj,
+            'paginator':         paginator,
+            'page_obj':          page_obj,
+            'is_paginated':      paginator.num_pages > 1,
+            'client_country':    client_country,
+            'search_query':      search_query,
+            'province_filter':   province_filter,
+            'city_filter':       city_filter,
             'knowledge_area_filter': knowledge_area_slug,
+            'subject_filter':    subject_filter,
+            'countries':         CountryConfig.objects.filter(active=True).order_by('country_name'),
+            'knowledge_areas':   KnowledgeArea.objects.prefetch_related('subjects').all().order_by('name'),
+            'ecuador_provinces': [
+                ('Azuay', ['Cuenca', 'Gualaceo', 'Paute']),
+                ('Bolívar', ['Guaranda', 'Chillanes']),
+                ('Cañar', ['Azogues', 'Cañar', 'La Troncal']),
+                ('Carchi', ['Tulcán', 'Montúfar']),
+                ('Chimborazo', ['Riobamba', 'Alausí', 'Guano']),
+                ('Cotopaxi', ['Latacunga', 'La Maná', 'Salcedo']),
+                ('El Oro', ['Machala', 'Pasaje', 'Santa Rosa', 'Huaquillas']),
+                ('Esmeraldas', ['Esmeraldas', 'Atacames', 'Quinindé']),
+                ('Galápagos', ['Puerto Ayora', 'Puerto Baquerizo Moreno']),
+                ('Guayas', ['Guayaquil', 'Milagro', 'Durán', 'Samborondón', 'Daule', 'El Triunfo', 'Naranjito', 'Yaguachi']),
+                ('Imbabura', ['Ibarra', 'Otavalo', 'Cotacachi']),
+                ('Loja', ['Loja', 'Catamayo', 'Cariamanga']),
+                ('Los Ríos', ['Babahoyo', 'Quevedo', 'Ventanas', 'Vinces']),
+                ('Manabí', ['Portoviejo', 'Manta', 'Chone', 'Jipijapa', 'Pedernales']),
+                ('Morona Santiago', ['Macas', 'Gualaquiza']),
+                ('Napo', ['Tena', 'Archidona']),
+                ('Orellana', ['Francisco de Orellana', 'Loreto']),
+                ('Pastaza', ['Puyo', 'Mera']),
+                ('Pichincha', ['Quito', 'Cayambe', 'Rumiñahui', 'Mejía']),
+                ('Santa Elena', ['Santa Elena', 'Salinas', 'La Libertad']),
+                ('Santo Domingo de los Tsáchilas', ['Santo Domingo']),
+                ('Sucumbíos', ['Nueva Loja', 'Shushufindi']),
+                ('Tungurahua', ['Ambato', 'Baños', 'Pelileo']),
+                ('Zamora Chinchipe', ['Zamora', 'Yantzaza']),
+            ],
         })
 
         return context
 
 
-class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+class RequestSessionView(ClientRequiredMixin, FormView):
     """
     View for clients to request a new session with a specific tutor.
     Uses SessionService for business logic.
     """
     template_name = 'core/request_session.html'
     form_class = SessionRequestForm
-    
-    def test_func(self):
-        """Only clients can request sessions"""
-        return self.request.user.user_type == 'client'
     
     def dispatch(self, request, *args, **kwargs):
         """Get tutor from URL parameter"""
@@ -173,10 +237,15 @@ class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from .forms import SessionMaterialForm
+        from .models import PlatformConfig
+        config = PlatformConfig.get_config()
         context.update({
             'tutor': self.tutor,
             'tutor_profile': getattr(self.tutor, 'tutor_profile', None),
-            'tutor_subjects': getattr(self.tutor, 'tutor_profile', None).subjects_taught.all() if getattr(self.tutor, 'tutor_profile', None) else []
+            'tutor_subjects': getattr(self.tutor, 'tutor_profile', None).subjects_taught.all() if getattr(self.tutor, 'tutor_profile', None) else [],
+            'material_form': SessionMaterialForm(),
+            'config': config,
         })
         return context
     
@@ -188,24 +257,60 @@ class RequestSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     
     def form_valid(self, form):
         """Use academic_services to create session"""
+        from .models import PlatformConfig
+        config = PlatformConfig.get_config()
+        if config:
+            if config.require_session_material_url:
+                if not self.request.POST.get('material_url', '').strip():
+                    form.add_error('material_url', 'La URL del material es obligatoria.')
+                    return self.form_invalid(form)
+            if config.require_session_material_file:
+                if not self.request.FILES.get('material_file'):
+                    messages.error(self.request, 'Debes subir un archivo de material para solicitar la clase.')
+                    return self.form_invalid(form)
+
         success, session, error = academic_services.create_session(
             self.tutor,
             self.request.user,
             form  # ← form object, NOT form.cleaned_data
         )
         
-        if success:
-            messages.success(
-                self.request,
-                f'¡Solicitud enviada! El tutor {session.tutor.name} revisará tu solicitud pronto.'
-            )
-            return redirect('client_dashboard')
-        else:
-            messages.error(self.request, f'Error al crear sesión: {error}')
+        if not success:
+            messages.error(self.request, f'Error al crear sesion: {error}')
             return self.form_invalid(form)
 
+        # Guardar materiales adjuntos
+        from .models import SessionMaterial
+        material_count = 0
 
-class ConfirmSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+        url = self.request.POST.get('material_url', '').strip()
+        if url:
+            SessionMaterial.objects.create(
+                session=session,
+                type='url',
+                url=url,
+                uploaded_by=self.request.user
+            )
+            material_count += 1
+
+        material_file = self.request.FILES.get('material_file')
+        if material_file and material_count < config.max_session_materials:
+            SessionMaterial.objects.create(
+                session=session,
+                type='file',
+                file=material_file,
+                filename=material_file.name,
+                uploaded_by=self.request.user
+            )
+
+        messages.success(
+            self.request,
+            f'Solicitud enviada! El tutor {session.tutor.name} revisara tu solicitud pronto.'
+        )
+        return redirect('client_dashboard')
+
+
+class ConfirmSessionView(TutorRequiredMixin, FormView):
     """
     View for tutors to confirm a session.
     Uses SessionService for business logic.
@@ -213,25 +318,27 @@ class ConfirmSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     template_name = 'core/confirm_session.html'
     form_class = SessionConfirmationForm
     
-    def test_func(self):
-        """Only tutors can confirm sessions and must own the session"""
-        session = get_object_or_404(ClassSession, id=self.kwargs['session_id'])
-        return (self.request.user.user_type == 'tutor' and 
-                self.request.user == session.tutor)
-    
     def dispatch(self, request, *args, **kwargs):
-        """Get session and validate status"""
+        """Get session and validate status and ownership"""
         self.session = get_object_or_404(ClassSession, id=kwargs['session_id'])
         
+        # NUEVA VALIDACION DE PROPIEDAD
+        if request.user != self.session.tutor:
+            raise PermissionDenied("No tienes permiso para confirmar esta sesion.")
+            
         if self.session.status != 'pending':
-            messages.warning(request, 'Esta sesión ya ha sido procesada.')
+            messages.warning(request, 'Esta sesion ya ha sido procesada.')
             return redirect('tutor_dashboard')
         
         return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from .forms import SessionMaterialForm
+        from .models import SessionMaterial
         context['session'] = self.session
+        context['material_form'] = SessionMaterialForm()
+        context['existing_materials'] = SessionMaterial.objects.filter(session=self.session)
         return context
     
     def get_form_kwargs(self):
@@ -247,17 +354,42 @@ class ConfirmSessionView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             self.session, self.request.user, form
         )
         
-        if success:
-            # Show platform-specific success message
-            platform_name = session.get_meeting_platform_display()
-            messages.success(
-                self.request,
-                f'¡Sesión confirmada! Se ha generado el enlace de {platform_name}.'
-            )
-            return redirect('tutor_dashboard')
-        else:
-            messages.error(self.request, f'Error al confirmar sesión: {error}')
+        if not success:
+            messages.error(self.request, f'Error al confirmar sesion: {error}')
             return self.form_invalid(form)
+
+        # Guardar materiales del tutor
+        from .models import SessionMaterial, PlatformConfig
+        config = PlatformConfig.get_config()
+        existing_count = SessionMaterial.objects.filter(session=session).count()
+
+        url = self.request.POST.get('material_url', '').strip()
+        if url and existing_count < config.max_session_materials:
+            SessionMaterial.objects.create(
+                session=session,
+                type='url',
+                url=url,
+                uploaded_by=self.request.user
+            )
+            existing_count += 1
+
+        material_file = self.request.FILES.get('material_file')
+        if material_file and existing_count < config.max_session_materials:
+            SessionMaterial.objects.create(
+                session=session,
+                type='file',
+                file=material_file,
+                filename=material_file.name,
+                uploaded_by=self.request.user
+            )
+
+        # Show platform-specific success message
+        platform_name = session.get_meeting_platform_display()
+        messages.success(
+            self.request,
+            f'Sesion confirmada! Se ha generado el enlace de {platform_name}.'
+        )
+        return redirect('tutor_dashboard')
 
 
 class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -291,6 +423,9 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
         """Cancel the session using academic_services"""
         # Guardar estado previo para idempotencia (no enviar email si ya estaba cancelada)
         prev_status = self.session.status
+        
+        # Obtener motivo de cancelación
+        cancellation_reason = request.POST.get('cancellation_reason', '').strip()
 
         success, session, error = academic_services.cancel_session(
             self.session,
@@ -298,6 +433,11 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
         if success:
+            # Guardar motivo de cancelación si se proporcionó
+            if cancellation_reason:
+                session.cancellation_reason = cancellation_reason
+                session.save(update_fields=['cancellation_reason'])
+            
             # Enviar email SOLO si la sesión NO estaba ya cancelada (idempotencia)
             if prev_status != 'cancelled':
                 # Determinar contraparte: quien NO canceló recibe el email
@@ -306,9 +446,13 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
                 else:
                     recipient = session.tutor
                 send_cancellation_email(session, request.user, recipient)
+                _reason_text = f' Motivo: {cancellation_reason}' if cancellation_reason else ''
+                notification_message = (f'{request.user.name} canceló la clase de {session.subject} '
+                                      f'del {session.scheduled_date.strftime("%d/%m/%Y")} a las '
+                                      f'{session.scheduled_time.strftime("%H:%M")}.{_reason_text}')
                 Notification.objects.create(
                     recipient=recipient,
-                    message=f'{request.user.name} canceló la clase de {session.subject} del {session.scheduled_date.strftime("%d/%m/%Y")} a las {session.scheduled_time.strftime("%H:%M")}'
+                    message=notification_message
                 )
                 messages.info(request, f'La sesión ha sido cancelada. Se notificó a {recipient.name}.')
             else:
@@ -326,12 +470,15 @@ class CancelSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
             return reverse('client_dashboard')
 
 
-class CompleteSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
+class CompleteSessionView(TutorRequiredMixin, View):
     """Mark a confirmed session as completed. Tutor only."""
 
-    def test_func(self):
+    # AGREGADO: Validacion de propiedad en dispatch
+    def dispatch(self, request, *args, **kwargs):
         self.session = get_object_or_404(ClassSession, id=self.kwargs['session_id'])
-        return self.request.user == self.session.tutor
+        if request.user != self.session.tutor:
+            raise PermissionDenied("No tienes permiso para completar esta sesion.")
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         session = self.session
@@ -344,12 +491,15 @@ class CompleteSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
         return redirect('tutor_dashboard')
 
 
-class UpdateMeetingUrlView(LoginRequiredMixin, UserPassesTestMixin, View):
+class UpdateMeetingUrlView(TutorRequiredMixin, View):
     """Allow tutor to update meeting_url of a confirmed session."""
 
-    def test_func(self):
+    # AGREGADO: Validacion de propiedad en dispatch
+    def dispatch(self, request, *args, **kwargs):
         self.session = get_object_or_404(ClassSession, id=self.kwargs['session_id'])
-        return self.request.user == self.session.tutor
+        if request.user != self.session.tutor:
+            raise PermissionDenied("No puedes actualizar el enlace de esta sesion.")
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         session = self.session
@@ -389,7 +539,7 @@ class MeetingRoomView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     
     def get_success_url(self):
         """Redirect to appropriate dashboard"""
-        if self.request.user.user_type == 'tutor':
+        if getattr(self.request.user, 'user_type', '') == 'tutor':
             return reverse('tutor_dashboard')
         else:
             return reverse('client_dashboard')
@@ -483,3 +633,329 @@ class NotificarmeExpansionView(View):
     def get(self, request):
         # Si no es POST, redirigir a servicio_no_disponible
         return redirect('servicio_no_disponible')
+
+
+from django.http import JsonResponse
+from .models import Institution, SessionMaterial
+
+def institution_search_api(request):
+    """API endpoint para búsqueda de instituciones vía autocomplete."""
+    q = request.GET.get('q', '').strip()
+    if len(q) < 2:
+        return JsonResponse({'results': []})
+    institutions = Institution.objects.filter(
+        name__icontains=q,
+        active=True
+    ).values('id', 'name', 'type', 'city', 'province')[:10]
+    return JsonResponse({'results': list(institutions)})
+
+
+class TutorSessionHistoryView(TutorRequiredMixin, TemplateView):
+    template_name = 'core/tutor_session_history.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        config = PlatformConfig.get_config()
+        archive_cutoff = timezone.now() - timedelta(
+            days=config.session_archive_days
+        )
+
+        # Auto-archive old completed sessions
+        ClassSession.objects.filter(
+            tutor=self.request.user,
+            status__in=['completed', 'cancelled'],
+            is_archived=False,
+            updated_at__lt=archive_cutoff
+        ).update(is_archived=True, archived_at=timezone.now())
+
+        # Auto-archivo cuando las 3 condiciones de comisión están cumplidas
+        from apps.academicTutoring.models import SessionMaterial as SM
+        completed_all = ClassSession.objects.filter(
+            tutor=self.request.user,
+            status='completed',
+            is_archived=False
+        )
+        for sess in completed_all:
+            has_recording = bool(sess.recording_url)
+            has_approved_sim = sess.simulators.filter(status='approved').exists()
+            has_pdf = SM.objects.filter(session=sess, file__iendswith='.pdf').exists()
+            if has_recording and has_approved_sim and has_pdf:
+                sess.is_archived = True
+                sess.archived_at = timezone.now()
+                sess.save(update_fields=['is_archived', 'archived_at'])
+
+        completed = ClassSession.objects.filter(
+            tutor=self.request.user,
+            status='completed',
+            is_archived=False
+        ).select_related('client').prefetch_related(
+            'materials', 'simulators'
+        ).order_by('-scheduled_date')
+
+        cancelled = ClassSession.objects.filter(
+            tutor=self.request.user,
+            status='cancelled',
+            is_archived=False
+        ).select_related('client').order_by('-scheduled_date')
+
+        # Simulators pending tutor approval
+        from apps.simulators.models import Simulator
+        pending_simulators = Simulator.objects.filter(
+            tutor=self.request.user,
+            status='pending_approval'
+        ).select_related('student', 'session').order_by('-created_at')
+
+        # Annotate simulator status per completed session
+        for session in completed:
+            session.pending_sim = session.simulators.filter(
+                status='pending_approval'
+            ).first()
+            session.approved_sim = session.simulators.filter(
+                status='approved'
+            ).first()
+            session.has_any_sim = session.simulators.exists()
+            session.sim_generating = session.simulators.filter(
+                generation_status='generating'
+            ).exists()
+            session.has_pdf = SM.objects.filter(
+                session=session, file__iendswith='.pdf'
+            ).exists()
+
+        context['completed_sessions'] = completed
+        context['cancelled_sessions'] = cancelled
+        context['pending_simulators'] = pending_simulators
+        context['archive_days'] = config.session_archive_days
+        return context
+
+
+class TutorUploadRecordingView(TutorRequiredMixin, View):
+    def dispatch(self, request, *args, **kwargs):
+        self.session = get_object_or_404(
+            ClassSession,
+            pk=kwargs['session_id'],
+            tutor=request.user,
+            status='completed'
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, session_id):
+        config = PlatformConfig.get_config()
+        recording_url = request.POST.get('recording_url', '').strip()
+        now = timezone.now()
+
+        if recording_url:
+            self.session.recording_url = recording_url
+            self.session.video_uploaded_at = now
+            self.session.video_expires_at = now + timedelta(
+                days=config.video_retention_days
+            )
+            self.session.save(update_fields=[
+                'recording_url', 'video_uploaded_at', 'video_expires_at'
+            ])
+            Notification.objects.create(
+                recipient=self.session.client,
+                message=(
+                    f'Tu tutor {self.session.tutor.name} subió el video de la sesión '
+                    f'"{self.session.subject}". Disponible para descarga durante '
+                    f'{config.video_retention_days} días (hasta '
+                    f'{self.session.video_expires_at.strftime("%d/%m/%Y")}).'
+                )
+            )
+            messages.success(request,
+                f'Video registrado. El estudiante tiene '
+                f'{config.video_retention_days} días para descargarlo.')
+        else:
+            messages.error(request, 'Ingresa una URL válida para el video.')
+
+        # Also handle additional material upload
+        material_url = request.POST.get('material_url', '').strip()
+        material_file = request.FILES.get('material_file')
+        existing_count = SessionMaterial.objects.filter(
+            session=self.session).count()
+
+        if material_url and existing_count < config.max_session_materials:
+            SessionMaterial.objects.create(
+                session=self.session,
+                type='url',
+                url=material_url,
+                uploaded_by=request.user
+            )
+            messages.success(request, 'Material adicional agregado.')
+
+        # VALIDACIÓN PDF RATIO — antes de crear SessionMaterial para archivos
+        if material_file:
+            # 1. Límite máximo de archivos
+            if existing_count >= config.max_session_materials:
+                messages.error(request,
+                    f'Límite de {config.max_session_materials} materiales alcanzado.')
+                return redirect('tutor_session_history')
+
+            # 2. Validar extensión
+            import os
+            ext = os.path.splitext(material_file.name)[1].lower()
+            allowed_all = [f'.{e.strip()}' for e in config.allowed_file_types.split(',')]
+            if ext not in allowed_all:
+                messages.error(request, f'Formato no permitido. Use: {config.allowed_file_types}')
+                return redirect('tutor_session_history')
+
+            # 3. Validar ratio de PDFs tras subir
+            existing_pdfs = SessionMaterial.objects.filter(
+                session=self.session,
+                file__endswith='.pdf'
+            ).count()
+            new_total = existing_count + 1
+            new_pdfs  = existing_pdfs + (1 if ext == '.pdf' else 0)
+            required_pdfs = max(1, int(new_total * config.min_pdf_materials_ratio))
+
+            # Solo advertir si el material actual ya supera 2 archivos y no hay PDFs
+            if new_total > 2 and new_pdfs == 0:
+                messages.warning(request,
+                    f'Recuerda: al menos {required_pdfs} de tus materiales debe(n) ser PDF '
+                    f'para que DeepSeek pueda generar un simulacro de calidad.')
+            # (no bloquear — solo advertir; el bloqueo real está en SimulatorGenerateView)
+
+            from apps.accounts.services import sanitize_filename
+            material_file.name = sanitize_filename(material_file.name)
+            SessionMaterial.objects.create(
+                session=self.session,
+                type='file',
+                file=material_file,
+                filename=material_file.name,
+                uploaded_by=request.user
+            )
+            messages.success(request, 'Archivo adicional agregado.')
+
+        return redirect('tutor_session_history')
+
+    def get(self, request, session_id):
+        return redirect('tutor_session_history')
+
+
+class SimulatorApproveView(TutorRequiredMixin, View):
+    def dispatch(self, request, *args, **kwargs):
+        from apps.simulators.models import Simulator
+        self.simulator = get_object_or_404(
+            Simulator,
+            pk=kwargs['pk'],
+            tutor=request.user,
+            status='pending_approval'
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, pk):
+        from apps.simulators.models import Simulator
+        action = request.POST.get('action')  # 'approve' or 'reject'
+        feedback = request.POST.get('feedback', '').strip()
+        now = timezone.now()
+
+        if action == 'approve':
+            self.simulator.status = 'approved'
+            self.simulator.tutor_reviewed_at = now
+            self.simulator.tutor_feedback = feedback or None
+            self.simulator.save(update_fields=[
+                'status', 'tutor_reviewed_at', 'tutor_feedback'
+            ])
+            Notification.objects.create(
+                recipient=self.simulator.student,
+                message=(
+                    f'Tu simulacro "{self.simulator.title}" fue aprobado '
+                    f'por {self.simulator.tutor.name}. ¡Ya puedes hacerlo!'
+                )
+            )
+            messages.success(request, 'Simulacro aprobado.')
+
+        elif action == 'reject':
+            self.simulator.status = 'rejected'
+            self.simulator.tutor_reviewed_at = now
+            self.simulator.tutor_feedback = feedback
+            self.simulator.save(update_fields=[
+                'status', 'tutor_reviewed_at', 'tutor_feedback'
+            ])
+            Notification.objects.create(
+                recipient=self.simulator.student,
+                message=(
+                    f'Tu simulacro "{self.simulator.title}" fue rechazado '
+                    f'por {self.simulator.tutor.name}. '
+                    f'Tu tutor generará uno nuevo cuando esté disponible.'
+                    + (f' Motivo: {feedback}' if feedback else '')
+                )
+            )
+            messages.warning(request, 'Simulacro rechazado. El tutor generará uno nuevo cuando esté listo.')
+        else:
+            messages.error(request, 'Acción inválida.')
+
+        return redirect('tutor_session_history')
+
+    def get(self, request, pk):
+        return redirect('tutor_session_history')
+
+
+class RateSessionView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """
+    Both tutor and student can rate a completed session.
+    One rating per user per session — cannot re-rate.
+    """
+
+    def test_func(self):
+        self.session = get_object_or_404(
+            ClassSession,
+            pk=self.kwargs['session_id'],
+            status='completed'
+        )
+        user = self.request.user
+        return (
+            user == self.session.tutor or
+            user == self.session.client
+        )
+
+    def post(self, request, session_id):
+        rating_str = request.POST.get('rating', '')
+        comment = request.POST.get('comment', '').strip()
+
+        try:
+            rating = int(rating_str)
+            if rating < 1 or rating > 5:
+                raise ValueError
+        except (ValueError, TypeError):
+            messages.error(request, 'Calificación inválida. Selecciona entre 1 y 5 estrellas.')
+            return redirect(self.get_redirect_url())
+
+        now = timezone.now()
+
+        if request.user == self.session.client:
+            if self.session.student_rating is not None:
+                messages.warning(request, 'Ya calificaste esta sesión.')
+                return redirect(self.get_redirect_url())
+            self.session.student_rating = rating
+            self.session.student_rating_comment = comment
+            self.session.student_rated_at = now
+            self.session.save(update_fields=[
+                'student_rating', 'student_rating_comment',
+                'student_rated_at'
+            ])
+            messages.success(request,
+                f'Calificaste la sesión con {rating} ★.')
+
+        elif request.user == self.session.tutor:
+            if self.session.tutor_rating is not None:
+                messages.warning(request, 'Ya calificaste esta sesión.')
+                return redirect(self.get_redirect_url())
+            self.session.tutor_rating = rating
+            self.session.tutor_rating_comment = comment
+            self.session.tutor_rated_at = now
+            self.session.save(update_fields=[
+                'tutor_rating', 'tutor_rating_comment',
+                'tutor_rated_at'
+            ])
+            messages.success(request,
+                f'Calificaste al estudiante con {rating} ★.')
+
+        return redirect(self.get_redirect_url())
+
+    def get_redirect_url(self):
+        if self.request.user.user_type == 'tutor':
+            return reverse('tutor_session_history')
+        return reverse('client_dashboard')
+
+    def get(self, request, session_id):
+        return redirect(self.get_redirect_url())

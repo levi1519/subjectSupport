@@ -86,6 +86,7 @@ def is_point_in_service_area(latitude, longitude):
     """
     Verifica si un punto está dentro de algún ServiceArea activo.
     Usa SQL raw para no depender de GIS_AVAILABLE ni de GDAL en runtime.
+    Si PostGIS no está disponible (base de datos estándar PostgreSQL), retorna False.
     """
     try:
         lon_float = float(longitude)
@@ -96,6 +97,16 @@ def is_point_in_service_area(latitude, longitude):
 
     try:
         from django.db import connection
+        from django.conf import settings
+        
+        # Si GIS no está disponible, retornar sin hacer la consulta espacial
+        if not getattr(settings, 'GIS_AVAILABLE', False):
+            logger.warning(
+                f"GIS not available. Skipping spatial query for Point ({lat_float}, {lon_float}). "
+                "Standard PostgreSQL backend in use."
+            )
+            return False, None
+        
         with connection.cursor() as cursor:
             cursor.execute("""
                 SELECT id, city_name, descripcion, activo

@@ -1,6 +1,56 @@
 import os
-GDAL_LIBRARY_PATH = os.environ.get('GDAL_LIBRARY_PATH')
-GEOS_LIBRARY_PATH = os.environ.get('GEOS_LIBRARY_PATH')
+import subprocess
+
+def _find_lib(name):
+    """Try multiple methods to find a library"""
+    import glob as _glob
+    
+    # Method 1: Check environment variable first
+    env_path = os.environ.get(f'{name.upper()}_LIBRARY_PATH')
+    if env_path and os.path.exists(env_path):
+        return env_path
+    
+    # Method 2: Try ldconfig (most reliable)
+    try:
+        result = subprocess.run(
+            ['ldconfig', '-p'],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            lines = result.stdout.split('\n')
+            for line in lines:
+                if name in line.lower() and '.so' in line:
+                    # Extract path from ldconfig output
+                    parts = line.strip().split('=>')
+                    if len(parts) > 1:
+                        path = parts[1].strip()
+                        if os.path.exists(path):
+                            return path
+    except (subprocess.SubprocessError, FileNotFoundError, TimeoutError):
+        pass
+    
+    # Method 3: Glob patterns in common locations
+    patterns = [
+        f'/nix/store/*/lib/lib{name}.so*',
+        f'/nix/store/*/{name}*',
+        f'/usr/lib*/lib{name}.so*',
+        f'/usr/local/lib*/lib{name}.so*',
+    ]
+    for p in patterns:
+        found = _glob.glob(p)
+        if found:
+            return found[0]
+    
+    return None
+
+# Try to find GDAL and GEOS libraries
+GDAL_LIBRARY_PATH = _find_lib('gdal')
+GEOS_LIBRARY_PATH = _find_lib('geos_c')
+
+# Only enable GIS if both libraries are found
+GIS_AVAILABLE = bool(GDAL_LIBRARY_PATH and GEOS_LIBRARY_PATH)
 
 
 
@@ -96,27 +146,14 @@ SKIP_GEO_CHECK = os.getenv('SKIP_GEO_CHECK', 'False') == 'True'
 # Application definition
 
 # Determinar si GIS está disponible (necesario para GeoDjango)
-GIS_AVAILABLE = False
-if not DEBUG:
-    # En producción siempre usar GIS (PostGIS estará disponible)
-    GIS_AVAILABLE = True
-else:
-    # En desarrollo LOCAL, deshabilitar temporalmente GIS (GDAL no instalado)
-    # Para habilitar: instalar GDAL y descomentar la siguiente línea
-    GIS_AVAILABLE = False
-    
-    # # Descomentar esto cuando GDAL esté instalado en Windows
-    # try:
-    #     from django.contrib.gis.db.backends.spatialite.base import DatabaseWrapper  # noqa: F401
-    #     GIS_AVAILABLE = True
-    # except (ImportError, Exception):
-    #     GIS_AVAILABLE = False
-    #     import warnings
-    #     warnings.warn(
-    #         "GDAL not available in development. GIS features disabled locally. "
-    #         "To enable: install OSGeo4W (Windows) or gdal-bin (Linux/Mac). "
-    #         "Production will use PostGIS normally."
-    #     )
+# GIS_AVAILABLE ya fue establecido arriba basado en si GDAL y GEOS fueron encontrados
+# En production, si no se encuentran, GIS será deshabilitado automáticamente
+if not GIS_AVAILABLE and not DEBUG:
+    import warnings
+    warnings.warn(
+        "GDAL/GEOS libraries not found. GIS will be disabled. "
+        f"GDAL_LIBRARY_PATH: {GDAL_LIBRARY_PATH}, GEOS_LIBRARY_PATH: {GEOS_LIBRARY_PATH}"
+    )
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -125,6 +162,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'storages',
+    'anymail',
 ]
 
 # Agregar django.contrib.gis solo si está disponible
@@ -134,6 +173,7 @@ if GIS_AVAILABLE:
 INSTALLED_APPS += [
     'apps.accounts',
     'apps.academicTutoring',
+    'apps.simulators',
 ]
 
 MIDDLEWARE = [
@@ -213,14 +253,24 @@ if DEBUG:
             }
         }
 else:
-    # Production: PostgreSQL con PostGIS para GeoDjango
+    # Production: PostgreSQL - use PostGIS if GDAL is available, otherwise standard PostgreSQL
     db_config = dj_database_url.config(
         default=os.getenv('DATABASE_URL'),
         conn_max_age=600,
         conn_health_checks=True,
     )
-    # Cambiar engine a PostGIS backend
-    db_config['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
+    # Use PostGIS backend only if GDAL/GEOS are available, otherwise use standard PostgreSQL
+    if GDAL_LIBRARY_PATH and GEOS_LIBRARY_PATH:
+        db_config['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
+    else:
+        db_config['ENGINE'] = 'django.db.backends.postgresql'
+        if not DEBUG:
+            import warnings
+            warnings.warn(
+                "GDAL/GEOS not found in production. Using standard PostgreSQL backend. "
+                "Geo-features will be limited. "
+                f"GDAL_LIBRARY_PATH: {GDAL_LIBRARY_PATH}, GEOS_LIBRARY_PATH: {GEOS_LIBRARY_PATH}"
+            )
     DATABASES = {
         'default': db_config
     }
@@ -280,12 +330,47 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # WhiteNoise configuration for serving static files
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Additional static files directories (if needed)
 STATICFILES_DIRS = [
     BASE_DIR / 'static',  # Global static folder for EduLatam CSS
 ]
+
+# ─── Supabase S3 — MEDIA FILES ONLY ───────────────────────────────────────
+# Static files are served by WhiteNoise and must NOT go to S3.
+_SUPABASE_KEY = os.getenv('SUPABASE_S3_KEY_ID', '')
+import logging
+_s3_logger = logging.getLogger(__name__)
+_s3_logger.warning(f"S3_KEY_ID length: {len(_SUPABASE_KEY)}")
+_s3_logger.warning(f"S3_SECRET length: {len(os.getenv('SUPABASE_S3_SECRET', ''))}")
+_s3_logger.warning(f"S3_BUCKET: {os.getenv('SUPABASE_S3_BUCKET', '')}")
+_s3_logger.warning(f"S3_URL length: {len(os.getenv('SUPABASE_S3_URL', ''))}")
+if not DEBUG and _SUPABASE_KEY:
+    AWS_ACCESS_KEY_ID = _SUPABASE_KEY
+    AWS_SECRET_ACCESS_KEY = os.getenv('SUPABASE_S3_SECRET', '')
+    AWS_STORAGE_BUCKET_NAME = os.getenv('SUPABASE_S3_BUCKET', '')
+    AWS_S3_ENDPOINT_URL = os.getenv('SUPABASE_S3_URL', '')
+    AWS_DEFAULT_ACL = 'public-read'
+    AWS_S3_FILE_OVERWRITE = True
+    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_REGION_NAME = 'us-west-2'
+    AWS_S3_ADDRESSING_STYLE = 'path'
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    _SUPABASE_REF = os.getenv('SUPABASE_S3_URL', '').split('.')[0].replace('https://', '')
+    AWS_S3_CUSTOM_DOMAIN = f'{_SUPABASE_REF}.supabase.co/storage/v1/object/public/{os.getenv("SUPABASE_S3_BUCKET", "")}'
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+# ──────────────────────────────────────────────────────────────────────────
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -305,10 +390,31 @@ SESSION_COOKIE_AGE = 3600
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SAVE_EVERY_REQUEST = True
 
-# Email configuration
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'noreply@subjectsupport.com'
-EMAIL_SUBJECT_PREFIX = '[SubjectSupport] '
+# ─── Email ───────────────────────────────────────────────────────────────────
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = os.getenv(
+        'EMAIL_BACKEND',
+        'django.core.mail.backends.smtp.EmailBackend'
+    )
+
+# Anymail — configuración para Resend (producción)
+ANYMAIL = {
+    'RESEND_API_KEY': os.getenv('ANYMAIL_RESEND_API_KEY', ''),
+}
+
+# Campos comunes de email
+DEFAULT_FROM_EMAIL  = os.getenv('DEFAULT_FROM_EMAIL', 'EduLatam <noreply@edulatam.com>')
+EMAIL_SUBJECT_PREFIX = '[EduLatam] '
+
+# SMTP fallback (solo aplica si EMAIL_BACKEND es smtp, i.e. en desarrollo local sin consola)
+EMAIL_HOST          = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT          = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS       = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER     = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_TIMEOUT       = int(os.getenv('EMAIL_TIMEOUT', '10'))
 
 # Security settings for production
 if not DEBUG:
@@ -373,6 +479,3 @@ LOGGING = {
         },
     },
 }
-
-
-ARCHITECTGUARD_SECRET = "ag-subjectsupport-2026"

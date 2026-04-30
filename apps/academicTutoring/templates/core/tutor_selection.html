@@ -53,15 +53,33 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'client_dashboard' %}">Mi Panel</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'user_profile' %}">Mi Perfil</a></li>
                     <li class="nav-item"><a class="nav-link active" href="{% url 'tutor_selection' %}" style="color: var(--primary) !important;">Buscar Tutores</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'simulators:list' %}">🎯 Simulacros</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Cerrar Sesión</a></li>
                     <!-- User Avatar & Country -->
                     <li class="nav-item d-flex align-items-center gap-2 ms-3">
-                        {% if request.user.avatar_url %}
-                            <img src="{{ request.user.avatar_url|drive_url }}" alt="Avatar" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-                            <div class="rounded-circle d-none align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);font-size:1rem;display:none!important;">{{ request.user.name|slice:":1"|upper }}</div>
-                        {% else %}
-                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);font-size:1rem;">{{ request.user.name|slice:":1"|upper }}</div>
-                        {% endif %}
+                        {% with avatar=None %}
+                          {% if request.user.user_type == 'tutor' and request.user.tutor_profile.avatar %}
+                            <img src="{{ request.user.tutor_profile.avatar.url }}"
+                                 alt="Avatar"
+                                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:none;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">
+                                {{ request.user.name|slice:":1"|upper|default:"U" }}
+                            </div>
+                          {% elif request.user.user_type == 'client' and request.user.client_profile.avatar %}
+                            <img src="{{ request.user.client_profile.avatar.url }}"
+                                 alt="Avatar"
+                                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:none;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">
+                                {{ request.user.name|slice:":1"|upper|default:"U" }}
+                            </div>
+                          {% else %}
+                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">
+                                {{ request.user.name|slice:":1"|upper|default:"U" }}
+                            </div>
+                          {% endif %}
+                        {% endwith %}
                         {% if request.user.country_code %}<span style="font-size:1.2rem;margin-left:4px;" title="{{ request.user.country_code|upper }}">{% with cc=request.user.country_code|upper %}{% if cc == "EC" %}🇪🇨{% elif cc == "MX" %}🇲🇽{% elif cc == "CO" %}🇨🇴{% elif cc == "AR" %}🇦🇷{% elif cc == "PE" %}🇵🇪{% elif cc == "CL" %}🇨🇱{% elif cc == "VE" %}🇻🇪{% elif cc == "BR" %}🇧🇷{% elif cc == "UY" %}🇺🇾{% elif cc == "PY" %}🇵🇾{% elif cc == "BO" %}🇧🇴{% elif cc == "PA" %}🇵🇦{% elif cc == "CR" %}🇨🇷{% elif cc == "GT" %}🇬🇹{% elif cc == "HN" %}🇭🇳{% elif cc == "SV" %}🇸🇻{% elif cc == "NI" %}🇳🇮{% elif cc == "DO" %}🇩🇴{% elif cc == "CU" %}🇨🇺{% elif cc == "PR" %}🇵🇷{% else %}🌎{% endif %}{% endwith %}</span>{% endif %}
                     </li>
                 </ul>
@@ -74,24 +92,35 @@
             <h1 class="display-5 fw-bold mb-3">Encuentra tu Tutor Perfecto</h1>
             <p class="lead mb-4">{% if client_city %}Mostrando tutores priorizados para tu país: {{ client_city }}{% else %}Explora nuestra red de tutores{% endif %}</p>
 
-            <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <input type="text" name="search" class="form-control form-control-lg"
-                           placeholder="Buscar por nombre o materia..." value="{{ search_query }}">
-                </div>
+            <form method="get" class="row g-3" id="search-form">
                 <div class="col-md-3">
-                    <select name="country_code" class="form-control form-control-lg">
-                        <option value="">Todos los países</option>
-                        {% for country in countries %}
-                            <option value="{{ country.country_code }}"
-                                {% if request.GET.country_code == country.country_code %}selected{% endif %}>
-                                {{ country.country_name }}
+                    <select name="province" class="form-control form-control-lg" id="province-select">
+                        <option value="">Todas las provincias</option>
+                        {% for province, cities in ecuador_provinces %}
+                            <option value="{{ province }}"
+                                {% if province_filter == province %}selected{% endif %}>
+                                {{ province }}
                             </option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <select name="knowledge_area" class="form-control form-control-lg">
+                <div class="col-md-2">
+                    <select name="city" class="form-control form-control-lg" id="city-select">
+                        <option value="">Todas las ciudades</option>
+                        {% for province, cities in ecuador_provinces %}
+                            {% if province_filter == province %}
+                                {% for city in cities %}
+                                    <option value="{{ city }}"
+                                        {% if city_filter == city %}selected{% endif %}>
+                                        {{ city }}
+                                    </option>
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="knowledge_area" class="form-control form-control-lg" id="area-select">
                         <option value="">Todas las áreas</option>
                         {% for area in knowledge_areas %}
                             <option value="{{ area.slug }}"
@@ -102,7 +131,18 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary btn-lg w-100">Buscar</button>
+                    <select name="subject" class="form-control form-control-lg" id="subject-select">
+                        <option value="">Todas las materias</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="text" name="search" class="form-control form-control-lg"
+                           placeholder="Nombre..." value="{{ search_query }}">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        Buscar
+                    </button>
                 </div>
             </form>
         </div>
@@ -126,13 +166,17 @@
                         <div class="card-body d-flex flex-column h-100">
                             <div class="flex-grow-1">
                                 <div class="d-flex align-items-center mb-3">
-                                    {% load accounts_filters %}
-                                    {% if tutor.avatar_url %}
-                                        <img src="{{ tutor.avatar_url|drive_url }}"
-                                             style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);margin-right:12px;">
+                                    {% if tutor.avatar %}
+                                        <img src="{{ tutor.avatar.url }}"
+                                             alt="Avatar tutor"
+                                             style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);margin-right:12px;"
+                                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                        <div style="width:48px;height:48px;border-radius:50%;background:var(--primary);display:none;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.2rem;margin-right:12px;">
+                                            {{ tutor.user.name|slice:":1"|upper }}
+                                        </div>
                                     {% else %}
                                         <div style="width:48px;height:48px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.2rem;margin-right:12px;">
-                                            {{ tutor.user.name|slice:":1" }}
+                                            {{ tutor.user.name|slice:":1"|upper }}
                                         </div>
                                     {% endif %}
                                 </div>
@@ -150,6 +194,13 @@
                                 {% if tutor.hourly_rate %}
                                     <p class="card-text">
                                         <strong>💰 Tarifa:</strong> ${{ tutor.hourly_rate }}/hora
+                                    </p>
+                                {% endif %}
+                                {% if tutor.linkedin_url %}
+                                    <p class="card-text small">
+                                        <a href="{{ tutor.linkedin_url }}" target="_blank" rel="noopener" class="text-info">
+                                            🔗 Ver LinkedIn
+                                        </a>
                                     </p>
                                 {% endif %}
                                 {% if tutor.bio %}
@@ -172,8 +223,99 @@
                 {% endfor %}
             </div>
         </div>
+
+        {% if is_paginated %}
+        <nav class="mt-4 d-flex justify-content-center" aria-label="Paginación">
+          <ul class="pagination">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if province_filter %}&province={{ province_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}">
+                  &laquo;
+                </a>
+              </li>
+            {% endif %}
+            {% for num in paginator.page_range %}
+              <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if province_filter %}&province={{ province_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}">
+                  {{ num }}
+                </a>
+              </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if province_filter %}&province={{ province_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}">
+                  &raquo;
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Mapa provincia → ciudades
+    const provinceCities = {
+      {% for province, cities in ecuador_provinces %}
+        "{{ province }}": [{% for city in cities %}"{{ city }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+      {% endfor %}
+    };
+
+    // Mapa área → materias
+    const areaSubs = {
+      {% for area in knowledge_areas %}
+        "{{ area.slug }}": [{% for s in area.subjects.all %}"{{ s.name }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+      {% endfor %}
+    };
+
+    const provinceSelect = document.getElementById('province-select');
+    const citySelect     = document.getElementById('city-select');
+    const areaSelect     = document.getElementById('area-select');
+    const subjectSelect  = document.getElementById('subject-select');
+
+    function updateCities() {
+        const province = provinceSelect.value;
+        citySelect.innerHTML = '<option value="">Todas las ciudades</option>';
+        if (province && provinceCities[province]) {
+            provinceCities[province].forEach(function(city) {
+                const opt = document.createElement('option');
+                opt.value = city;
+                opt.textContent = city;
+                citySelect.appendChild(opt);
+            });
+        }
+    }
+
+    function updateSubjects() {
+        const area = areaSelect.value;
+        subjectSelect.innerHTML = '<option value="">Todas las materias</option>';
+        if (area && areaSubs[area]) {
+            areaSubs[area].forEach(function(sub) {
+                const opt = document.createElement('option');
+                opt.value = sub;
+                opt.textContent = sub;
+                subjectSelect.appendChild(opt);
+            });
+        }
+    }
+
+    provinceSelect.addEventListener('change', function() {
+        updateCities();
+        citySelect.value = '';
+    });
+
+    areaSelect.addEventListener('change', updateSubjects);
+
+    // Restaurar ciudades si hay provincia seleccionada al cargar
+    if (provinceSelect.value) { updateCities(); }
+    if ("{{ city_filter }}" && citySelect) { citySelect.value = "{{ city_filter }}"; }
+
+    // Restaurar materias si hay área seleccionada al cargar
+    if (areaSelect.value) {
+        updateSubjects();
+        if ("{{ subject_filter }}") { subjectSelect.value = "{{ subject_filter }}"; }
+    }
+    </script>
 </body>
 </html>

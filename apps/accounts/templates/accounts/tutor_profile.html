@@ -121,11 +121,16 @@
                     </li>
                     <!-- User Context: Avatar + Country -->
                     <li class="nav-item d-flex align-items-center gap-2 ms-3">
-                        {% if request.user.avatar_url %}
-                            <img src="{{ request.user.avatar_url|drive_url }}" alt="Profile" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);background:var(--surface);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-                            <div class="rounded-circle d-none align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);display:none!important;font-size:1rem;">{{ request.user.name|slice:":1"|upper }}</div>
+                        {% if request.user.tutor_profile.avatar %}
+                            <img src="{{ request.user.tutor_profile.avatar.url }}"
+                                 alt="Avatar"
+                                 class="rounded-circle"
+                                 style="width:36px;height:36px;object-fit:cover;border:2px solid var(--primary);">
                         {% else %}
-                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width:36px;height:36px;background:var(--primary);font-size:1rem;">{{ request.user.name|slice:":1"|upper }}</div>
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                                 style="width:36px;height:36px;background:var(--primary);font-size:1rem;">
+                                {{ request.user.name|slice:":1"|upper }}
+                            </div>
                         {% endif %}
                         {% if request.user.country_code %}<span style="font-size:1.2rem;margin-left:4px;" title="{{ request.user.country_code|upper }}">{% with cc=request.user.country_code|upper %}{% if cc == "EC" %}🇪🇨{% elif cc == "MX" %}🇲🇽{% elif cc == "CO" %}🇨🇴{% elif cc == "AR" %}🇦🇷{% elif cc == "PE" %}🇵🇪{% elif cc == "CL" %}🇨🇱{% elif cc == "VE" %}🇻🇪{% elif cc == "BR" %}🇧🇷{% elif cc == "UY" %}🇺🇾{% elif cc == "PY" %}🇵🇾{% elif cc == "BO" %}🇧🇴{% elif cc == "PA" %}🇵🇦{% elif cc == "CR" %}🇨🇷{% elif cc == "GT" %}🇬🇹{% elif cc == "HN" %}🇭🇳{% elif cc == "SV" %}🇸🇻{% elif cc == "NI" %}🇳🇮{% elif cc == "DO" %}🇩🇴{% elif cc == "CU" %}🇨🇺{% elif cc == "PR" %}🇵🇷{% else %}🌎{% endif %}{% endwith %}</span>{% endif %}
                     </li>
@@ -136,8 +141,8 @@
 
     <div class="profile-header">
         <div class="container text-center">
-            {% if profile.avatar_url %}
-                <img src="{{ profile.avatar_url|drive_url }}" alt="Foto de perfil"
+                {% if profile.avatar %}
+                <img src="{{ profile.avatar.url }}" alt="Foto de perfil"
                      style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin-bottom:12px;border:4px solid var(--primary);box-shadow:0 4px 20px rgba(108,99,255,0.3);background:var(--surface);"
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <div style="width:120px;height:120px;border-radius:50%;background:var(--primary);display:none;align-items:center;justify-content:center;color:white;font-size:3rem;margin-bottom:12px;font-weight:bold;">
@@ -203,6 +208,36 @@
                     <div class="info-item">
                         <div class="info-label">Tarifa por Hora</div>
                         <div class="info-value">${{ profile.hourly_rate }} USD</div>
+                    </div>
+                    {% endif %}
+
+                    {% if profile.linkedin_url %}
+                    <div class="info-item">
+                        <div class="info-label">LinkedIn</div>
+                        <div class="info-value">
+                            <a href="{{ profile.linkedin_url }}" target="_blank" rel="noopener"
+                               style="color: var(--accent);">
+                                🔗 Ver perfil de LinkedIn
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if profile.university_name %}
+                    <div class="info-item">
+                        <div class="info-label">Institución Educativa</div>
+                        <div class="info-value">{{ profile.university_name }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if profile.document_file %}
+                    <div class="info-item">
+                        <div class="info-label">Documento de Verificación</div>
+                        <div class="info-value">
+                            <a href="{{ profile.document_file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                📄 Ver documento
+                            </a>
+                        </div>
                     </div>
                     {% endif %}
                 </div>
